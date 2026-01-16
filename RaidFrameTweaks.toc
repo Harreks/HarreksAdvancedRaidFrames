@@ -1,0 +1,12 @@
+## Interface: 120000, 120001
+## Title: RaidFrameTweaks
+## Author: Harrek
+## Version: 1.0.0
+## Notes: Small modifications for the default raid frames
+## IconTexture: Interface/Addons/RaidFrameTweaks/RaidFrameTweaks.tga
+## Category: Unit Frames
+## SavedVariables: RaidFrameTweaksDB
+
+libs/LibStub/LibStub.lua
+libs/LibEditMode/embed.xml
+RaidFrameTweaks.lua

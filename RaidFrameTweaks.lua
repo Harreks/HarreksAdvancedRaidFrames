@@ -126,7 +126,7 @@ eventTracker:SetScript('OnEvent', function(self, event)
             SetupSettings()
         end)
 
-        LEM:AddSystemSettings(Enum.EditModeSystem.UnitFrame, {
+        local options = {
             {
                 name = 'Click Through Buff Icons',
                 kind = LEM.SettingType.Checkbox,
@@ -169,7 +169,9 @@ eventTracker:SetScript('OnEvent', function(self, event)
                 maxValue = 3,
                 valueStep = 1
             }
-        })
+        }
+        LEM:AddSystemSettings(Enum.EditModeSystem.UnitFrame, options, Enum.EditModeUnitFrameSystemIndices.Party)
+        LEM:AddSystemSettings(Enum.EditModeSystem.UnitFrame, options, Enum.EditModeUnitFrameSystemIndices.Raid)
     elseif event == 'GROUP_ROSTER_UPDATE' then
         SetupSettings()
     end

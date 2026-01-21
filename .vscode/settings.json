@@ -28,6 +28,9 @@
         "MinimalSliderWithSteppersMixin",
         "CreateMinimalSliderFormatter",
         "RaidFrame",
-        "class"
+        "class",
+        "PLAYER",
+        "RAID",
+        "CompactPartyFrameMember2HealthBar"
     ]
 }

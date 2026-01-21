@@ -39,8 +39,14 @@ local function ToggleIndicatorsMouse(value)
         end
         frame = partyUnit .. 'CenterStatusIcon'
         ChangeFrameMouseInteraction(frame, value)
+        if _G[partyUnit] and _G[partyUnit].CenterDefensiveBuff then
+            _G[partyUnit].CenterDefensiveBuff:EnableMouse(value)
+        end
         frame = raidUnit .. 'CenterStatusIcon'
         ChangeFrameMouseInteraction(frame, value)
+        if _G[partyUnit] and _G[partyUnit].CenterDefensiveBuff then
+            _G[partyUnit].CenterDefensiveBuff:EnableMouse(value)
+        end
     end
 end
 
@@ -70,6 +76,29 @@ local function ToggleBuffIcons(amount)
         end
     end
 end
+
+local colorMap = {}
+--Riptide check
+C_Timer.NewTicker(0.05, function()
+    for i = 1, 5 do
+        local frameName = 'CompactPartyFrameMember' .. i
+        if not colorMap[frameName] then
+            local red, green, blue =  _G[frameName .. 'HealthBar']:GetStatusBarColor()
+            colorMap[frameName] = { r = red, g = green, b = blue }
+        end
+        local frame = _G[frameName]
+        local unit = frame:GetAttribute("unit")
+        local auras = C_UnitAuras.GetUnitAuras(unit, "HELPFUL|PLAYER|RAID", nil, 5, 0);
+        for _, aura in ipairs(auras) do print(unit, ': ', aura.name) end
+        if next(auras) ~= nil then
+            _G[frameName .. 'HealthBar']:SetStatusBarColor(1,0,1);
+        else
+            local color = colorMap[frameName]
+            _G[frameName .. 'HealthBar']:SetStatusBarColor(color.r, color.g, color.b);
+        end
+    end
+end)
+
 
 --Controls visibility on debuff icons
 local function ToggleDebuffIcons(amount)

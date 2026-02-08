@@ -1,11 +1,12 @@
 ## Interface: 120000, 120001
 ## Title: Harreks Advanced Raid Frames
 ## Author: Harrek
-## Version: 0.1.1
+## Version: 0.1.2
 ## Notes: Functionality enhancement for the default party and raid frames
 ## IconTexture: Interface/Addons/HarreksAdvancedRaidFrames/HarreksAdvancedRaidFrames.tga
 ## Category: Unit Frames
 ## SavedVariables: HARFDB
+## LoadSavedVariablesFirst: 1
 
 libs/LibStub/LibStub.lua
 libs/LibEditMode/embed.xml

@@ -8,12 +8,25 @@ local currentLayout = nil
 local unitFrameMap = {}
 local playerClass = nil
 local supportedBuffTracking = {
+    --[[
+    Riptide
+    Earth Shield
+    ]]
     SHAMAN = {
         spell = 'Riptide',
         utility = {
-            earthShield = nil
+            earthShield = nil,
+            activeAuras = {}
         }
     },
+    --[[
+    Echo
+    Reversion (non-echo)
+    Source of Magic
+    Zephyr
+    Rewind
+    Time Dilation
+    ]]
     EVOKER = {
         spell = 'Echo',
         utility = {
@@ -22,17 +35,32 @@ local supportedBuffTracking = {
                 [366155] = true,
                 [1256581] = true,
                 [374227] = true,
-                [369459] = true
+                [369459] = true,
+                [357170] = true,
+                [390386] = true,
+                [363916] = true,
+                [363564] = true
             },
-            filteredBuffs = {}
+            filteredBuffs = {},
+            activeAuras = {}
         }
     },
+    --[[
+    Atonement
+    Pain Suppression
+    Power Word: Shield
+    Void Shield
+    ]]
     PRIEST = {
         spell = 'Atonement',
         utility = {
             isDisc = false,
             filteredSpellTimestamp = nil,
-            filteredSpells = {}
+            filteredSpells = {
+                [33206] = true
+            },
+            filteredBuffs = {},
+            activeAuras = {}
         }
     }
 }
@@ -70,6 +98,7 @@ for i = 1, 30 do
             debuffs = {},
             name = partyFrame .. 'Name',
             centerIcon = partyFrame .. 'CenterStatusIcon',
+            isColored = false,
             defensive = { type = 'defensive', frame = partyFrame }
         }
     end
@@ -80,6 +109,7 @@ for i = 1, 30 do
         debuffs = {},
         name = raidFrame .. 'Name',
         centerIcon = raidFrame .. 'CenterStatusIcon',
+        isColored = false,
         defensive = { type = 'defensive', frame = raidFrame }
     }
     for j = 1, 6 do
@@ -113,6 +143,15 @@ local function GetRelevantList()
     return IsInRaid() and frameList.raid or frameList.party
 end
 
+local function AreTimestampsEqual(time1, time2)
+    if time1 and time2 then
+        return time1 > time2 and time1 < time2 + 0.2
+        --return time1 == time2
+    else
+        return false
+    end
+end
+
 local function GetSpotlightNames()
     if IsInRaid() then
         local frames = GetRelevantList()
@@ -137,17 +176,19 @@ local function GetSpotlightNames()
     end
 end
 
+--Use the spotlight name list to map out where each frame is supposed to go
 local function MapSpotlightAnchors()
-    spotlightAnchors = { spotlights = {}, defaults = {} }
+    spotlightAnchors = { spotlights = {}, defaults = {} } --Reset the current lists
     local units = HARFDB[currentLayout].spotlight.names
-    local frames = frameList.raid
+    local frames = frameList.raid --Spotlight only works in raid
     for frameString, _ in pairs(frames) do
         if _G[frameString] and _G[frameString].unit then
             local currentFrame = _G[frameString]
             local unit = currentFrame.unit
-            if unit ~= 'player' then
+            if unit ~= 'player' then --The player can't be spotlight
                 local unitName = UnitName(unit)
-                local frameIndex = frameString:gsub('CompactRaidFrame', '')
+                local frameIndex = frameString:gsub('CompactRaidFrame', '') --We grab the number of this frame to keep them in order
+                --If the unit is in our name list we save it in the spotlights, otherwise we save it on defaults
                 if units[unitName] then
                     spotlightAnchors.spotlights[frameIndex] = frameString
                 else
@@ -156,28 +197,35 @@ local function MapSpotlightAnchors()
             end
         end
     end
+    --We are gonna sort our frames to know what goes anchored to what
+    --The goal here is to have two ordered lists of what order the frames must follow for ReanchorSpotlights() to work with
     for type, list in pairs(spotlightAnchors) do
         local framesIndexes = {}
         for index in pairs(list) do
-            table.insert(framesIndexes, tonumber(index))
+            table.insert(framesIndexes, tonumber(index)) --Insert the frame number into a new list
         end
-        table.sort(framesIndexes)
+        table.sort(framesIndexes) --Sort the numbers
         local orderedFrameList = {}
         local order = 1
+        --Now we use the ordered indices to list the frames in the order they're supposed to go
         for _, index in ipairs(framesIndexes) do
             orderedFrameList[order] = list[tostring(index)]
             order = order + 1
         end
+        --Save the sorted data in our spotlight anchors list
         spotlightAnchors[type] = orderedFrameList
     end
 end
 
+--Use the mapped spotlight anchors to attach the frames where they are supposed to go
 function ReanchorSpotlights()
     for index, frameString in ipairs(spotlightAnchors.spotlights) do
         local frame = _G[frameString]
         frame:ClearAllPoints()
+        --The first frame goes attached directly to the spotlight anchor
         if index == 1 then
             frame:SetPoint('TOP', 'AdvancedRaidFramesSpotlight', 'TOP')
+        --Other frames go attached to the previous one in the list
         else
             local previousFrame = _G[spotlightAnchors.spotlights[index - 1]]
             local childPoint, parentPoint
@@ -189,12 +237,15 @@ function ReanchorSpotlights()
             frame:SetPoint(childPoint, previousFrame, parentPoint)
         end
     end
+    --Similar logic for the frames that remain in the default position
+    --This currently has a bug if the user has 'separate tanks' turned on, because the tanks' targets and targetoftarget also use frames but of different size
     for index, frameString in ipairs(spotlightAnchors.defaults) do
         local frame = _G[frameString]
         frame:ClearAllPoints()
         if index == 1 then
             frame:SetPoint('TOPLEFT', 'CompactRaidFrameContainer', 'TOPLEFT')
         else
+            --This 5 is a magic number that assumes people have 5 frames before breaking into a new row (needs updating)
             if (index - 1) % 5 == 0 then
                 local previousFrame = _G[spotlightAnchors.defaults[index - 5]]
                 frame:SetPoint('TOP', previousFrame, 'BOTTOM')
@@ -205,6 +256,23 @@ function ReanchorSpotlights()
         end
     end
 end
+
+--We hook into the function that recolors the health bars
+hooksecurefunc("CompactUnitFrame_UpdateHealthColor", function(frame)
+    --check if this unit frame is one of the ones we have mapped
+    if frame.unit and unitFrameMap[frame.unit] and
+    --Confirm the addon is setup and we care about recoloring bars
+    currentLayout and HARFDB[currentLayout].buffTracking and HARFDB[currentLayout].trackingType == 'color'
+    then
+        --See if this frame is supposed to be colored, if so recolor it
+        local elements = GetRelevantList()[unitFrameMap[frame.unit]]
+        if elements.isColored then
+            local healthBar = frame.healthBar
+            local trackingColor = HARFDB[currentLayout].trackingColor
+            healthBar:SetStatusBarColor(trackingColor.r, trackingColor.g, trackingColor.b)
+        end
+    end
+end)
 
 --[[----------------------------------
     Core Functions
@@ -350,23 +418,29 @@ end
 
 --Map out unitsIds to the frameString of their frame for buff tracking, also creates the icon
 function MapOutUnits(value, frameString, elements)
-    if value and _G[frameString] and _G[frameString].unit then
+    if value and _G[frameString]then
         local unit = _G[frameString].unit
-        local frame = _G[frameString]
-        unitFrameMap[unit] = frameString
-        local r, g, b = frame.healthBar:GetStatusBarColor()
-        elements.originalColor = { r = r, g = g, b = b }
-        if not elements.buffTrackingIcon then
-            local buffIcon = CreateFrame('Frame', nil, UIParent)
-            buffIcon:SetSize(25, 25)
-            buffIcon:SetPoint('RIGHT', frame, 'RIGHT', -2, 0)
-            buffIcon.texture = buffIcon:CreateTexture(nil, 'ARTWORK')
-            buffIcon.texture:SetAllPoints()
-            buffIcon.cooldown = CreateFrame('Cooldown', nil, buffIcon, 'CooldownFrameTemplate')
-            buffIcon.cooldown:SetAllPoints()
-            buffIcon.cooldown:SetReverse(true)
-            buffIcon:Hide()
-            elements.buffTrackingIcon = buffIcon
+        if unit then
+            local frame = _G[frameString]
+            unitFrameMap[unit] = frameString
+            if not elements.buffTrackingIcon then
+                local buffIcon = CreateFrame('Frame', nil, UIParent)
+                buffIcon:SetSize(25, 25)
+                buffIcon:SetPoint('RIGHT', frame, 'RIGHT', -2, 0)
+                buffIcon.texture = buffIcon:CreateTexture(nil, 'ARTWORK')
+                buffIcon.texture:SetAllPoints()
+                buffIcon.cooldown = CreateFrame('Cooldown', nil, buffIcon, 'CooldownFrameTemplate')
+                buffIcon.cooldown:SetAllPoints()
+                buffIcon.cooldown:SetReverse(true)
+                buffIcon:Hide()
+                buffIcon:SetScript('OnEvent', function(_, _, unitId, auraUpdateInfo)
+                    CheckAuraStatus(unitId, auraUpdateInfo)
+                end)
+                elements.buffTrackingIcon = buffIcon
+            end
+            elements.buffTrackingIcon:RegisterUnitEvent('UNIT_AURA', unit)
+        elseif elements.buffTrackingIcon then
+            elements.buffTrackingIcon:UnregisterAllEvents()
         end
     end
 end
@@ -377,67 +451,106 @@ function CheckAuraStatus(unit, updateInfo)
     local hasBuff = false
     local isPlayer = UnitIsUnit(unit, 'player')
     local auras
-    if playerClass == 'SHAMAN' then
-        auras = C_UnitAuras.GetUnitAuras(unit, 'PLAYER|HELPFUL|RAID_IN_COMBAT', 2, Enum.UnitAuraSortRule.ExpirationOnly)
-        if #auras == 2 then
-            hasBuff = true
-            if not isPlayer then
-                util.earthShield = unit
+    local currentTime = GetTime()
+    --Check if the aura update time matches the timestamp of casting a filtered spell
+    if AreTimestampsEqual(currentTime, util.filteredSpellTimestamp) and updateInfo.addedAuras then
+        for _, aura in ipairs(updateInfo.addedAuras) do
+            --Check the auras added to see if any was applied by the player, if so we assume this aura was applied by a spell we don't want to track
+            if C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER') then
+                util.filteredBuffs[aura.auraInstanceID] = unit
             end
-        elseif #auras == 1 and not isPlayer and (util.earthShield == nil or util.earthShield ~= unit) then
-            hasBuff = true
-        end
-    elseif playerClass == 'EVOKER' then
-        local currentTime = GetTime()
-        auras = C_UnitAuras.GetUnitAuras(unit, 'PLAYER|HELPFUL|RAID', 2, Enum.UnitAuraSortRule.NameOnly)
-        if currentTime == util.filteredSpellTimestamp and updateInfo.addedAuras then
-            --This unit just got an invalid aura applied
-            for _, aura in ipairs(updateInfo.addedAuras) do
-                if C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER') then
-                    util.filteredSpells[aura.auraInstanceID] = unit
-                end
-            end
-        end
-        if #auras > 0 then
-            for _, aura in ipairs(auras) do
-                if not util.filteredBuffs[aura.auraInstanceID] or not util.filteredBuffs[aura.auraInstanceID] == unit then
-                    hasBuff = true
-                end
-            end
-        end
-    elseif playerClass == 'PRIEST' and util.isDisc then
-        local currentTime = GetTime()
-        if currentTime == util.filteredSpellTimestamp and updateInfo.addedAuras then
-            --This update is at the same time as Pain Sup cast and applied an aura
-            for _, aura in ipairs(updateInfo.addedAuras) do
-                if C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER') then
-                    util.filteredSpells[aura.auraInstanceID] = unit
-                end
-            end
-        end
-        auras = C_UnitAuras.GetUnitAuras(unit, 'PLAYER|HELPFUL|RAID_IN_COMBAT', 1, Enum.UnitAuraSortRule.NameOnly)
-        if #auras == 1 and not util.filteredSpells[auras[1].auraInstanceID]  then
-            hasBuff = true
         end
     end
+    --If we already have a valid saved buff for this unit
+    if util.activeAuras[unit] then
+        hasBuff = true
+        --Check the removed auras to make sure our auraInstanceID still exists
+        if updateInfo.removedAuraInstanceIDs then
+            for _, auraId in ipairs(updateInfo.removedAuraInstanceIDs) do
+                --If our saved auraInstanceID was removed, clear the saved aura for this unit
+                if util.activeAuras[unit] == auraId then
+                    util.activeAuras[unit] = nil
+                    hasBuff = false
+                end
+            end
+        end
+    end
+    --Shaman aura handling
+    if playerClass == 'SHAMAN' then
+        --If this is the unit that we have saved as our earth shield, check if its still there
+        if util.earthShield and unit == util.earthShield.unit then
+            if updateInfo.removedAuraInstanceIDs then
+                for _, auraId in ipairs(updateInfo.removedAuraInstanceIDs) do
+                    --If our saved auraInstanceID was removed, clear the saved aura for this unit
+                    if util.earthShield.aura == auraId then
+                        util.earthShield = nil
+                    end
+                end
+            end
+        end
+        if not util.activeAuras[unit] or not util.earthShield then
+            auras = C_UnitAuras.GetUnitAuras(unit, 'PLAYER|HELPFUL|RAID_IN_COMBAT', 2, Enum.UnitAuraSortRule.ExpirationOnly)
+            if #auras == 2 then --If the unit has two auras these have to be Earth Shield and Riptide
+                hasBuff = true
+                util.activeAuras[unit] = auras[1].auraInstanceID --We know the first aura is Riptide because of the sorting
+                if not isPlayer then
+                    util.earthShield = { unit = unit, aura = auras[2].auraInstanceID } --If the unit has two auras and is not the player, this is our second earth shield
+                end
+            --If the unit has one aura, is not the player nor the earth shield target, then this unit has Riptide
+            elseif #auras == 1 and not isPlayer and (util.earthShield == nil or util.earthShield.unit ~= unit) then
+                hasBuff = true
+                util.activeAuras[unit] = auras[1].auraInstanceID --Save the auraInstanceID for future checks on this unit
+            end
+        end
+    --Evoker aura handling
+    elseif playerClass == 'EVOKER' then
+        --If we don't have a valid saved aura for this unit, we check their buffs
+        if not util.activeAuras[unit] then
+            auras = C_UnitAuras.GetUnitAuras(unit, 'PLAYER|HELPFUL|RAID', 1, Enum.UnitAuraSortRule.NameOnly)
+            if #auras > 0 then
+                --The sorting means Echo will always be first, so we check the first aura to see if its filtered out by our casts
+                if not util.filteredBuffs[auras[1].auraInstanceID] or not util.filteredBuffs[auras[1].auraInstanceID] == unit then
+                    hasBuff = true --If it isn't filtered, this is echo
+                    util.activeAuras[unit] = auras[1].auraInstanceID
+                end
+            end
+        end
+    --Priest aura handling
+    elseif playerClass == 'PRIEST' and util.isDisc then
+        --If we don't have a valid saved aura for this unit, we check their buffs
+        if not util.activeAuras[unit] then
+            auras = C_UnitAuras.GetUnitAuras(unit, 'PLAYER|HELPFUL|RAID_IN_COMBAT', 1, Enum.UnitAuraSortRule.NameOnly)
+            --Sorting means Atonement will be first, if the auraInstanceID isn't from one of our filtered casts then the unit has atonement
+            if #auras == 1 and not util.filteredBuffs[auras[1].auraInstanceID]  then
+                hasBuff = true
+                util.activeAuras[unit] = auras[1].auraInstanceID
+            end
+        end
+    end
+    --Get info to update visuals accordingly
     local elements = GetRelevantList()[unitFrameMap[unit]]
     local buffIcon = elements.buffTrackingIcon
-    local healthBar = _G[unitFrameMap[unit]].healthBar
-    local trackingColor = HARFDB[currentLayout].trackingColor
-    local originalColor = elements.originalColor
+    local frame = _G[unitFrameMap[unit]]
     if hasBuff then
         local trackingType = HARFDB[currentLayout].trackingType
+        --If the tracking is an icon we update it and show it
         if trackingType == 'icon' then
             buffIcon.texture:SetTexture(auras[1].icon)
             local duration = C_UnitAuras.GetAuraDuration(unit, auras[1].auraInstanceID)
             buffIcon.cooldown:SetCooldownFromDurationObject(duration)
             buffIcon:Show()
+        --If the tracking is bar recoloring ew recolor the bar and mark it as colored in the elements
         elseif trackingType == 'color' then
+            local healthBar = frame.healthBar
+            local trackingColor = HARFDB[currentLayout].trackingColor
             healthBar:SetStatusBarColor(trackingColor.r, trackingColor.g, trackingColor.b)
+            elements.isColored = true
         end
+    --If the unit does not have a valid buff we hide the icon, mark is as not colored and call Blizz' coloring function on the frame
     else
         buffIcon:Hide()
-        healthBar:SetStatusBarColor(originalColor.r, originalColor.g, originalColor.b)
+        elements.isColored = false
+        CompactUnitFrame_UpdateHealthColor(frame)
     end
 end
 
@@ -500,8 +613,7 @@ spotlightOptionsFrame:SetAlpha(0)
 local trackedEvents = {
     'PLAYER_LOGIN',
     'GROUP_ROSTER_UPDATE',
-    'UNIT_SPELLCAST_SUCCEEDED',
-    'UNIT_AURA'
+    'UNIT_SPELLCAST_SUCCEEDED'
 }
 local eventTracker = CreateFrame('Frame')
 for _, event in ipairs(trackedEvents) do
@@ -510,7 +622,6 @@ end
 eventTracker:SetScript('OnEvent', function(self, event, ...)
     if event == 'PLAYER_LOGIN' then
 
-        HARFDB = HARFDB or {}
         playerClass = UnitClassBase('player')
 
         local LEM = LibStub('LibEditMode')
@@ -742,22 +853,11 @@ eventTracker:SetScript('OnEvent', function(self, event, ...)
 
         SetupSettings()
 
-    elseif event == 'UNIT_AURA' and HARFDB[currentLayout].buffTracking then
-
-        local unit, updateInfo = ...
-        if supportedBuffTracking[playerClass] and unitFrameMap[unit] then
-            CheckAuraStatus(unit, updateInfo)
-        end
-
     elseif event == 'UNIT_SPELLCAST_SUCCEEDED' and supportedBuffTracking[playerClass] and HARFDB[currentLayout].buffTracking then
 
         local unit, _, spellId = ...
-        if not issecretvalue(spellId) and not issecretvalue(unit) and unit == 'player' then
-            if playerClass == 'EVOKER' and supportedBuffTracking.EVOKER.utility.filteredSpells[spellId] then
-                supportedBuffTracking.EVOKER.utility.filteredSpellTimestamp = GetTime()
-            elseif playerClass == 'PRIEST' and supportedBuffTracking.PRIEST.utility.isDisc and spellId == 33206 then
-                supportedBuffTracking.PRIEST.utility.filteredSpellTimestamp = GetTime()
-            end
+        if not issecretvalue(spellId) and not issecretvalue(unit) and unit == 'player' and supportedBuffTracking[playerClass].utility.filteredSpells[spellId] then
+            supportedBuffTracking[playerClass].utility.filteredSpellTimestamp = GetTime()
         end
 
     end

@@ -6,17 +6,10 @@ local Opt = NS.Opt
 
 function Opt.SetupSettings(modifiedSettingFunction, newValue)
     if not InCombatLockdown() then
-        local relevantFrameList = Util.GetRelevantList()
+        local unitList = Util.GetRelevantList()
         local functionsToRun = {}
-        if not modifiedSettingFunction or modifiedSettingFunction == Core.MapOutUnits then
-            if Data.playerClass == 'PRIEST' and HARFDB.buffTracking then
-                Data.supportedBuffTracking.PRIEST.utility.isDisc = C_SpecializationInfo.GetSpecialization() == 1
-            end
-            Util.CleanUtilityTables()
-        end
-
-        if modifiedSettingFunction and type(modifiedSettingFunction) == 'function' then
-            table.insert(functionsToRun, { func = modifiedSettingFunction, val = newValue } )
+        if modifiedSettingFunction and type(Core[modifiedSettingFunction]) == 'function' then
+            table.insert(functionsToRun, { func = Core[modifiedSettingFunction], val = newValue } )
         else
             table.insert(functionsToRun, { func = Core.ToggleBuffIcons, val = HARFDB.buffIcons } )
             table.insert(functionsToRun, { func = Core.ToggleDebuffIcons, val = HARFDB.debuffIcons } )
@@ -24,12 +17,18 @@ function Opt.SetupSettings(modifiedSettingFunction, newValue)
             table.insert(functionsToRun, { func = Core.SetGroupFrameTransparency, val = HARFDB.frameTransparency } )
             table.insert(functionsToRun, { func = Core.ScaleNames, val = HARFDB.nameScale } )
             table.insert(functionsToRun, { func = Core.ColorNames, val = HARFDB.colorNames } )
-            table.insert(functionsToRun, { func = Core.MapOutUnits, val = HARFDB.buffTracking } )
+
+            if Data.playerClass == 'PRIEST' and HARFDB.buffTracking then
+                Data.supportedBuffTracking.PRIEST.utility.isDisc = C_SpecializationInfo.GetSpecialization() == 1
+            end
+
+            Util.CleanUtilityTables()
+            Util.MapOutUnits()
         end
 
-        for frameString, elements in pairs(relevantFrameList) do
+        for unit, elements in pairs(unitList) do
             for _, functionData in ipairs(functionsToRun) do
-                functionData.func(functionData.val, frameString, elements)
+                functionData.func(functionData.val, unit, elements)
             end
         end
 
@@ -55,6 +54,8 @@ Opt.eventTracker:SetScript('OnEvent', function(_, event, ...)
         Data.playerClass = UnitClassBase('player')
 
         Util.CreateOptionsPanel(Data.settings)
+        Util.InstallFrames()
+
         local LEM = NS.LibEditMode
 
         LEM:RegisterCallback('enter', function()

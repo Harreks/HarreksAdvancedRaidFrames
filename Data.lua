@@ -5,11 +5,8 @@ local Core = NS.Core
 local Opt = NS.Opt
 
 --Initialize default data
-Data.gameVersion = select(4, GetBuildInfo())
-Data.unitFrameMap = {}
 Data.initializerList = {}
 Data.playerClass = nil
-Data.allowedCastDelay = 0.25
 Data.buffFilter = 'PLAYER|HELPFUL|RAID_IN_COMBAT'
 Data.supportedBuffTracking = {
     SHAMAN = {
@@ -21,13 +18,15 @@ Data.supportedBuffTracking = {
     },
     EVOKER = {
         spell = 'Echo',
+        allowedCastDelay = 0.1,
         utility = {
             filteredSpellTimestamp = nil,
             filteredSpells = {
                 [366155] = true,
                 [357170] = true,
                 [1256581] = true,
-                [360995] = true
+                [360995] = true,
+                [363564] = true
             },
             filteredEmpowers = {
                 [355936] = true,
@@ -46,6 +45,7 @@ Data.supportedBuffTracking = {
     },
     PRIEST = {
         spell = 'Atonement',
+        allowedCastDelay = 0.1,
         utility = {
             isDisc = false,
             filteredSpellTimestamp = nil,
@@ -137,7 +137,7 @@ Data.settings = {
         text = 'Buff Tracking',
         default = true,
         tooltip = 'Some specializations can track a specific buff better on their frames, this enables that tracking.',
-        func = 'MapOutUnits'
+        func = 'Setup'
     },
     {
         key = 'trackingType',
@@ -145,18 +145,92 @@ Data.settings = {
         text = 'Tracking Type',
         items = {
             { text = 'Icon', value = 'icon' },
-            { text = 'Bar Recolor', value = 'color' }
+            { text = 'Bar Recolor', value = 'color' },
+            { text = 'Progress Bar', value = 'bar' }
         },
         default = 'color',
         tooltip = 'Choose how to track the buffs.',
-        parent = 'buffTracking'
+        parent = 'buffTracking',
+        func = 'Setup'
     },
     {
         key = 'trackingColor',
         type = 'color',
         text = 'Tracking Color',
         default = 'ff00ff00',
-        tooltip = 'Color to change the bars into when the buff is present.'
+        tooltip = 'Color to change the bars into when the buff is present.',
+        parent = 'buffTracking'
+    },
+    {
+        key = 'iconSize',
+        type = 'slider',
+        text = 'Icon Size',
+        min = 10,
+        max = 50,
+        step = 1,
+        default = 25,
+        tooltip = 'Choose the size of the tracking icon.',
+        parent = 'buffTracking',
+        func = 'Setup'
+    },
+    {
+        key = 'iconPosition',
+        type = 'dropdown',
+        text = 'Icon Position',
+        items = {
+            { text = 'Top Left', value = 'TOPLEFT' },
+            { text = 'Top', value = 'TOP' },
+            { text = 'Top Right', value = 'TOPRIGHT' },
+            { text = 'Left', value = 'LEFT' },
+            { text = 'Right', value = 'RIGHT' },
+            { text = 'Bottom Left', value = 'BOTTOMLEFT' },
+            { text = 'Bottom', value = 'BOTTOM' },
+            { text = 'Bottom Right', value = 'BOTTOMRIGHT' }
+        },
+        default = 'RIGHT',
+        tooltip = 'Choose where to place the tracking icon.',
+        parent = 'buffTracking',
+        func = 'Setup'
+    },
+    {
+        key = 'barPosition',
+        type = 'dropdown',
+        text = 'Bar Position',
+        items = {
+            { text = 'Top Right', value = 'topRight' },
+            { text = 'Bottom Right', value = 'bottomRight' },
+            { text = 'Bottom Left', value = 'bottomLeft' },
+            { text = 'Top Left', value = 'topLeft' }
+        },
+        default = 'topRight',
+        tooltip = 'Choose where to place the progress bar.',
+        parent = 'buffTracking',
+        func = 'Setup'
+    },
+    {
+        key = 'barHeight',
+        type = 'slider',
+        text = 'Bar Height',
+        min = 5,
+        max = 20,
+        step = 1,
+        default = 10,
+        tooltip = 'Choose the height of the progress bar.',
+        parent = 'buffTracking',
+        func = 'Setup'
+    },
+    {
+        key = 'barWidth',
+        type = 'dropdown',
+        text = 'Bar Width',
+        items = {
+            { text = 'Full', value = 'full' },
+            { text = 'Half', value = 'half' }
+        },
+        default = 'full',
+        tooltip = 'Choose the width of the progress bar.',
+        parent = 'buffTracking',
+        func = 'Setup'
     },
     {
         key = 'addonsHeader',
@@ -168,10 +242,20 @@ Data.settings = {
         type = 'checkbox',
         text = 'DandersFrames Compatibility',
         default = false,
-        tooltip = 'Enables highlighting on buffs for the addon frame.'
+        tooltip = 'Shows the selected tracking method on DandersFrames instead of the default ones.',
+        func = 'Setup'
+    },
+    {
+        key = 'grid2Compat',
+        type = 'checkbox',
+        text = 'Grid2 Compatibility',
+        default = true,
+        readOnly = true,
+        tooltip = 'Having the AddOn installed enables the \'HealerBuff\' status in Grid2. Use it to configure how to display the tracking.'
     }
 }
 
+--Events the frames need to check for
 Data.trackedEvents = {
     general = {
         'PLAYER_LOGIN',
@@ -183,40 +267,42 @@ Data.trackedEvents = {
     }
 }
 
---Build a list of strings that match the default frame elements
+--List of the names of all the default raid frames
 Data.frameList = { party = {}, raid = {} }
 for i = 1, 30 do
-    local partyFrame, raidFrame
     if i <= 5 then
-        partyFrame = 'CompactPartyFrameMember' .. i
-        Data.frameList.party[partyFrame] = {
-            buffs = {},
-            debuffs = {},
-            name = partyFrame .. 'Name',
-            centerIcon = partyFrame .. 'CenterStatusIcon',
-            isColored = false,
-            defensive = { type = 'defensive', frame = partyFrame }
-        }
+        table.insert(Data.frameList.party, 'CompactPartyFrameMember' .. i)
     end
-    raidFrame = 'CompactRaidFrame' .. i
-    Data.frameList.raid[raidFrame] = {
-        buffs = {},
-        debuffs = {},
-        name = raidFrame .. 'Name',
-        centerIcon = raidFrame .. 'CenterStatusIcon',
-        isColored = false,
-        defensive = { type = 'defensive', frame = raidFrame }
-    }
-    for j = 1, 6 do
-        if j <= 3 then
-            if partyFrame then
-                Data.frameList.party[partyFrame].debuffs[j] = partyFrame .. 'Debuff' .. j
-            end
-            Data.frameList.raid[raidFrame].debuffs[j] = raidFrame .. 'Debuff' .. j
-        end
-        if partyFrame then
-            Data.frameList.party[partyFrame].buffs[j] = partyFrame .. 'Buff' .. j
-        end
-        Data.frameList.raid[raidFrame].buffs[j] = raidFrame .. 'Buff' .. j
+    table.insert(Data.frameList.raid, 'CompactRaidFrame' .. i)
+    local group = math.floor((i / 5) - 0.1 + 1)
+    local member = ((i - 1) % 5) + 1
+    table.insert(Data.frameList.raid, 'CompactRaidGroup' .. group .. 'Member' .. member)
+end
+
+--Default data that each unit carries
+Data.defaultUnitData = {
+    frame = nil,
+    buffs = {},
+    debuffs = {},
+    centerIcon = nil,
+    name = nil,
+    isColored = false,
+    defensive = { type = 'defensive', frame = nil }
+}
+
+--Build a list of units to store data for each group member
+Data.unitList = {
+    party = {
+        player = CopyTable(Data.defaultUnitData)
+    },
+    raid = {}
+}
+for i = 1, 30 do
+    local partyMember, raidMember
+    if i <= 4 then
+        partyMember = 'party' .. i
+        Data.unitList.party[partyMember] = CopyTable(Data.defaultUnitData)
     end
+    raidMember = 'raid' .. i
+    Data.unitList.raid[raidMember] = CopyTable(Data.defaultUnitData)
 end

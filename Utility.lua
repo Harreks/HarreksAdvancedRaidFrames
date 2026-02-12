@@ -9,6 +9,35 @@ function Util.FormatForDisplay(number)
     return math.floor(number * 10 + 0.5) / 10
 end
 
+--Takes a string, checks global table for frame with that name and changes mouse interaction on it
+function Util.ChangeFrameMouseInteraction(frameString, value)
+    local frame
+    --Special handling for the center defensive because it doesn't have a direct name to access
+    if type(frameString) == 'table' and frameString.type and frameString.type == 'defensive' then
+        if _G[frameString.frame] and _G[frameString.frame].CenterDefensiveBuff then
+            frame = _G[frameString.frame].CenterDefensiveBuff
+        end
+    else
+        if _G[frameString] then
+            frame = _G[frameString]
+        end
+    end
+    if frame and frame:IsMouseEnabled() ~= value then
+        frame:EnableMouse(value)
+    end
+end
+
+--Hides elements by changing opacity
+function Util.ToggleTransparency(frameString, shouldShow)
+    if _G[frameString] then
+        if shouldShow then
+            _G[frameString]:SetAlpha(1)
+        else
+            _G[frameString]:SetAlpha(0)
+        end
+    end
+end
+
 --Helper function to check if a specific auraInstanceId on a specific unit is already present on a filter list
 function Util.IsAuraOnUnitFilteredByList(auraInstanceId, unit, filteredAurasList)
     if filteredAurasList[unit] and filteredAurasList[unit][auraInstanceId] then
@@ -21,7 +50,6 @@ end
 --The addon uses some tables to keep track of unit frames and specific auras, every now and then we empty these tables to remove irrelevant data
 --Currently this happens when we remap out frames to new units after a roster update, as the info is tied to a specific player occupying a specific frame
 function Util.CleanUtilityTables()
-    wipe(Data.unitFrameMap)
     for _, spec in pairs(Data.supportedBuffTracking) do
         if spec.utility.filteredBuffs then
             wipe(spec.utility.filteredBuffs)
@@ -34,13 +62,14 @@ end
 
 --Return the list of raid frames depending on raid or party
 function Util.GetRelevantList()
-    return IsInRaid() and Data.frameList.raid or Data.frameList.party
+    return IsInRaid() and Data.unitList.raid or Data.unitList.party
 end
 
 --Yes i know what "equal" means
 function Util.AreTimestampsEqual(time1, time2)
+    local castDelay = Data.supportedBuffTracking[Data.playerClass].allowedCastDelay
     if time1 and time2 then
-        return time1 >= time2 and time1 <= time2 + Data.allowedCastDelay
+        return time1 >= time2 and time1 <= time2 + castDelay
     else
         return false
     end
@@ -155,42 +184,57 @@ end
 
 function Util.DisplayTrackedBuff(unit, buff)
     --Get info to update visuals accordingly
-    local elements = Util.GetRelevantList()[Data.unitFrameMap[unit]]
+    local unitList = Util.GetRelevantList()
+    local elements = unitList[unit]
     if elements then
-        local buffIcon = elements.buffTrackingIcon
-        local frame = _G[Data.unitFrameMap[unit]]
         local trackingType = HARFDB.trackingType
         local trackingColor = CreateColorFromHexString(HARFDB.trackingColor)
         --If the tracking is an icon we update it and show it
         if trackingType == 'icon' and buff then
-            buffIcon.texture:SetTexture(buff.icon)
+            local trackingIcon = elements.trackingIcon
             local duration = C_UnitAuras.GetAuraDuration(unit, buff.auraInstanceID)
-            buffIcon.cooldown:SetCooldownFromDurationObject(duration)
-            buffIcon:Show()
+            trackingIcon.texture:SetTexture(buff.icon)
+            trackingIcon.cooldown:SetCooldownFromDurationObject(duration)
+            trackingIcon:Show()
         --If the tracking is bar recoloring we recolor the bar and mark it as colored in the elements
         elseif trackingType == 'color' then
-            local healthBar = frame.healthBar
-            healthBar:SetStatusBarColor(trackingColor.r, trackingColor.g, trackingColor.b)
-            elements.isColored = true
-        end
-
-        if HARFDB.dandersCompat and DandersFrames_IsReady and DandersFrames_IsReady() then
-            DandersFrames_HighlightUnit(unit, trackingColor.r, trackingColor.g, trackingColor.b, trackingColor.a)
+            if Util.DandersCompat() then
+                DandersFrames_HighlightUnit(unit, trackingColor.r, trackingColor.g, trackingColor.b, trackingColor.a)
+            else
+                local frame = _G[elements.frame]
+                local healthBar = frame.healthBar
+                healthBar:SetStatusBarColor(trackingColor.r, trackingColor.g, trackingColor.b)
+                elements.isColored = true
+            end
+        elseif trackingType == 'bar' then
+            local bar = elements.displayBar
+            local duration = C_UnitAuras.GetAuraDuration(unit, buff.auraInstanceID)
+            bar:SetStatusBarColor(trackingColor.r, trackingColor.g, trackingColor.b)
+            bar:SetTimerDuration(duration, Enum.StatusBarInterpolation.Immediate, Enum.StatusBarTimerDirection.RemainingTime)
+            bar:Show()
         end
     end
 end
 
 function Util.HideTrackedBuff(unit)
-    local elements = Util.GetRelevantList()[Data.unitFrameMap[unit]]
-    local frame = _G[Data.unitFrameMap[unit]]
-    if elements and frame and frame.unit then
-        local buffIcon = elements.buffTrackingIcon
-        buffIcon:Hide()
-        elements.isColored = false
-        CompactUnitFrame_UpdateHealthColor(frame)
-
-        if HARFDB.dandersCompat and DandersFrames_IsReady and DandersFrames_IsReady() then
-            DandersFrames_ClearHighlight(unit)
+    local unitList = Util.GetRelevantList()
+    local elements = unitList[unit]
+    if elements then
+        local trackingType = HARFDB.trackingType
+        if trackingType == 'icon' then
+            local trackingIcon = elements.trackingIcon
+            trackingIcon:Hide()
+        elseif trackingType == 'color' then
+            if Util.DandersCompat() then
+                DandersFrames_ClearHighlight(unit)
+            else
+                local frame = _G[elements.frame]
+                elements.isColored = false
+                CompactUnitFrame_UpdateHealthColor(frame)
+            end
+        elseif trackingType == 'bar' then
+            local bar = elements.displayBar
+            bar:Hide()
         end
     end
 end
@@ -219,15 +263,24 @@ function Util.CreateOptionsElement(data, parent)
         local input = Settings.RegisterAddOnSetting(parent.category, data.key, data.key, HARFDB, type(data.default), data.text, data.default)
         input:SetValueChangedCallback(function(setting, value)
             local settingKey = setting:GetVariable()
-            local func
-            for _, opt in ipairs(Data.settings) do
-                if opt.key == settingKey then
-                    func = opt.func
-                    break
+            if data.readOnly and HARFDB[settingKey] ~= data.default then
+                HARFDB[settingKey] = data.default
+                setting:NotifyUpdate()
+            else
+                local func
+                for _, opt in ipairs(Data.settings) do
+                    if opt.key == settingKey then
+                        func = opt.func
+                        break
+                    end
                 end
-            end
-            if func and Core[func] then
-                Opt.SetupSettings(Core[func], value)
+                if func then
+                    if func == 'Setup' then
+                        Opt.SetupSettings()
+                    else
+                        Opt.SetupSettings(func, value)
+                    end
+                end
             end
         end)
         if data.type == "checkbox" then
@@ -271,15 +324,148 @@ function Util.CreateOptionsPanel(optionsTable)
     end
 end
 
+function Util.InstallFrames()
+    for groupType, units in pairs(Data.unitList) do
+        for unit, _ in pairs(units) do
+            local elements = Data.unitList[groupType][unit]
+            if not elements.trackingIcon then
+                local trackingIcon = CreateFrame('Frame', nil, UIParent)
+                trackingIcon:SetSize(25, 25)
+                trackingIcon.texture = trackingIcon:CreateTexture(nil, 'ARTWORK')
+                trackingIcon.texture:SetAllPoints()
+                trackingIcon.cooldown = CreateFrame('Cooldown', nil, trackingIcon, 'CooldownFrameTemplate')
+                trackingIcon.cooldown:SetAllPoints()
+                trackingIcon.cooldown:SetReverse(true)
+                trackingIcon:Hide()
+                trackingIcon:SetScript('OnEvent', function(_, _, unitId, auraUpdateInfo)
+                    Core.CheckAuraStatus(unitId, auraUpdateInfo)
+                    if Util.Grid2Plugin and Util.Grid2Plugin.enabled then
+                        Util.Grid2Plugin:UpdateIndicators(unitId)
+                    end
+                end)
+                trackingIcon:RegisterUnitEvent('UNIT_AURA', unit)
+                elements.trackingIcon = trackingIcon
+            end
+            if not elements.displayBar then
+                local displayBar = CreateFrame('StatusBar', nil, UIParent)
+                displayBar:SetStatusBarTexture("Interface/Buttons/WHITE8x8")
+                displayBar.background = displayBar:CreateTexture(nil, 'BACKGROUND')
+                displayBar.background:SetAllPoints(displayBar)
+                displayBar.background:SetColorTexture(0, 0, 0, 1)
+                displayBar:Hide()
+                elements.displayBar = displayBar
+            end
+        end
+    end
+end
+
+function Util.AttachElements(elements, parent)
+    local icon = elements.trackingIcon
+    icon:SetParent(UIParent)
+    icon:ClearAllPoints()
+    icon:SetPoint(HARFDB.iconPosition, parent, HARFDB.iconPosition)
+    icon:SetSize(HARFDB.iconSize, HARFDB.iconSize)
+    icon:Hide()
+    local bar = elements.displayBar
+    local barPos = HARFDB.barPosition
+    local barWidth = HARFDB.barWidth
+    bar:SetParent(UIParent)
+    bar:ClearAllPoints()
+    bar:SetPoint(barPos, parent, barPos)
+    if barPos == 'topRight' then
+        if barWidth == 'full' then
+            bar:SetPoint('TOPLEFT', parent, 'TOPLEFT')
+        else
+            bar:SetPoint('TOPLEFT', parent, 'TOP')
+        end
+    elseif barPos == 'topLeft' then
+        if barWidth == 'full' then
+            bar:SetPoint('TOPRIGHT', parent, 'TOPRIGHT')
+        else
+            bar:SetPoint('TOPRIGHT', parent, 'TOP')
+        end
+    elseif barPos == 'bottomRight' then
+        if barWidth == 'full' then
+            bar:SetPoint('BOTTOMLEFT', parent, 'BOTTOMLEFT')
+        else
+            bar:SetPoint('BOTTOMLEFT', parent, 'BOTTOM')
+        end
+    elseif barPos == 'bottomLeft' then
+        if barWidth == 'full' then
+            bar:SetPoint('BOTTOMRIGHT', parent, 'BOTTOMRIGHT')
+        else
+            bar:SetPoint('BOTTOMRIGHT', parent, 'BOTTOM')
+        end
+    end
+    bar:SetHeight(HARFDB.barHeight)
+    bar:Hide()
+end
+
+function Util.DandersCompat()
+    return HARFDB.dandersCompat and DandersFrames_IsReady and DandersFrames_IsReady()
+end
+
+--Connects units to the default frames
+function Util.MapOutUnits()
+    for groupType, units in pairs(Data.unitList) do
+        for unit, _ in pairs(units) do
+            local elements = Data.unitList[groupType][unit]
+            elements.frame = nil
+            elements.centerIcon = nil
+            elements.isColored = false
+            elements.defensive.frame = nil
+            elements.name = nil
+            wipe(elements.buffs)
+            wipe(elements.debuffs)
+        end
+    end
+    local groupType = IsInRaid() and 'raid' or 'party'
+    local unitList = Util.GetRelevantList()
+    local frameList = Data.frameList[groupType]
+    for _, frameString in ipairs(frameList) do
+        local frame = _G[frameString]
+        if frame and frame.unit then
+            local unitElements = unitList[frame.unit]
+            unitElements.frame = frameString
+            unitElements.centerIcon = frameString .. 'CenterStatusIcon'
+            unitElements.defensive.frame = frameString
+            unitElements.name = frameString .. 'Name'
+            Util.AttachElements(unitElements, frame)
+            for i = 1, 6 do
+                if i <= 3 then
+                    unitElements.debuffs[i] = frameString .. 'Debuff' .. i
+                end
+                unitElements.buffs[i] = frameString .. 'Buff' .. i
+            end
+        end
+    end
+
+    if Util.DandersCompat() then
+        for unit, unitElements in pairs(unitList) do
+            local frame = DandersFrames_GetFrameForUnit(unit)
+            if frame then
+                Util.AttachElements(unitElements, frame)
+                local icon = unitElements.trackingIcon
+                icon:SetParent(frame)
+                icon:SetFrameLevel(frame:GetFrameLevel() + 10)
+                local bar = unitElements.displayBar
+                bar:SetParent(frame)
+                bar:SetFrameLevel(frame:GetFrameLevel() + 10)
+            end
+        end
+    end
+end
+
 --We hook into the function that recolors the health bars
 hooksecurefunc("CompactUnitFrame_UpdateHealthColor", function(frame)
     --check if this unit frame is one of the ones we have mapped
-    if frame.unit and Data.unitFrameMap[frame.unit] and
+    local unitList = Util.GetRelevantList()
+    if frame.unit and unitList[frame.unit] and
     --Confirm the addon is setup and we care about recoloring bars
     HARFDB.buffTracking and HARFDB.trackingType == 'color'
     then
         --See if this frame is supposed to be colored, if so recolor it
-        local elements = Util.GetRelevantList()[Data.unitFrameMap[frame.unit]]
+        local elements = unitList[frame.unit]
         if elements and elements.isColored then
             local healthBar = frame.healthBar
             local trackingColor = CreateColorFromHexString(HARFDB.trackingColor)

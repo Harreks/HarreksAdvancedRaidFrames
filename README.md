@@ -1,25 +1,27 @@
+[![Patreon](https://i.imgur.com/VHOsqDj.png)](https://www.patreon.com/harrek) [![Discord](https://i.imgur.com/iUrRmiw.png)](https://discord.gg/MMjNrUTxQe)
+
 # Introduction
 
-Implement improvements and extra functionality to Blizzard's party and raid frames. The goal is to integrate with as little footprint as possible, reusing existing elements when available and doing most set up work outside of combat.
+Implementing improvements to the default frames and advanced functionality to all frames. The goal is to integrate with as little footprint as possible, reusing existing elements when available and doing most set up work outside of combat. Working alongside popular frame addons to improve them when possible.
 
 # Functionality
 
-- Click-through Aura Icons: Removes mouse interaction from most elements on the frames, letting targeting work through them and removing the tooltips.
+- Click-through Aura Icons: Removes mouse interaction from most elements on the default frames, letting targeting work through them and removing the tooltips.
 - Buff and Debuff icon amounts: While still limited to a maximum of 6 buffs and 3 debuffs, you can reduce them even more if desired.
-- Frame Transparency: disables transparency effects on the frames to they remain fully solid when units are out of range.
-- Name Size: Controls the scale of the player names on the frames.
+- Frame Transparency: disables transparency effects on the default frames to they remain fully solid when units are out of range.
+- Name Size: Controls the scale of the player names on the default frames.
 - Class Colored Names: Colors the player names according to their class.
-- Spotlight: Move the raid frames of selected units into a separate group with positioning.
-- Buff Tracking: Track one specific buff relevant to your spec, either by showing an icon in a separate spot for only that buff or by recoloring the frame when the buff is present. Currently supports Atonement, Riptide and Echo.
-- DandersFrames Compatibility: Highlight the frame of the unit in the addon when the buff is detected.
+- Spotlight: Move the raid frames of selected units into a separate group with custom positioning.
+- Buff Tracking: Track one specific buff relevant to your spec with different display methods. Currently supports Atonement, Riptide and Echo.
+- DandersFrames Compatibility: Display the tracking on the addon frames.
 - Grid2 Compatibility: The addon implements its own "HealerBuff" custom status as a plugin.
 
 # Planned Upgrades
 
-- Buff Tracking Icon Customization: Implement more options to position and size the buff track icon.
-- Overshields: Show shields that go above the unit's max health on the frame
-- Spotlight Customization: More options to customize the spotlight
-- Restoration Druid, Augmentation Evoker tracking in the works. Holy Paladin and Holy Priest tracking will be explored in the future.
+- Overshields: Show shields that go above the unit's max health on the default frames.
+- Spotlight Groupings: Separate the spotlight in several rows or columns.
+- Restoration Druid and Augmentation Evoker tracking in the works. Holy Paladin and Holy Priest tracking will be explored in the future.
+- ElvUI frames tracking is being looked into.
 
 # Known Bugs
 

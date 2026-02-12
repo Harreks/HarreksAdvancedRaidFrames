@@ -6,9 +6,8 @@ NS.Core = {}
 NS.Opt = {}
 
 --Version-specific handling of saved vars
-if not HARFDB.version then
-    HARFDB = {}
-    HARFDB.version = "1.0.1"
+if HARFDB.version ~= '1.1.1' then
+    HARFDB.version = "1.1.1"
 end
 
-print('AdvancedRaidFrames v.' .. HARFDB.version)
+print('AdvancedRaidFrames v.' .. HARFDB.version .. ' by Harrek.')

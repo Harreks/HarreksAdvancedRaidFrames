@@ -1,71 +1,78 @@
 local _, NS = ...
 local Data = NS.Data
+local Ui = NS.Ui
 local Util = NS.Util
 local Core = NS.Core
-local Opt = NS.Opt
-
---Initialize default data
-Data.initializerList = {}
-Data.playerClass = nil
-Data.buffFilter = 'PLAYER|HELPFUL|RAID_IN_COMBAT'
-Data.supportedBuffTracking = {
-    SHAMAN = {
-        spell = 'Riptide',
-        utility = {
-            earthShield = nil,
-            activeAuras = {}
-        }
-    },
-    EVOKER = {
-        spell = 'Echo',
-        allowedCastDelay = 0.1,
-        utility = {
-            filteredSpellTimestamp = nil,
-            filteredSpells = {
-                [366155] = true,
-                [357170] = true,
-                [1256581] = true,
-                [360995] = true,
-                [363564] = true
-            },
-            filteredEmpowers = {
-                [355936] = true,
-                [382614] = true
-            },
-            allEmpowers = {
-                [355936] = true,
-                [382614] = true,
-                [357208] = true,
-                [382266] = true
-            },
-            ttsActive = false,
-            filteredBuffs = {},
-            activeAuras = {}
-        }
-    },
-    PRIEST = {
-        spell = 'Atonement',
-        allowedCastDelay = 0.1,
-        utility = {
-            isDisc = false,
-            filteredSpellTimestamp = nil,
-            --Disc works the other way around, tracks the casts that apply atonement
-            filteredSpells = {
-                [200829] = true,
-                [2061] = true,
-                [17] = true,
-                [47540] = true,
-                [194509] = true
-            },
-            filteredBuffs = {},
-            activeAuras = {}
-        }
-    }
-}
+local SavedIndicators = HARFDB.savedIndicators
+local Options = HARFDB.options
 
 Data.spotlightAnchors = {
     spotlights = {},
     defaults = {},
+}
+
+Data.state = {
+    casts = {},
+    lastCast = nil,
+    auras = {},
+    extras = {}
+}
+
+Data.indicatorTypes = {
+    icon = {
+        display = 'Icon'
+    },
+    square = {
+        display = 'Square'
+    },
+    bar = {
+        display = 'Bar'
+    },
+    healthColor = {
+        display = 'Health Color'
+    }
+}
+
+Data.dropdownOptions = {
+    iconPosition = {
+        text = 'Select Icon Position',
+        default = 'CENTER',
+        options = { 'TOPLEFT', 'TOP', 'TOPRIGHT', 'LEFT', 'CENTER', 'RIGHT', 'BOTTOMLEFT', 'BOTTOM', 'BOTTOMRIGHT' }
+    },
+    barPosition = {
+        text = 'Select Bar Position',
+        default = 'TOPRIGHT',
+        options = { 'TOPLEFT', 'TOPRIGHT', 'BOTTOMLEFT', 'BOTTOMRIGHT' }
+    },
+    barScale = {
+        text = 'Select Bar Scale',
+        default = 'Full',
+        options = { 'Full', 'Half' }
+    },
+    barOrientation = {
+        text = 'Select Bar Orientation',
+        default = 'Horizontal',
+        options = { 'Horizontal', 'Vertical' }
+    },
+}
+
+Data.sliderPresets = {
+    iconSize = {
+        text = 'Size',
+        decimals = 0,
+        default = 25,
+        min = 10,
+        max = 50,
+        step = 1
+    },
+    barSize = {
+        text = 'Size',
+        decimals = 0,
+        default = 10,
+        min = 5,
+        max = 20,
+        step = 1
+    }
 }
 
 Data.settings = {
@@ -255,54 +262,5 @@ Data.settings = {
     }
 }
 
---Events the frames need to check for
-Data.trackedEvents = {
-    general = {
-        'PLAYER_LOGIN',
-        'GROUP_ROSTER_UPDATE'
-    },
-    player = {
-        'UNIT_SPELLCAST_SUCCEEDED',
-        'UNIT_SPELLCAST_EMPOWER_STOP'
-    }
-}
-
---List of the names of all the default raid frames
-Data.frameList = { party = {}, raid = {} }
-for i = 1, 30 do
-    if i <= 5 then
-        table.insert(Data.frameList.party, 'CompactPartyFrameMember' .. i)
-    end
-    table.insert(Data.frameList.raid, 'CompactRaidFrame' .. i)
-    local group = math.floor((i / 5) - 0.1 + 1)
-    local member = ((i - 1) % 5) + 1
-    table.insert(Data.frameList.raid, 'CompactRaidGroup' .. group .. 'Member' .. member)
-end
-
---Default data that each unit carries
-Data.defaultUnitData = {
-    frame = nil,
-    buffs = {},
-    debuffs = {},
-    centerIcon = nil,
-    name = nil,
-    isColored = false,
-    defensive = { type = 'defensive', frame = nil }
-}
-
---Build a list of units to store data for each group member
-Data.unitList = {
-    party = {
-        player = CopyTable(Data.defaultUnitData)
-    },
-    raid = {}
-}
-for i = 1, 30 do
-    local partyMember, raidMember
-    if i <= 4 then
-        partyMember = 'party' .. i
-        Data.unitList.party[partyMember] = CopyTable(Data.defaultUnitData)
-    end
-    raidMember = 'raid' .. i
-    Data.unitList.raid[raidMember] = CopyTable(Data.defaultUnitData)
-end
+Data.initializerList = {}
+Data.playerSpec = nil

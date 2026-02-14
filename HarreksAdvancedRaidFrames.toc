@@ -1,7 +1,7 @@
 ## Interface: 120000, 120001
 ## Title: Harreks Advanced Raid Frames
 ## Author: Harrek
-## Version: 1.1.1
+## Version: 2.0.0
 ## Notes: Functionality enhancement for party and raid frames
 ## IconTexture: Interface/Addons/HarreksAdvancedRaidFrames/HarreksAdvancedRaidFrames.tga
 ## Category: Unit Frames
@@ -13,10 +13,24 @@ LibEditMode/namespaced.lua
 LibEditMode/embed.xml
 
 Init.lua
-Data.lua
-Utility.lua
-Core.lua
-Opt.lua
+
+Data/Internals.lua
+Data/Specs.lua
+Data/Units.lua
+
+Ui/Pools.lua
+Ui/Elements.lua
+Ui/Designer.lua
+Ui/Menu.lua
+
+Utility/Helpers.lua
+Utility/Visuals.lua
+
+Core/Engines.lua
+Core/Options.lua
+Core/Trackers.lua
+
 Main.lua
 
-Grid2Plugin.lua
+External/Api.lua
+External/Grid2.lua

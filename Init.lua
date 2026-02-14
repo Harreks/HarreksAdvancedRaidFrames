@@ -5,23 +5,17 @@ NS.Ui = {}
 NS.Util = {}
 NS.Core = {}
 NS.Version = '2.0.0'
-NS.Alpha = true
 
 --Initialize saved variables
-HARFDB = HARFDB or {}
+HARFDB = {} --HARFDB or {}
+if HARFDB.version ~= NS.Version then
+    HARFDB = {}
+    HARFDB.version = NS.Version
+end
 if not HARFDB.options then HARFDB.options = {} end
 if not HARFDB.savedIndicators then HARFDB.savedIndicators = {} end
 
---Version-specific handling of saved vars
-if HARFDB.version ~= NS.Version then
-    HARFDB.version = NS.Version
-end
-
 print('|cnNORMAL_FONT_COLOR:AdvancedRaidFrames|r v' .. HARFDB.version .. ' by Harrek. use |cnNORMAL_FONT_COLOR:/harf|r to open the settings.')
-
-if NS.Alpha then
-    print('|cnPURE_RED_COLOR:This is an alpha version. Bugs are very likely. Please don\'t share it.|r')
-end
 
 --[[
 TODO:
@@ -38,4 +32,7 @@ TODO:
 -- dont forget to clear saved vars if version missmatch before releasing
 -- rework main.lua (find new way of startup?)
 -- write faq
+-- remake the options, half of them do nothing now
+-- add bar width/height depending
+-- fix bar inverting and add extra anchor info
 ]]

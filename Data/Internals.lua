@@ -68,8 +68,24 @@ Data.sliderPresets = {
     barSize = {
         text = 'Size',
         decimals = 0,
-        default = 10,
+        default = 15,
         min = 5,
+        max = 30,
+        step = 1
+    },
+    xOffset = {
+        text = 'X Offset',
+        decimals = 0,
+        default = 0,
+        min = -20,
+        max = 20,
+        step = 1
+    },
+    yOffset = {
+        text = 'Y Offset',
+        decimals = 0,
+        default = 0,
+        min = -20,
         max = 20,
         step = 1
     }

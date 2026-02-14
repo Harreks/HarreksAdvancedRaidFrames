@@ -7,20 +7,24 @@ local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
 --Container frame is a holder for indicator option elements
-Ui.ContainerFramePool = CreateFramePool('Frame', nil, nil,
+Ui.ContainerFramePool = CreateFramePool('Frame', nil, 'InsetFrameTemplate3',
     function(_, frame)
         frame:ReleaseElements()
         frame:ClearAllPoints()
         frame:Hide()
         frame.type = nil
+        frame.savedSetting.spec = nil
+        frame.savedSetting.index = nil
     end, false,
     function(frame)
         frame.elements = {}
+        frame.deleteButton = nil
         frame.savedSetting = { spec = nil, index = nil }
         frame.text = frame:CreateFontString(nil, 'OVERLAY', 'GameFontNormal')
-        frame.text:SetPoint('TOPLEFT', frame, 'TOPLEFT')
+        frame.text:SetPoint('TOPLEFT', frame, 'TOPLEFT', 10, -10)
+        frame.text:SetScale(1.3)
         frame.type = nil
-        frame:SetSize(1, 40)
+        frame:SetHeight(80)
         frame.SetupText = function(self, index)
             self.optionsContainerIndex = index
             if self.type then
@@ -31,22 +35,35 @@ Ui.ContainerFramePool = CreateFramePool('Frame', nil, nil,
             for index, element in ipairs(self.elements) do
                 element:SetParent(self)
                 element:ClearAllPoints()
-                local parent
+                local parent, point, rel, xOff, yOff
                 if index == 1 then
-                    parent = self.text
+                    parent = self
+                    point = 'BOTTOMLEFT'
+                    rel = 'BOTTOMLEFT'
+                    xOff = 13
+                    yOff = 20
                 else
                     parent = self.elements[index - 1]
+                    point = 'LEFT'
+                    rel = 'RIGHT'
+                    xOff = 10
+                    yOff = 0
                 end
-                element:SetPoint('LEFT', parent, 'RIGHT', 10, 0)
+                element:SetPoint(point, parent, rel, xOff, yOff)
             end
+            self.deleteButton:SetParent(self)
+            self.deleteButton:SetPoint('TOPRIGHT', self, 'TOPRIGHT', -2, -2)
         end
         frame.ReleaseElements = function(self)
             for _, element in ipairs(frame.elements) do
                 element:SetParent()
                 element:Release()
             end
+            if self.deleteButton then
+                self.deleteButton:Release()
+                self.deleteButton = nil
+            end
             wipe(self.elements)
-            wipe(self.savedSetting)
         end
         frame.Release = function(self)
             Ui.ContainerFramePool:Release(self)
@@ -107,6 +124,8 @@ Ui.ContainerFramePool = CreateFramePool('Frame', nil, nil,
                             dataTable.Scale = control.selectedOption
                         elseif control.type == 'Dropdown' and control.dropdownType == 'barOrientation' then
                             dataTable.Orientation = control.selectedOption
+                        elseif control.type == 'Slider' and control.sliderType == 'barSize' then
+                            dataTable.Size = control:GetValue()
                         elseif control.type == 'SpellSelector' then
                             dataTable.Spell = control.selectedOption
                         end
@@ -185,7 +204,7 @@ Ui.SpellSelectorFramePool = CreateFramePool('DropdownButton', nil, "WowStyle1Dro
     end, false,
     function(frame)
         frame.type = 'SpellSelector'
-        frame:SetWidth(150)
+        frame:SetWidth(110)
         frame.spec = nil
         frame.selectedOption = nil
         frame:SetupMenu(function(owner, root)
@@ -223,7 +242,7 @@ Ui.DropdownSelectorPool = CreateFramePool('DropdownButton', nil, "WowStyle1Dropd
     function(frame)
         frame.type = 'Dropdown'
         frame.dropdownType = nil
-        frame:SetWidth(100)
+        frame:SetWidth(110)
         frame.selectedOption = nil
         frame:SetupMenu(function(owner, root)
             if frame.dropdownType then
@@ -264,9 +283,8 @@ Ui.DeleteIndicatorOptionsButtonPool = CreateFramePool('Button', nil, 'UIPanelBut
         frame:SetSize(30, 30)
         frame:SetText(' X ')
         frame:SetScript('OnClick', function(self)
-            local parent = self:GetParent()
-            if parent then
-                parent:DeleteOption()
+            if self.parent then
+                self.parent:DeleteOption()
             end
         end)
         frame.Release = function(self)
@@ -283,7 +301,7 @@ Ui.SliderPool = CreateFramePool('Slider', nil, 'UISliderTemplateWithLabels',
     function(frame)
         frame.type = 'Slider'
         frame.sliderType = nil
-        frame:SetSize(100, 15)
+        frame:SetSize(110, 15)
         frame.Current = frame:CreateFontString(nil, 'OVERLAY', 'GameFontHighlightSmall')
         local font, size, flags = frame.High:GetFont()
         frame.Current:SetScale(frame.High:GetScale())
@@ -446,7 +464,9 @@ Ui.BarIndicatorPool = CreateFramePool('StatusBar', nil, nil,
             self:SetTimerDuration(duration, Enum.StatusBarInterpolation.Immediate, Enum.StatusBarTimerDirection.RemainingTime)
             if not frame.previewTimer then
                 frame.previewTimer = C_Timer.NewTicker(30, function()
-                    frame:ShowPreview()
+                    local duration = C_DurationUtil.CreateDuration()
+                    duration:SetTimeFromStart(GetTime(), 30)
+                    self:SetTimerDuration(duration, Enum.StatusBarInterpolation.Immediate, Enum.StatusBarTimerDirection.RemainingTime)
                 end)
             end
             self:Show()

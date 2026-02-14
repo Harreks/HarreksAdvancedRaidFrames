@@ -15,7 +15,7 @@ function Ui.GetDesignerFrame()
         --The preview is our top container
         local preview = CreateFrame('Frame', nil, designer)
         preview:SetPoint('TOPLEFT', designer, 'TOPLEFT')
-        preview:SetPoint('TOPRIGHT', designer, 'TOPRIGHT')
+        preview:SetPoint('TOPRIGHT', designer, 'TOPRIGHT', -15, 0)
         preview:SetHeight(200)
         designer.Preview = preview
 
@@ -28,7 +28,7 @@ function Ui.GetDesignerFrame()
         exampleFrame.bg:SetAllPoints(exampleFrame)
         exampleFrame.bg:SetTexture("Interface\\RaidFrame\\Raid-Bar-Hp-Fill")
         local disclaimer = exampleFrame:CreateFontString(nil, 'OVERLAY', 'GameFontNormal')
-        disclaimer:SetPoint('TOPLEFT', exampleFrame, 'BOTTOMLEFT', 0, -3)
+        disclaimer:SetPoint('TOP', exampleFrame, 'BOTTOM', 0, -3)
         disclaimer:SetWidth(250)
         disclaimer:SetScale(0.7)
         disclaimer:SetText('*Indicator size in the preview might not match real bars exactly')
@@ -51,7 +51,7 @@ function Ui.GetDesignerFrame()
         local config = CreateFrame('Frame', nil, designer)
         config:SetPoint('TOPLEFT', preview, 'BOTTOMLEFT')
         config:SetPoint('TOPRIGHT', preview, 'BOTTOMRIGHT')
-        config:SetHeight(100)
+        config:SetHeight(80)
         designer.Config = config
 
         --First we make the spec selector
@@ -135,10 +135,8 @@ function Ui.GetDesignerFrame()
         for spec, _ in pairs(Data.specInfo) do
             local indicatorContainer = CreateFrame('Frame', nil, designer)
             indicatorContainer.Elements = {}
-            indicatorContainer:SetPoint('TOPLEFT', config, 'BOTTOMLEFT')
             indicatorContainer:SetPoint('TOPRIGHT', config, 'BOTTOMRIGHT')
             indicatorContainer:SetPoint('BOTTOMLEFT', designer, 'BOTTOMLEFT')
-            indicatorContainer:SetPoint('BOTTOMRIGHT', designer, 'BOTTOMRIGHT')
 
             indicatorContainer.RebuildElements = function(self)
                 for _, Element in ipairs(self.Elements) do
@@ -163,15 +161,17 @@ function Ui.GetDesignerFrame()
                     element:SetParent(self)
                     element:SetupText(index)
                     element:ClearAllPoints()
-                    local parent, point
+                    local points = {}
                     if index == 1 then
-                        parent = self
-                        point = 'TOPLEFT'
+                        table.insert(points, { parent = self, point = 'TOPLEFT', rel = 'TOPLEFT' })
+                        table.insert(points, { parent = self, point = 'TOPRIGHT', rel = 'TOPRIGHT' })
                     else
-                        parent = self.Elements[index - 1]
-                        point = 'BOTTOMLEFT'
+                        table.insert(points, { parent = self.Elements[index - 1], point = 'TOPLEFT', rel = 'BOTTOMLEFT' })
+                        table.insert(points, { parent = self.Elements[index - 1], point = 'TOPRIGHT', rel = 'BOTTOMRIGHT' })
                     end
-                    element:SetPoint('TOPLEFT', parent, point)
+                    for _, point in ipairs(points) do
+                        element:SetPoint(point.point, point.parent, point.rel)
+                    end
                 end
             end
 

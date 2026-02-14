@@ -73,18 +73,23 @@ function Ui.CreateIndicatorOptions(type, spec, savedSettings)
             barPositionSelector:GenerateMenu()
         end
         table.insert(containerFrame.elements, barPositionSelector)
-        local barScaleSelector = Ui.CreateDropdown('barScale')
-        if savedSettings and savedSettings.Scale then
-            barScaleSelector.selectedOption = savedSettings.Scale
-            barScaleSelector:GenerateMenu()
-        end
-        table.insert(containerFrame.elements, barScaleSelector)
         local barOrientationSelector = Ui.CreateDropdown('barOrientation')
         if savedSettings and savedSettings.Orientation then
             barOrientationSelector.selectedOption = savedSettings.Orientation
             barOrientationSelector:GenerateMenu()
         end
         table.insert(containerFrame.elements, barOrientationSelector)
+        local barScaleSelector = Ui.CreateDropdown('barScale')
+        if savedSettings and savedSettings.Scale then
+            barScaleSelector.selectedOption = savedSettings.Scale
+            barScaleSelector:GenerateMenu()
+        end
+        table.insert(containerFrame.elements, barScaleSelector)
+        local barSizeSlider = Ui.CreateSlider('barSize')
+        if savedSettings and savedSettings.Size then
+            barSizeSlider:SetValue(savedSettings.Size)
+        end
+        table.insert(containerFrame.elements, barSizeSlider)
     end
     local spellSelector = Ui.SpellSelectorFramePool:Acquire()
     spellSelector.spec = spec
@@ -95,7 +100,7 @@ function Ui.CreateIndicatorOptions(type, spec, savedSettings)
     table.insert(containerFrame.elements, spellSelector)
     local deleteButton = Ui.DeleteIndicatorOptionsButtonPool:Acquire()
     deleteButton.parent = containerFrame
-    table.insert(containerFrame.elements, deleteButton)
+    containerFrame.deleteButton = deleteButton
     containerFrame:AnchorElements()
     return containerFrame
 end
@@ -132,9 +137,14 @@ function Ui.CreateIndicatorOverlay(indicatorDataTable)
                         newBar:SetPoint(anchor.point, newIndicatorOverlay, anchor.relative)
                     end
                 end
-                if anchorData.sizing.Orientation then newBar:SetOrientation(anchorData.sizing.Orientation) end
-                if anchorData.sizing.Width then newBar:SetWidth(anchorData.sizing.Width) end
-                if anchorData.sizing.Height then newBar:SetHeight(anchorData.sizing.Height) end
+                if anchorData.sizing.Orientation then
+                    newBar:SetOrientation(anchorData.sizing.Orientation)
+                    if anchorData.sizing.Orientation == 'VERTICAL' then
+                        newBar:SetWidth(indicatorData.Size)
+                    else
+                        newBar:SetHeight(indicatorData.Size)
+                    end
+                end
                 newBar.spell = indicatorData.Spell
                 table.insert(newIndicatorOverlay.elements, newBar)
             end

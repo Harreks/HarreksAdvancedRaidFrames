@@ -27,10 +27,8 @@ function Util.FigureOutBarAnchors(barData)
 
     if barData.Orientation == 'Vertical' then
         sizing.Orientation = 'VERTICAL'
-        sizing.Width = 20
     else
         sizing.Orientation = 'HORIZONTAL'
-        sizing.Height = 20
     end
 
     if barData.Position == 'TOPRIGHT' then
@@ -101,6 +99,7 @@ function Util.GetDefaultSettingsForIndicator(type)
         data.Position = 'TOPRIGHT'
         data.Scale = 'Full'
         data.Orientation = 'Horizontal'
+        data.Size = 15
     end
     for spell, _ in pairs(Data.specInfo[Options.editingSpec].auras) do
         data.Spell = spell

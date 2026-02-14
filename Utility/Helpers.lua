@@ -44,6 +44,8 @@ end
 --Currently this happens when we remap out frames to new units after a roster update, as the info is tied to a specific player occupying a specific frame
 function Util.CleanUtilityTables()
     --TODO: change this to clear state
+    --Maybe swap to clearing on loading screens?
+    --Does the new utility table even need cleaning? am i not managing it fully dynamically?
     --[[
     for _, spec in pairs(Data.supportedBuffTracking) do
         if spec.utility.filteredBuffs then
@@ -248,6 +250,8 @@ function Util.DoesAuraDifferBetweenFilters(unit, auraId)
 end
 
 --We hook into the function that recolors the health bars
+--TODO: come back and fix frame recoloring hook
+--[[
 hooksecurefunc("CompactUnitFrame_UpdateHealthColor", function(frame)
     --check if this unit frame is one of the ones we have mapped
     local unitList = Util.GetRelevantList()
@@ -264,3 +268,4 @@ hooksecurefunc("CompactUnitFrame_UpdateHealthColor", function(frame)
         end
     end
 end)
+]]

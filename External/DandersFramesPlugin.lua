@@ -19,7 +19,9 @@ groupTracker:SetScript('OnEvent', function()
 
         if AdvancedRaidFramesAPI and DandersFrames_IsReady and DandersFrames_IsReady() then
             for unit, index in pairs(unitIndexMap) do
-                AdvancedRaidFramesAPI.UnregisterFrameForUnit(unit, index)
+                if unit and index then
+                    AdvancedRaidFramesAPI.UnregisterFrameForUnit(unit, index)
+                end
             end
             --Player
             local frame = DandersFrames_GetFrameForUnit('player')

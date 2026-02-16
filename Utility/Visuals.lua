@@ -22,7 +22,9 @@ function Util.UpdateIndicatorsForUnit(unit)
         end
         if #elements.extraFrames > 0 then
             for _, extraFrameData in ipairs(elements.extraFrames) do
-                extraFrameData.indicatorOverlay:UpdateIndicators(elements.auras)
+                if extraFrameData.indicatorOverlay then
+                    extraFrameData.indicatorOverlay:UpdateIndicators(elements.auras)
+                end
             end
         end
     end

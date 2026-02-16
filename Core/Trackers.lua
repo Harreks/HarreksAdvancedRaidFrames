@@ -109,7 +109,6 @@ function Core.InstallTrackers()
         stateTracker:RegisterEvent('GROUP_ROSTER_UPDATE')
         stateTracker:SetScript('OnEvent', function(self, event)
             if event == 'PLAYER_LOGIN' then
-                DevTool:AddData(Data.unitList, 'Units')
                 Util.UpdatePlayerSpec()
                 Util.MapEngineFunctions()
                 Data.editingSpec = Data.playerSpec

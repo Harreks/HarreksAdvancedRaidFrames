@@ -190,14 +190,16 @@ function Util.MapOutUnits()
                 for _, extraFrameData in ipairs(elements.extraFrames) do
                     if extraFrameData.frame and not extraFrameData.indicatorOverlay then
                         local indicatorOverlay = Ui.CreateIndicatorOverlay(SavedIndicators[Data.playerSpec])
-                        indicatorOverlay.unit = unit
-                        indicatorOverlay:AttachToFrame(extraFrameData.frame)
-                        indicatorOverlay:Show()
-                        indicatorOverlay.extraFrameIndex = extraFrameData.index
-                        if extraFrameData.coloringFunc and type(extraFrameData.coloringFunc) == 'function' then
-                            indicatorOverlay.coloringFunc = extraFrameData.coloringFunc
+                        if indicatorOverlay then
+                            indicatorOverlay.unit = unit
+                            indicatorOverlay:AttachToFrame(extraFrameData.frame)
+                            indicatorOverlay:Show()
+                            indicatorOverlay.extraFrameIndex = extraFrameData.index
+                            if extraFrameData.coloringFunc and type(extraFrameData.coloringFunc) == 'function' then
+                                indicatorOverlay.coloringFunc = extraFrameData.coloringFunc
+                            end
+                            extraFrameData.indicatorOverlay = indicatorOverlay
                         end
-                        extraFrameData.indicatorOverlay = indicatorOverlay
                     end
                 end
             end

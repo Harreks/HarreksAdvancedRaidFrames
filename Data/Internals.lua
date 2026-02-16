@@ -20,6 +20,53 @@ Data.state = {
 
 Data.engineFunctions = {}
 
+Data.textures = {
+    Echo = 4622456,
+    Reversion = 4630467,
+    EchoReversion = 4630469,
+    DreamBreath = 4622454,
+    EchoDreamBreath = 7439198,
+    TimeDilation = 4622478,
+    Rewind = 4622474,
+    DreamFlight = 4622455,
+    Prescience = 5199639,
+    ShiftingSands = 5199633,
+    InfernosBlessing = 5199632,
+    EbonMight = 5061347,
+    SensePower = 132160,
+    PowerWordShield = 135940,
+    Atonement = 458720,
+    PainSuppression = 135936,
+    VoidShield = 7514191,
+    Renew = 135953,
+    EchoOfLight = 237537,
+    GuardianSpirit = 237542,
+    PrayerOfMending = 135944,
+    PowerInfusion = 135939,
+    RenewingMist = 627487,
+    EnvelopingMist = 775461,
+    SoothingMist = 606550,
+    LifeCocoon = 627485,
+    Rejuvenation = 136081,
+    Regrowth = 136085,
+    Lifebloom = 134206,
+    Germination = 1033478,
+    WildGrowth = 236153,
+    IronBark = 572025,
+    Riptide = 252995,
+    EarthShield = 136089,
+    BeaconOfFaith = 1030095,
+    EternalFlame = 135433,
+    BeaconOfLight = 236247,
+    BlessingOfProtection = 135964,
+    HolyBulwark = 5927636,
+    SacredWeapon = 5927637,
+    BlessingOfSacrifice = 135966,
+    BeaconOfVirtue = 1030094,
+    BeaconOfTheSavior = 7514188,
+    AspectOfHarmony = 5927638
+}
+
 Data.indicatorTypes = {
     icon = {
         display = 'Icon'
@@ -152,131 +199,37 @@ Data.settings = {
         func = 'ColorNames'
     },
     {
-        key = 'buffTrackingHeader',
+        key = 'miscOptionsHeader',
         type = 'header',
-        text = 'Advanced Buff Tracking'
+        text = 'Misc.'
     },
     {
-        key = 'buffTracking',
+        key = 'showMinimapIcon',
         type = 'checkbox',
-        text = 'Buff Tracking',
+        text = 'Show Minimap Icon',
         default = true,
-        tooltip = 'Some specializations can track a specific buff better on their frames, this enables that tracking.',
-        func = 'Setup'
+        tooltip = 'Shows or hides the minimap icon for the addon',
+        func = 'ToggleMinimapIcon'
+    }
+}
+
+Data.otherAddonsInfo = {
+    {
+        title = 'Compatibility With Other Frame Addons',
+        text = 'One of my goals is trying to integrate as much as possible with existing addons so you can very easily improve your gameplay without having to start over ' ..
+        'with a whole new set of frames. With that purpose i have designed advanced raid frames to seamlessly integrate into other frames with very little work. I have done ' ..
+        'this integration myself for a couple of them but others might require me to talk to their developers or for them to use my api. If you use different frames that i don\'t ' ..
+        'currently support please let me know about it and also let the author know, so we can work together to get you sorted.'
     },
     {
-        key = 'trackingType',
-        type = 'dropdown',
-        text = 'Tracking Type',
-        items = {
-            { text = 'Icon', value = 'icon' },
-            { text = 'Bar Recolor', value = 'color' },
-            { text = 'Progress Bar', value = 'bar' }
-        },
-        default = 'color',
-        tooltip = 'Choose how to track the buffs.',
-        parent = 'buffTracking',
-        func = 'Setup'
+        title = 'Grid2',
+        text = 'Grid2 lets other addons register plugins for it to add new statuses. Advanced Raid Frames registers all the buffs it tracks as custom statuses so you can assign them to ' ..
+        'any indicators like you normally would and did before Midnight. Simply having both addons installed is enough to get them to work.'
     },
     {
-        key = 'trackingColor',
-        type = 'color',
-        text = 'Tracking Color',
-        default = 'ff00ff00',
-        tooltip = 'Color to change the bars into when the buff is present.',
-        parent = 'buffTracking'
-    },
-    {
-        key = 'iconSize',
-        type = 'slider',
-        text = 'Icon Size',
-        min = 10,
-        max = 50,
-        step = 1,
-        default = 25,
-        tooltip = 'Choose the size of the tracking icon.',
-        parent = 'buffTracking',
-        func = 'Setup'
-    },
-    {
-        key = 'iconPosition',
-        type = 'dropdown',
-        text = 'Icon Position',
-        items = {
-            { text = 'Top Left', value = 'TOPLEFT' },
-            { text = 'Top', value = 'TOP' },
-            { text = 'Top Right', value = 'TOPRIGHT' },
-            { text = 'Left', value = 'LEFT' },
-            { text = 'Right', value = 'RIGHT' },
-            { text = 'Bottom Left', value = 'BOTTOMLEFT' },
-            { text = 'Bottom', value = 'BOTTOM' },
-            { text = 'Bottom Right', value = 'BOTTOMRIGHT' }
-        },
-        default = 'RIGHT',
-        tooltip = 'Choose where to place the tracking icon.',
-        parent = 'buffTracking',
-        func = 'Setup'
-    },
-    {
-        key = 'barPosition',
-        type = 'dropdown',
-        text = 'Bar Position',
-        items = {
-            { text = 'Top Right', value = 'topRight' },
-            { text = 'Bottom Right', value = 'bottomRight' },
-            { text = 'Bottom Left', value = 'bottomLeft' },
-            { text = 'Top Left', value = 'topLeft' }
-        },
-        default = 'topRight',
-        tooltip = 'Choose where to place the progress bar.',
-        parent = 'buffTracking',
-        func = 'Setup'
-    },
-    {
-        key = 'barHeight',
-        type = 'slider',
-        text = 'Bar Height',
-        min = 5,
-        max = 20,
-        step = 1,
-        default = 10,
-        tooltip = 'Choose the height of the progress bar.',
-        parent = 'buffTracking',
-        func = 'Setup'
-    },
-    {
-        key = 'barWidth',
-        type = 'dropdown',
-        text = 'Bar Width',
-        items = {
-            { text = 'Full', value = 'full' },
-            { text = 'Half', value = 'half' }
-        },
-        default = 'full',
-        tooltip = 'Choose the width of the progress bar.',
-        parent = 'buffTracking',
-        func = 'Setup'
-    },
-    {
-        key = 'addonsHeader',
-        type = 'header',
-        text = 'Frame AddOn Compatibility'
-    },
-    {
-        key = 'dandersCompat',
-        type = 'checkbox',
-        text = 'DandersFrames Compatibility',
-        default = false,
-        tooltip = 'Shows the selected tracking method on DandersFrames instead of the default ones.',
-        func = 'Setup'
-    },
-    {
-        key = 'grid2Compat',
-        type = 'checkbox',
-        text = 'Grid2 Compatibility',
-        default = true,
-        readOnly = true,
-        tooltip = 'Having the AddOn installed enables the \'HealerBuff\' status in Grid2. Use it to configure how to display the tracking.'
+        title = 'DandersFrames',
+        text = 'Integration with DandersFrames works via installing the Advanced Raid Frames indicators on top of the frames from the addon. If DandersFrames is installed when you form ' ..
+        'a group the addon will try to also add any indicator you have created in the designer onto those frames and show the tracking for the spells.'
     }
 }
 

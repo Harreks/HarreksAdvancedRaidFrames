@@ -3,17 +3,15 @@ NS.Core.InstallTrackers()
 
 --[[
 TODO:
--- IndicatorOverlays don't refresh when settings change (trigger re-map on every setting change?)
--- shaman earth shield is not showing on player
--- test other specs
--- write api
+-- write api --only missing register i think --need to write the functions to create the attach overlay and call the callback
+-- leave a nice comment here?
 -- fix grid2 plugin
 -- fix danders compat ( write api > just register the danders frames with it)
--- dm Vuhdo dev
--- find who to talk for the cell dev?
--- look into frame recolor
--- dont forget to clear saved vars if version missmatch before releasing
--- write faq
--- remake the options, half of them do nothing now
--- recolor function should be in visuals now not helpers
+-- look into frame recolor WHAT THE FUCK .... FIX FRAME RECOLORING
+-- write faq for bot command
+-- write new version intro
+-- write api docs (github)
+-- make video
+-- write new blogpost
+-- Fix minimap button opening to last saved menu
 ]]

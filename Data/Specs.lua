@@ -8,6 +8,7 @@ local Options = HARFDB.options
 
 --[[
 spells that are in raid but not in raidincombat:
+TODO: check every single one of these, rework gen function to check for them (massive gains)
 - beacon of virtue
 
 spells in raidincombat but not in raid
@@ -33,8 +34,7 @@ Data.specInfo = {
             [364343] = { 'Echo' },
             [366155] = { 'Reversion' },
             [357170] = { 'TimeDilation' },
-            [363534] = { 'Rewind' },
-            DreamBreath = {}
+            [363534] = { 'Rewind' }
         },
         empowers = {
             [355936] = 'DreamBreath',
@@ -51,17 +51,23 @@ Data.specInfo = {
         auras = {
             Prescience = 3,
             ShiftingSands = 2,
+            BlisteringScales = 2,
             InfernosBlessing = 0,
+            SymbioticBloom = 1,
             EbonMight = 3,
-            SensePower = nil
+            SensePower = 0
         },
         casts = {
             [409311] = { 'Prescience' },
-            [396286] = { 'ShiftingSands' }, --Upheaval
-            [408092] = { 'ShiftingSands' }, --Upheaval
-            [357208] = { 'ShiftingSands', 'InfernosBlessing' }, --Firebreath
-            [382266] = { 'ShiftingSands', 'InfernosBlessing' }, --Firebreath
+            Upheaval = { 'ShiftingSands' },
+            Firebreath = { 'ShiftingSands', 'InfernosBlessing' },
             [395152] = { 'EbonMight' }
+        },
+        empowers = {
+            [396286] = 'Upheaval',
+            [408092] = 'Upheaval',
+            [357208] = 'Firebreath',
+            [382266] = 'Firebreath'
         },
         spec = 0,
     },
@@ -105,7 +111,7 @@ Data.specInfo = {
             [1253593] = { 'Atonement', 'VoidShield' },
             [10060] = { 'PowerInfusion' }
         },
-        spec = 0,
+        pi = 10060
     },
     HolyPriest = {
         display = 'Holy Priest',
@@ -119,13 +125,14 @@ Data.specInfo = {
         },
         casts = {
             --Holy Priest is pending (they dont care (noobs))
+            --[[
             [0] = { 'Renew' },
             [1] = { 'EchoOfLight' },
+            ]]
             [47788] = { 'GuardianSpirit' },
             [33076] = { 'PrayerOfMending' },
             [10060] = { 'PowerInfusion' }
         },
-        spec = 0,
     },
     MistweaverMonk = {
         display = 'Mistweaver Monk',
@@ -134,13 +141,16 @@ Data.specInfo = {
             RenewingMist = 2,
             EnvelopingMist = 3,
             SoothingMist = 3,
-            LifeCocoon = 3
+            LifeCocoon = 3,
+            AspectOfHarmony = 2
         },
         casts = {
             [124682] = { 'EnvelopingMist', 'RenewingMist' },
             [115151] = { 'RenewingMist' },
+            [107428] = { 'RenewingMist' },
             [115175] = { 'SoothingMist' },
-            [116849] = { 'LifeCocoon' }
+            [116670] = { 'AspectOfHarmony' },
+            [399491] = { 'AspectOfHarmony' }
         },
         spec = 0,
     },
@@ -163,25 +173,26 @@ Data.specInfo = {
         auras = {
             BeaconOfFaith = 7,
             EternalFlame = 3,
-            BeaconOfLight = 7,
+            BeaconOfLight = 6,
             BlessingOfProtection = 0,
             HolyBulwark = 5,
             SacredWeapon = 5,
             BlessingOfSacrifice = 9,
             BeaconOfVirtue = 4,
-            BeaconOfTheSaviour = 7
+            BeaconOfTheSavior = 7
         },
         casts = {
             [156910] = { 'BeaconOfFaith' },
             [156322] = { 'EternalFlame' },
             [53563] = { 'BeaconOfLight' },
             [1022] = { 'BlessingOfProtection' },
-            [432459] = { 'HolyBulwark' },
-            [432437] = { 'SacredWeapon' },
+            [432472] = { 'HolyBulwark', 'SacredWeapon' },
             [6940] = { 'BlessingOfSacrifice' },
             [200025] = { 'BeaconOfVirtue' }
         },
-        spec = 0,
+        virtue = 200025,
+        armaments = 432472,
+        icons = { bulwark = 5927636, weapon = 5927637 }
     },
 }
 

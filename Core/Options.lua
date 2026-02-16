@@ -6,6 +6,15 @@ local Core = NS.Core
 local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
+function Core.ToggleMinimapIcon(value, _, _)
+    local LibDBIcon = LibStub('LibDBIcon-1.0')
+    if value then
+        LibDBIcon:Show('HARF')
+    else
+        LibDBIcon:Hide('HARF')
+    end
+end
+
 --Controls visibility on buff icons, takes how many buffs are to be shown and the element list of the frame to be modified
 function Core.ToggleBuffIcons(amount, _, elements)
     for i = 1, 6 do
@@ -66,9 +75,11 @@ function Core.ScaleNames(value, _, elements)
     end
     if elements.customName then
         elements.customName:SetScale(value)
-        local width = _G[elements.name]:GetWidth()
-        if not issecretvalue(width) then
-            elements.customName:SetWidth(width)
+            if _G[elements.name] then
+            local width = _G[elements.name]:GetWidth()
+            if not issecretvalue(width) then
+                elements.customName:SetWidth(width)
+            end
         end
     end
 end
@@ -129,7 +140,6 @@ function Core.ModifySettings(modifiedSettingFunction, newValue)
             table.insert(functionsToRun, { func = Core.ScaleNames, val = Options.nameScale } )
             table.insert(functionsToRun, { func = Core.ColorNames, val = Options.colorNames } )
 
-            Util.CleanUtilityTables()
             Util.MapOutUnits()
         end
 

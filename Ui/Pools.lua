@@ -373,11 +373,9 @@ Ui.IndicatorOverlayPool = CreateFramePool('Frame', UIParent, nil,
             end
             wipe(self.elements)
         end
-        frame.UpdateIndicators = function(self)
-            --Handling for UNIT_AURA events
-            local aurasData = Data.state.auras[self.unit]
+        frame.UpdateIndicators = function(self, auraData)
             for _, element in ipairs(self.elements) do
-                element:UpdateIndicator(self.unit, aurasData)
+                element:UpdateIndicator(self.unit, auraData)
             end
         end
         frame.ShowPreview = function(self)
@@ -399,10 +397,11 @@ Ui.IndicatorOverlayPool = CreateFramePool('Frame', UIParent, nil,
 --This is the default icon indicator that shows on frames
 Ui.IconIndicatorPool = CreateFramePool('Frame', nil, nil,
     function(_, frame)
+        frame:Hide()
+        frame:SetScale(1)
         frame:ClearAllPoints()
         frame:SetParent()
         frame.spell = nil
-        frame:Hide()
     end, false,
     function(frame)
         frame.texture = frame:CreateTexture(nil, 'ARTWORK')
@@ -414,28 +413,24 @@ Ui.IconIndicatorPool = CreateFramePool('Frame', nil, nil,
         frame.cooldown:SetAllPoints()
         frame.cooldown:SetReverse(true)
         frame.ShowPreview = function(self)
-            frame.texture:SetTexture('Interface/Addons/HarreksAdvancedRaidFrames/Assets/logo.tga')
-            frame.cooldown:SetCooldown(GetTime(), 30)
-            if not frame.previewTimer then
-                frame.previewTimer = C_Timer.NewTicker(30, function()
-                    frame:ShowPreview()
+            self.texture:SetTexture(Data.textures[self.spell])
+            self.cooldown:SetCooldown(GetTime(), 30)
+            if not self.previewTimer then
+                self.previewTimer = C_Timer.NewTicker(30, function()
+                    self:ShowPreview()
                 end)
             end
-            frame:Show()
+            self:Show()
         end
-        frame.UpdateIndicator = function(self, unit, aurasData)
-            self:Hide()
-            for instanceId, auraName in pairs(aurasData) do
-                if auraName == self.spell then
-                    --TODO: improve performance, im querying the aura on every single UNIT_AURA
-                    local auraData = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, instanceId)
-                    local duration = C_UnitAuras.GetAuraDuration(unit, instanceId)
-                    if auraData and duration then
-                        self.texture:SetTexture(auraData.icon)
-                        self.cooldown:SetCooldownFromDurationObject(duration)
-                        self:Show()
-                    end
-                end
+        frame.UpdateIndicator = function(self, unit, auraData)
+            if self.spell and auraData[self.spell] then
+                local aura = auraData[self.spell]
+                local duration = C_UnitAuras.GetAuraDuration(unit, aura.auraInstanceID)
+                self.texture:SetTexture(aura.icon)
+                self.cooldown:SetCooldownFromDurationObject(duration)
+                self:Show()
+            else
+                self:Hide()
             end
         end
         frame.Release = function(self)
@@ -451,16 +446,24 @@ Ui.IconIndicatorPool = CreateFramePool('Frame', nil, nil,
 --Square type indicators
 Ui.SquareIndicatorPool = CreateFramePool('Frame', nil, nil,
     function(_, frame)
+        frame:Hide()
+        frame:SetScale(1)
         frame:ClearAllPoints()
         frame:SetParent()
         frame.spell = nil
-        frame:Hide()
     end, false,
     function(frame)
         frame.texture = frame:CreateTexture(nil, 'ARTWORK')
         frame.texture:SetAllPoints()
         frame.type = 'SquareIndicator'
         frame.spell = nil
+        frame.UpdateIndicator = function(self, unit, auraData)
+            if self.spell and auraData[self.spell] then
+                self:Show()
+            else
+                self:Hide()
+            end
+        end
         frame.ShowPreview = function(self)
             self:Show()
         end
@@ -473,10 +476,11 @@ Ui.SquareIndicatorPool = CreateFramePool('Frame', nil, nil,
 --Progress Bars
 Ui.BarIndicatorPool = CreateFramePool('StatusBar', nil, nil,
     function(_, frame)
+        frame:Hide()
+        frame:SetScale(1)
         frame:ClearAllPoints()
         frame:SetParent()
         frame.spell = nil
-        frame:Hide()
     end, false,
     function(frame)
         frame:SetStatusBarTexture("Interface/Buttons/WHITE8x8")
@@ -486,6 +490,16 @@ Ui.BarIndicatorPool = CreateFramePool('StatusBar', nil, nil,
         frame.type = 'BarIndicator'
         frame.previewTimer = nil
         frame.spell = nil
+        frame.UpdateIndicator = function(self, unit, auraData)
+            if self.spell and auraData[self.spell] then
+                local aura = auraData[self.spell]
+                local duration = C_UnitAuras.GetAuraDuration(unit, aura.auraInstanceID)
+                self:SetTimerDuration(duration, Enum.StatusBarInterpolation.Immediate, Enum.StatusBarTimerDirection.RemainingTime)
+                self:Show()
+            else
+                self:Hide()
+            end
+        end
         frame.ShowPreview = function(self)
             local duration = C_DurationUtil.CreateDuration()
             duration:SetTimeFromStart(GetTime(), 30)
@@ -505,6 +519,41 @@ Ui.BarIndicatorPool = CreateFramePool('StatusBar', nil, nil,
                 self.previewTimer = nil
             end
             Ui.BarIndicatorPool:Release(self)
+        end
+    end
+)
+
+Ui.HealthColorIndicatorPool = CreateFramePool('Frame', nil, nil,
+    function(_, frame)
+        frame.spell = nil
+    end, false,
+    function(frame)
+        frame.spell = nil
+        frame.color = nil
+        frame.type = 'HealthColor'
+        frame.DefaultCallback = function(self, unit, auraData)
+            local unitList = Util.GetRelevantList()
+            local elements = unitList[unit]
+            if self.spell and auraData[self.spell] and elements then
+                elements.isColored = true
+                elements.recolor = self.color
+                local unitFrame = _G[elements.frame]
+                if unitFrame and unitFrame.healthBar then
+                    --unitFrame.healthBar.barTexture:SetVertexColor(self.color.r, self.color.g, self.color.b)
+                end
+            else
+                elements.isColored = false
+                elements.recolor = nil
+                local unitFrame = _G[elements.frame]
+                --CompactUnitFrame_UpdateHealthColor(unitFrame)
+            end
+        end
+        frame.UpdateIndicator = function(self, unit, auraData)
+            self:DefaultCallback(unit, auraData)
+        end
+        frame.ShowPreview = function(self) end
+        frame.Release = function(self)
+            Ui.HealthColorIndicatorPool:Release(self)
         end
     end
 )

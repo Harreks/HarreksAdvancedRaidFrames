@@ -8,10 +8,17 @@ local Options = HARFDB.options
 
 function Util.UpdateIndicatorsForUnit(unit)
     local unitList = Util.GetRelevantList()
+    local auras = Data.state.auras[unit]
     local elements = unitList[unit]
+    if not elements.auras then elements.auras = {} end
+    wipe(elements.auras)
+    for instanceId, buff in pairs(auras) do
+        elements.auras[buff] = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, instanceId)
+    end
+
     if elements then
         if elements.indicatorOverlay then
-            elements.indicatorOverlay:UpdateIndicators()
+            elements.indicatorOverlay:UpdateIndicators(elements.auras)
         end
         if elements.extraFrames then
             --TODO this will be an api point, so extra frames get their own indicator overlays updated as well
@@ -125,3 +132,34 @@ function Util.GetDefaultSettingsForIndicator(type)
     end
     return data
 end
+
+function Util.DisplayPopupTextbox(title, link)
+    if not StaticPopupDialogs['HARF_COPY_TEXT'] then
+        StaticPopupDialogs['HARF_COPY_TEXT'] = {
+            text = '',
+            button1 = CLOSE,
+            hasEditBox = true,
+            editBoxWidth = 250,
+            OnShow = function(self, data)
+                self.EditBox:SetText(data)
+                C_Timer.After(0.05, function()
+                    self.EditBox:HighlightText()
+                    self.EditBox:SetFocus()
+                end)
+            end,
+            EditBoxOnEnterPressed = function(self)
+                self:GetParent():Hide()
+            end
+        }
+    end
+    StaticPopup_Show('HARF_COPY_TEXT', title, nil, link)
+end
+
+--fuck flame recoloring
+hooksecurefunc("CompactUnitFrame_UpdateHealthColor", function(frame)
+    local unitList = Util.GetRelevantList()
+    if frame.unit and unitList[frame.unit] and frame == _G[unitList[frame.unit].frame] and unitList[frame.unit].isColored then
+        local color = unitList[frame.unit].recolor
+        --frame.healthBar.barTexture:SetVertexColor(color.r, color.g, color.b)
+    end
+end)

@@ -40,32 +40,14 @@ function Util.ToggleTransparency(frameString, shouldShow)
     end
 end
 
---The addon uses some tables to keep track of unit frames and specific auras, every now and then we empty these tables to remove irrelevant data
---Currently this happens when we remap out frames to new units after a roster update, as the info is tied to a specific player occupying a specific frame
-function Util.CleanUtilityTables()
-    --TODO: change this to clear state
-    --Maybe swap to clearing on loading screens?
-    --Does the new utility table even need cleaning? am i not managing it fully dynamically?
-    --[[
-    for _, spec in pairs(Data.supportedBuffTracking) do
-        if spec.utility.filteredBuffs then
-            wipe(spec.utility.filteredBuffs)
-        end
-        if spec.utility.activeAuras then
-            wipe(spec.utility.activeAuras)
-        end
-    end
-    ]]
-end
-
 --Return the list of frames depending on raid or party
 function Util.GetRelevantList()
     return IsInRaid() and Data.unitList.raid or Data.unitList.party
 end
 
---Yes i know what "equal" means
-function Util.AreTimestampsEqual(time1, time2)
-    local castDelay = 0.1
+--Yes i know what "equal" means. We check if time1 is *close* to time2
+function Util.AreTimestampsEqual(time1, time2, delay)
+    local castDelay = delay or 0.1
     if time1 and time2 then
         return time1 >= time2 and time1 <= time2 + castDelay
     else
@@ -182,6 +164,12 @@ end
 
 --Update unit data of current group members
 function Util.MapOutUnits()
+    --Refresh some player data too
+    Util.UpdatePlayerSpec()
+    --Will use this to add handling for pain sup applying atonement in the future
+    if Data.playerSpec == 'MistweaverMonk' then
+        Data.state.extras.moh = C_SpellBook.IsSpellKnown(450529) and true or false
+    end
     --Remove all current data on the unit lists
     for groupType, units in pairs(Data.unitList) do
         for unit, _ in pairs(units) do
@@ -239,15 +227,29 @@ function Util.UpdatePlayerSpec()
     Data.playerSpec = Data.specMap[class .. '_' .. spec]
 end
 
+--It says "is from player" but really we are checking that it passes the full raid in combat filter
+--The second param is auraInstanceId, not the full aura, same for all the other checks
 function Util.IsAuraFromPlayer(unit, auraId)
     local isFromPlayer = not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, auraId, 'PLAYER|HELPFUL|RAID_IN_COMBAT')
     return isFromPlayer
 end
 
+--This is an extra function for weirdo buffs, attempting to track things not in raid in combat
+function Util.DoesAuraPassRaidFilter(unit, auraId)
+    local passesRaidFilter = not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, auraId, 'PLAYER|HELPFUL|RAID')
+    return passesRaidFilter
+end
+
+--Some spells are in raid in combat but not in raid, this is a quick check to know if this is one of them
 function Util.DoesAuraDifferBetweenFilters(unit, auraId)
     local passesRaid = not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, auraId, 'PLAYER|HELPFUL|RAID')
     local passesRaidInCombat = not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, auraId, 'PLAYER|HELPFUL|RAID_IN_COMBAT')
     return passesRaid ~= passesRaidInCombat
+end
+
+function Util.IsExternalDefensive(unit, auraId)
+    local isExternal = not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, auraId, 'PLAYER|HELPFUL|EXTERNAL_DEFENSIVE')
+    return isExternal
 end
 
 function Util.MapEngineFunctions()
@@ -256,24 +258,3 @@ function Util.MapEngineFunctions()
         functionMap[spec] = Core['Parse' .. spec .. 'Buffs']
     end
 end
-
---We hook into the function that recolors the health bars
---TODO: come back and fix frame recoloring hook
---[[
-hooksecurefunc("CompactUnitFrame_UpdateHealthColor", function(frame)
-    --check if this unit frame is one of the ones we have mapped
-    local unitList = Util.GetRelevantList()
-    if frame.unit and unitList[frame.unit] and
-    --Confirm the addon is setup and we care about recoloring bars
-    Options.buffTracking and Options.trackingType == 'color'
-    then
-        --See if this frame is supposed to be colored, if so recolor it
-        local elements = unitList[frame.unit]
-        if elements and elements.isColored then
-            local healthBar = frame.healthBar
-            local trackingColor = CreateColorFromHexString(Options.trackingColor)
-            healthBar:SetStatusBarColor(trackingColor.r, trackingColor.g, trackingColor.b)
-        end
-    end
-end)
-]]

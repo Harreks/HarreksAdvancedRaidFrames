@@ -3,14 +3,18 @@
 ## Author: Harrek
 ## Version: 2.0.0
 ## Notes: Functionality enhancement for party and raid frames
-## IconTexture: Interface/Addons/HarreksAdvancedRaidFrames/Assets/logo.tga
+## IconTexture: Interface/Addons/HarreksAdvancedRaidFrames/Assets/harrek-logo.png
 ## Category: Unit Frames
 ## SavedVariables: HARFDB
 ## OptionalDeps: DandersFrames, Grid2
 ## LoadSavedVariablesFirst: 1
 
-LibEditMode/namespaced.lua
-LibEditMode/embed.xml
+Libraries/LibStub.lua
+Libraries/CallbackHandler-1.0.lua
+Libraries/LibDataBroker-1.1.lua
+Libraries/LibDBIcon-1.0.lua
+Libraries/LibEditMode/namespaced.lua
+Libraries/LibEditMode/embed.xml
 
 Init.lua
 

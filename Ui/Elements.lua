@@ -173,8 +173,12 @@ function Ui.CreateIndicatorOverlay(indicatorDataTable)
                 end
                 newBar.spell = indicatorData.Spell
                 table.insert(newIndicatorOverlay.elements, newBar)
+            elseif indicatorData.Type == 'healthColor' then
+                local newHealthRecolor = Ui.HealthColorIndicatorPool:Acquire()
+                newHealthRecolor.spell = indicatorData.Spell
+                newHealthRecolor.color = indicatorData.Color
+                table.insert(newIndicatorOverlay.elements, newHealthRecolor)
             end
-            --Write handling for healthColor type indicators
         end
         return newIndicatorOverlay
     end

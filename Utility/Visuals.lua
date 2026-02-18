@@ -159,8 +159,6 @@ function Util.FigureOutBarAnchors(barData)
     return { points = points, sizing = sizing }
 end
 
---There must be a better way to do this?
---Do i have to rewrite my whole data tables so i can share it between the functions?
 function Util.GetDefaultSettingsForIndicator(indicatorType)
     local data = { Type = indicatorType }
     local typeData = Data.indicatorTypeSettings[indicatorType]

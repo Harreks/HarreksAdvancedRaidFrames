@@ -7,6 +7,52 @@ local API = NS.API
 local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
+local function GetFirstSpellForSpec(spec)
+    if spec and Data.specInfo[spec] and Data.specInfo[spec].auras then
+        for spell, _ in pairs(Data.specInfo[spec].auras) do
+            return spell
+        end
+    end
+end
+
+function Util.NormalizeSavedIndicators()
+    if not SavedIndicators or type(SavedIndicators) ~= 'table' then
+        return
+    end
+
+    for spec, indicators in pairs(SavedIndicators) do
+        if type(indicators) == 'table' then
+            for _, indicatorData in ipairs(indicators) do
+                if type(indicatorData) == 'table' and indicatorData.Type then
+                    if indicatorData.Type == 'bar' and indicatorData.Offset == nil and indicatorData.offset ~= nil then
+                        indicatorData.Offset = indicatorData.offset
+                        indicatorData.offset = nil
+                    end
+
+                    local typeData = Data.indicatorTypeSettings[indicatorData.Type]
+                    if typeData and typeData.defaults then
+                        for key, defaultValue in pairs(typeData.defaults) do
+                            if indicatorData[key] == nil then
+                                if type(defaultValue) == 'table' then
+                                    indicatorData[key] = CopyTable(defaultValue)
+                                else
+                                    indicatorData[key] = defaultValue
+                                end
+                            end
+                        end
+                    end
+
+                    if not indicatorData.Spell then
+                        indicatorData.Spell = GetFirstSpellForSpec(spec)
+                            or GetFirstSpellForSpec(Options.editingSpec)
+                            or GetFirstSpellForSpec(Data.playerSpec)
+                    end
+                end
+            end
+        end
+    end
+end
+
 function Util.UpdateIndicatorsForUnit(unit)
     local unitList = Util.GetRelevantList()
     local auras = Data.state.auras[unit]
@@ -38,15 +84,16 @@ function Util.FigureOutBarAnchors(barData)
         { point = barData.Position, relative = barData.Position }
     }
     local sizing = {}
+    local offset = barData.Offset or 0
 
     if barData.Orientation == 'Vertical' then
         sizing.Orientation = 'VERTICAL'
-        sizing.xOffset = barData.Offset
+        sizing.xOffset = offset
         sizing.yOffset = 0
     else
         sizing.Orientation = 'HORIZONTAL'
         sizing.xOffset = 0
-        sizing.yOffset = barData.Offset
+        sizing.yOffset = offset
     end
 
     if barData.Position == 'TOPRIGHT' then
@@ -114,38 +161,23 @@ end
 
 --There must be a better way to do this?
 --Do i have to rewrite my whole data tables so i can share it between the functions?
-function Util.GetDefaultSettingsForIndicator(type)
-    local data = { Type = type }
-        if type == 'healthColor' then
-        data.Color = { r = 0, g = 1, b = 0, a = 1 }
-    elseif type == 'icon' then
-        data.Position = 'CENTER'
-        data.Size = 25
-        data.xOffset = 0
-        data.yOffset = 0
-        data.textSize = 1
-        data.showText = true
-        data.showTexture = true
-    elseif type == 'square' then
-        data.Color = { r = 0, g = 1, b = 0, a = 1 }
-        data.Position = 'CENTER'
-        data.Size = 25
-        data.xOffset = 0
-        data.yOffset = 0
-        data.textSize = 1
-        data.showCooldown = false
-    elseif type == 'bar' then
-        data.Color = { r = 0, g = 1, b = 0, a = 1 }
-        data.Position = 'TOPRIGHT'
-        data.Scale = 'Full'
-        data.Orientation = 'Horizontal'
-        data.Size = 15
-        data.offset = 0
+function Util.GetDefaultSettingsForIndicator(indicatorType)
+    local data = { Type = indicatorType }
+    local typeData = Data.indicatorTypeSettings[indicatorType]
+    if typeData and typeData.defaults then
+        for key, value in pairs(typeData.defaults) do
+            if type(value) == 'table' then
+                data[key] = CopyTable(value)
+            else
+                data[key] = value
+            end
+        end
     end
-    for spell, _ in pairs(Data.specInfo[Options.editingSpec].auras) do
-        data.Spell = spell
-        break
-    end
+
+    data.Spell = GetFirstSpellForSpec(Options.editingSpec or Data.playerSpec)
+        or GetFirstSpellForSpec(Options.editingSpec)
+        or GetFirstSpellForSpec(Data.playerSpec)
+
     return data
 end
 

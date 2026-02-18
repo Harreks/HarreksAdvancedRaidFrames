@@ -1,2 +1,3 @@
 local _, NS = ...
+NS.Util.NormalizeSavedIndicators()
 NS.Core.InstallTrackers()

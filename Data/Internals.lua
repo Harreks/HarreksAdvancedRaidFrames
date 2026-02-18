@@ -86,6 +86,79 @@ Data.indicatorTypes = {
     }
 }
 
+Data.indicatorTypeSettings = {
+    healthColor = {
+        defaults = {
+            Color = { r = 0, g = 1, b = 0, a = 1 }
+        },
+        controls = {
+            { controlType = 'SpellSelector', setting = 'Spell', row = 1 },
+            { controlType = 'ColorPicker', setting = 'Color', row = 1 }
+        }
+    },
+    icon = {
+        defaults = {
+            Position = 'CENTER',
+            Size = 25,
+            xOffset = 0,
+            yOffset = 0,
+            textSize = 1,
+            showText = true,
+            showTexture = true
+        },
+        controls = {
+            { controlType = 'SpellSelector', setting = 'Spell', row = 1 },
+            { controlType = 'Dropdown', dropdownType = 'iconPosition', setting = 'Position', row = 1 },
+            { controlType = 'Slider', sliderType = 'iconSize', setting = 'Size', row = 1 },
+            { controlType = 'Slider', sliderType = 'xOffset', setting = 'xOffset', row = 1 },
+            { controlType = 'Slider', sliderType = 'yOffset', setting = 'yOffset', row = 1 },
+            { controlType = 'Slider', sliderType = 'textSize', setting = 'textSize', row = 2 },
+            { controlType = 'Checkbox', setting = 'showText', text = 'Show Text', row = 2 },
+            { controlType = 'Checkbox', setting = 'showTexture', text = 'Show Texture', row = 2 }
+        }
+    },
+    square = {
+        defaults = {
+            Color = { r = 0, g = 1, b = 0, a = 1 },
+            Position = 'CENTER',
+            Size = 25,
+            xOffset = 0,
+            yOffset = 0,
+            textSize = 1,
+            showCooldown = false
+        },
+        controls = {
+            { controlType = 'SpellSelector', setting = 'Spell', row = 1 },
+            { controlType = 'ColorPicker', setting = 'Color', row = 1 },
+            { controlType = 'Dropdown', dropdownType = 'iconPosition', setting = 'Position', row = 1 },
+            { controlType = 'Slider', sliderType = 'iconSize', setting = 'Size', row = 1 },
+            { controlType = 'Slider', sliderType = 'xOffset', setting = 'xOffset', row = 1 },
+            { controlType = 'Slider', sliderType = 'yOffset', setting = 'yOffset', row = 1 },
+            { controlType = 'Slider', sliderType = 'textSize', setting = 'textSize', row = 2 },
+            { controlType = 'Checkbox', setting = 'showCooldown', text = 'Show Cooldown', row = 2 }
+        }
+    },
+    bar = {
+        defaults = {
+            Color = { r = 0, g = 1, b = 0, a = 1 },
+            Position = 'TOPRIGHT',
+            Scale = 'Full',
+            Orientation = 'Horizontal',
+            Size = 15,
+            Offset = 0
+        },
+        controls = {
+            { controlType = 'SpellSelector', setting = 'Spell', row = 1 },
+            { controlType = 'ColorPicker', setting = 'Color', row = 1 },
+            { controlType = 'Dropdown', dropdownType = 'barPosition', setting = 'Position', row = 1 },
+            { controlType = 'Slider', sliderType = 'barSize', setting = 'Size', row = 1 },
+            { controlType = 'Dropdown', dropdownType = 'barOrientation', setting = 'Orientation', row = 1 },
+            { controlType = 'Dropdown', dropdownType = 'barScale', setting = 'Scale', row = 2 },
+            { controlType = 'Slider', sliderType = 'offset', setting = 'Offset', row = 2 }
+        }
+    }
+}
+
 Data.dropdownOptions = {
     iconPosition = {
         text = 'Select Icon Position',

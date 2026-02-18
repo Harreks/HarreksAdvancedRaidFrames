@@ -7,6 +7,25 @@ local API = NS.API
 local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
+local indicatorControlReaders = {
+    ColorPicker = function(control)
+        local r, g, b, a = control.Color:GetVertexColor()
+        return { r = r, g = g, b = b, a = a }
+    end,
+    Dropdown = function(control)
+        return control.selectedOption
+    end,
+    Slider = function(control)
+        return control:GetValue()
+    end,
+    SpellSelector = function(control)
+        return control.selectedOption
+    end,
+    Checkbox = function(control)
+        return control:GetChecked()
+    end
+}
+
 --Container frame is a holder for indicator option elements
 Ui.ContainerFramePool = CreateFramePool('Frame', nil, 'InsetFrameTemplate3',
     function(_, frame)
@@ -47,35 +66,40 @@ Ui.ContainerFramePool = CreateFramePool('Frame', nil, 'InsetFrameTemplate3',
             end
         end
         frame.AnchorElements = function(self)
+            local rowAnchors = {}
             for index, element in ipairs(self.elements) do
                 element:ClearAllPoints()
                 element:SetParent(self)
                 local parent, point, rel, xOff, yOff
-                if index == 1 then
+                local currentRow = element.layoutRow or 1
+                if not rowAnchors[currentRow] then
                     parent = self
-                    point = 'LEFT'
-                    rel = 'LEFT'
-                    xOff = 13
-                    yOff = 10
-                elseif (index == 6 and self.type == 'icon') or (index == 7 and self.type ~= 'icon') then --i deserve to be shot
-                    parent = self
-                    point = 'BOTTOMLEFT'
-                    rel = 'BOTTOMLEFT'
-                    xOff = 13
-                    yOff = 20
+                    if currentRow == 1 then
+                        point = 'LEFT'
+                        rel = 'LEFT'
+                        xOff = 13
+                        yOff = 10
+                    else
+                        point = 'BOTTOMLEFT'
+                        rel = 'BOTTOMLEFT'
+                        xOff = 13
+                        yOff = 20 - ((currentRow - 2) * 30)
+                    end
+                    rowAnchors[currentRow] = element
                 else
-                    parent = self.elements[index - 1]
+                    parent = rowAnchors[currentRow]
                     point = 'LEFT'
                     rel = 'RIGHT'
                     xOff = 10
                     yOff = 0
-                    --this is a stupid hardcoded fix to make selectors line up when icons don't have a color picker
-                    if self.type == 'icon' and index == 2 then
+                    if self.type == 'icon' and rowAnchors[currentRow].type == 'SpellSelector' and element.type == 'Dropdown' then
                         xOff = 35
-                    elseif self.elements[index - 1].type == 'Checkbox' then
+                    elseif rowAnchors[currentRow].type == 'Checkbox' then
                         xOff = 60
                     end
+                    rowAnchors[currentRow] = element
                 end
+
                 element:SetPoint(point, parent, rel, xOff, yOff)
                 element:Show()
             end
@@ -106,68 +130,23 @@ Ui.ContainerFramePool = CreateFramePool('Frame', nil, 'InsetFrameTemplate3',
                 local dataTable = SavedIndicators[savedSetting.spec][savedSetting.index]
                 wipe(dataTable)
                 dataTable.Type = self.type
-                --Depending on the type of indicator this controls, we expect different options
-                if self.type == 'healthColor' then
-                    --Health Colors have just the color and the spell selector
-                    for _, control in ipairs(self.elements) do
-                        if control.type == 'ColorPicker' then
-                            local r, g, b, a = control.Color:GetVertexColor()
-                            dataTable.Color = { r = r, g = g, b = b, a = a}
-                        elseif control.type == 'SpellSelector' then
-                            dataTable.Spell = control.selectedOption
+                local typeData = Data.indicatorTypeSettings[self.type]
+                if typeData and typeData.defaults then
+                    for key, value in pairs(typeData.defaults) do
+                        if type(value) == 'table' then
+                            dataTable[key] = CopyTable(value)
+                        else
+                            dataTable[key] = value
                         end
                     end
-                elseif self.type == 'icon' then
-                    --Icons have position, size and spell
-                    for _, control in ipairs(self.elements) do
-                        if control.type == 'Dropdown' and control.dropdownType == 'iconPosition' then
-                            dataTable.Position = control.selectedOption
-                        elseif control.type == 'Slider' and control.sliderType == 'iconSize' then
-                            dataTable.Size = control:GetValue()
-                        elseif control.type == 'Slider' then
-                            dataTable[control.sliderType] = control:GetValue()
-                        elseif control.type == 'SpellSelector' then
-                            dataTable.Spell = control.selectedOption
-                        elseif control.type == 'Checkbox' then
-                            dataTable[control.setting] = control:GetChecked()
-                        end
-                    end
-                elseif self.type == 'square' then
-                    --Squares have everything the icons do, plus color
-                    for _, control in ipairs(self.elements) do
-                        if control.type == 'ColorPicker' then
-                            local r, g, b, a = control.Color:GetVertexColor()
-                            dataTable.Color = { r = r, g = g, b = b, a = a}
-                        elseif control.type == 'Dropdown' and control.dropdownType == 'iconPosition' then
-                            dataTable.Position = control.selectedOption
-                        elseif control.type == 'Slider' and control.sliderType == 'iconSize' then
-                            dataTable.Size = control:GetValue()
-                        elseif control.type == 'Slider' then
-                            dataTable[control.sliderType] = control:GetValue()
-                        elseif control.type == 'Checkbox' then
-                            dataTable[control.setting] = control:GetChecked()
-                        elseif control.type == 'SpellSelector' then
-                            dataTable.Spell = control.selectedOption
-                        end
-                    end
-                elseif self.type == 'bar' then
-                    --Bars have color, position, scale, orientation, and spell
-                    for _, control in ipairs(self.elements) do
-                        if control.type == 'ColorPicker' then
-                            local r, g, b, a = control.Color:GetVertexColor()
-                            dataTable.Color = { r = r, g = g, b = b, a = a}
-                        elseif control.type == 'Dropdown' and control.dropdownType == 'barPosition' then
-                            dataTable.Position = control.selectedOption
-                        elseif control.type == 'Dropdown' and control.dropdownType == 'barScale' then
-                            dataTable.Scale = control.selectedOption
-                        elseif control.type == 'Dropdown' and control.dropdownType == 'barOrientation' then
-                            dataTable.Orientation = control.selectedOption
-                        elseif control.type == 'Slider' and control.sliderType == 'barSize' then
-                            dataTable.Size = control:GetValue()
-                        elseif control.type == 'Slider' and control.sliderType == 'offset' then
-                            dataTable.Offset = control:GetValue()
-                        elseif control.type == 'SpellSelector' then
-                            dataTable.Spell = control.selectedOption
+                end
+
+                for _, control in ipairs(self.elements) do
+                    local settingKey = control.indicatorSetting
+                    if settingKey then
+                        local reader = indicatorControlReaders[control.type]
+                        if reader then
+                            dataTable[settingKey] = reader(control)
                         end
                     end
                 end
@@ -199,6 +178,8 @@ Ui.ColorPickerFramePool = CreateFramePool('Button', nil, 'ColorSwatchTemplate',
         frame:Hide()
         frame:ClearAllPoints()
         frame:SetParent()
+        frame.indicatorSetting = nil
+        frame.layoutRow = nil
         frame.Color:SetVertexColor(0, 1, 0, 1)
     end, false,
     function(frame)
@@ -241,6 +222,8 @@ Ui.SpellSelectorFramePool = CreateFramePool('DropdownButton', nil, "WowStyle1Dro
     function(_, frame)
         frame.spec = nil
         frame.selectedOption = nil
+        frame.indicatorSetting = nil
+        frame.layoutRow = nil
         frame:Hide()
         frame:ClearAllPoints()
         frame:SetParent()
@@ -281,6 +264,8 @@ Ui.DropdownSelectorPool = CreateFramePool('DropdownButton', nil, "WowStyle1Dropd
         frame.selectedOption = nil
         frame.allOptions = {}
         frame.dropdownType = nil
+        frame.indicatorSetting = nil
+        frame.layoutRow = nil
         frame:Hide()
         frame:ClearAllPoints()
         frame:SetParent()
@@ -348,6 +333,8 @@ Ui.SliderPool = CreateFramePool('Slider', nil, 'UISliderTemplateWithLabels',
         frame:SetParent()
         frame:SetValue(0)
         frame:SetMinMaxValues(0, 0)
+        frame.indicatorSetting = nil
+        frame.layoutRow = nil
         frame.Text:SetText("")
     end, false,
     function(frame)
@@ -391,6 +378,8 @@ Ui.CheckboxPool = CreateFramePool('CheckButton', nil, 'InterfaceOptionsCheckButt
         frame:ClearAllPoints()
         frame:SetParent()
         frame.setting = nil
+        frame.indicatorSetting = nil
+        frame.layoutRow = nil
         frame.Text:SetText("")
     end, false,
     function(frame)

@@ -63,7 +63,6 @@ local indicatorControlFactories = {
     end
 }
 
---TODO: this generator and the function that pulls the data from the elements of the container are a pain, need to rewrite them so they pull from the same list
 --Create the options for a given indicator type. if saved settings is passed that data is used to init the control
 function Ui.CreateIndicatorOptions(type, spec, savedSettings)
     local containerFrame = Ui.ContainerFramePool:Acquire()

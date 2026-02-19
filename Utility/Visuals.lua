@@ -53,24 +53,82 @@ function Util.NormalizeSavedIndicators()
     end
 end
 
-function Util.UpdateIndicatorsForUnit(unit)
+function Util.UpdateIndicatorsForUnit(unit, updateInfo)
     local unitList = Util.GetRelevantList()
     local auras = Data.state.auras[unit]
     local elements = unitList[unit]
     if elements then
         if not elements.auras then elements.auras = {} end
-        wipe(elements.auras)
-        for instanceId, buff in pairs(auras or {}) do
-            elements.auras[buff] = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, instanceId)
+        if not elements.auraInstanceMap then elements.auraInstanceMap = {} end
+        if not elements.auraDurations then elements.auraDurations = {} end
+
+        local instanceMap = elements.auraInstanceMap
+        local durationMap = elements.auraDurations
+        local shouldFullRefresh = not updateInfo
+            or updateInfo.isFullUpdate
+            or next(instanceMap) == nil
+
+        if shouldFullRefresh then
+            wipe(elements.auras)
+            wipe(instanceMap)
+            wipe(durationMap)
+
+            for instanceId, buff in pairs(auras or {}) do
+                instanceMap[instanceId] = buff
+                local auraData = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, instanceId)
+                elements.auras[buff] = auraData
+                if auraData then
+                    durationMap[buff] = C_UnitAuras.GetAuraDuration(unit, instanceId)
+                end
+            end
+        else
+            if updateInfo.removedAuraInstanceIDs then
+                for _, instanceId in ipairs(updateInfo.removedAuraInstanceIDs) do
+                    local spell = instanceMap[instanceId]
+                    if spell then
+                        instanceMap[instanceId] = nil
+                        elements.auras[spell] = nil
+                        durationMap[spell] = nil
+                    end
+                end
+            end
+
+            local function RefreshAuraByInstanceId(instanceId)
+                local spell = (auras and auras[instanceId]) or instanceMap[instanceId]
+                if spell then
+                    local auraData = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, instanceId)
+                    if auraData then
+                        instanceMap[instanceId] = spell
+                        elements.auras[spell] = auraData
+                        durationMap[spell] = C_UnitAuras.GetAuraDuration(unit, instanceId)
+                    else
+                        instanceMap[instanceId] = nil
+                        elements.auras[spell] = nil
+                        durationMap[spell] = nil
+                    end
+                end
+            end
+
+            if updateInfo.addedAuras then
+                for _, aura in ipairs(updateInfo.addedAuras) do
+                    RefreshAuraByInstanceId(aura.auraInstanceID)
+                end
+            end
+
+            if updateInfo.updatedAuraInstanceIDs then
+                for _, instanceId in ipairs(updateInfo.updatedAuraInstanceIDs) do
+                    RefreshAuraByInstanceId(instanceId)
+                end
+            end
         end
 
         if elements.indicatorOverlay then
-            elements.indicatorOverlay:UpdateIndicators(elements.auras)
+            elements.indicatorOverlay:UpdateIndicators(elements.auras, elements.auraDurations)
         end
         if #elements.extraFrames > 0 then
             for _, extraFrameData in ipairs(elements.extraFrames) do
                 if extraFrameData.indicatorOverlay then
-                    extraFrameData.indicatorOverlay:UpdateIndicators(elements.auras)
+                    extraFrameData.indicatorOverlay:UpdateIndicators(elements.auras, elements.auraDurations)
                 end
             end
         end

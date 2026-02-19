@@ -7,6 +7,36 @@ local API = NS.API
 local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
+local auraSignatureLookupBySpec = {}
+
+local function MakeAuraSignature(pointCount, passesRaid, passesRic, passesExt, passesDisp)
+    return pointCount .. ':'
+        .. (passesRaid and '1' or '0') .. ':'
+        .. (passesRic and '1' or '0') .. ':'
+        .. (passesExt and '1' or '0') .. ':'
+        .. (passesDisp and '1' or '0')
+end
+
+local function GetAuraSignatureLookup(spec)
+    if auraSignatureLookupBySpec[spec] then
+        return auraSignatureLookupBySpec[spec]
+    end
+
+    local lookup = {}
+    local specData = Data.specInfo[spec]
+    if specData and specData.auras then
+        for auraName, auraData in pairs(specData.auras) do
+            local signature = MakeAuraSignature(auraData.points, auraData.raid, auraData.ric, auraData.ext, auraData.disp)
+            if not lookup[signature] then
+                lookup[signature] = auraName
+            end
+        end
+    end
+
+    auraSignatureLookupBySpec[spec] = lookup
+    return lookup
+end
+
 --Function to format decimals out for display
 function Util.FormatForDisplay(number)
     return math.floor(number * 10 + 0.5) / 10
@@ -179,6 +209,9 @@ function Util.MapOutUnits()
             elements.name = nil
             wipe(elements.buffs)
             wipe(elements.debuffs)
+            if elements.auras then wipe(elements.auras) end
+            if elements.auraInstanceMap then wipe(elements.auraInstanceMap) end
+            if elements.auraDurations then wipe(elements.auraDurations) end
             if elements.indicatorOverlay then
                 elements.indicatorOverlay:Delete()
                 elements.indicatorOverlay = nil
@@ -268,17 +301,14 @@ function Util.MatchAuraInfo(unit, aura)
     local passesDisp = not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|RAID_PLAYER_DISPELLABLE')
     local pointCount = #aura.points
 
-    local auraList = Data.specInfo[Data.playerSpec].auras
-    for buff, buffData in pairs(auraList) do
-        local matchesPoints = buffData.points == pointCount
-        local matchesRaid = buffData.raid == passesRaid
-        local matchesRic = buffData.ric == passesRic
-        local matchesExt = buffData.ext == passesExt
-        local matchesDisp = buffData.disp == passesDisp
-        if matchesPoints and matchesRaid and matchesRic and matchesExt and matchesDisp then
-            return buff
-        end
+    if not (passesRaid or passesRic) then
+        return nil
     end
+
+    local spec = Data.playerSpec
+    local lookup = spec and GetAuraSignatureLookup(spec)
+    local signature = MakeAuraSignature(pointCount, passesRaid, passesRic, passesExt, passesDisp)
+    return lookup and lookup[signature] or nil
 end
 
 function Util.MapEngineFunctions()

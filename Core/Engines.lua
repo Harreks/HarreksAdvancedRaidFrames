@@ -115,7 +115,6 @@ function Core.ParseHolyPaladinBuffs(unit, updateInfo)
             if Util.IsAuraFromPlayer(unit, aura.auraInstanceID) then
                 if unitAuras[aura.auraInstanceID] == 'SacredWeapon' then
                     local castedSpell = C_Spell.GetSpellTexture(375576) == 5927637 and 'HolyBulwark' or 'SacredWeapon'
-                    print(castedSpell)
                     if UnitIsUnit(unit, 'player') then
                         unitAuras[aura.auraInstanceID] = castedSpell
                     else
@@ -174,32 +173,71 @@ function Core.UpdateAuraStatus(unit, updateInfo)
     local state = Data.state
     if not updateInfo then updateInfo = {} end
 
-    --lets try to init the auras on this unit
-    if not state.auras[unit] then
-        state.auras[unit] = {}
+    local currentUnitAuras = state.auras[unit]
+    local needsIndicatorRefresh = false
+
+    --Init this unit state
+    if not currentUnitAuras then
+        currentUnitAuras = {}
+        state.auras[unit] = currentUnitAuras
+
         local auras = C_UnitAuras.GetUnitAuras(unit, 'PLAYER|HELPFUL')
         for _, aura in ipairs(auras) do
-            state.auras[unit][aura.auraInstanceID] = Util.MatchAuraInfo(unit, aura)
-        end
-    end
-
-    --If an auraInstanceID that we have saved has been removed, get it away
-    if updateInfo.removedAuraInstanceIDs then
-        local currentUnitAuras = state.auras[unit]
-        if currentUnitAuras then
-            for _, auraId in ipairs(updateInfo.removedAuraInstanceIDs) do
-                if currentUnitAuras[auraId] then
-                    currentUnitAuras[auraId] = nil
-                end
+            local auraId = aura.auraInstanceID
+            local matchedAura = Util.MatchAuraInfo(unit, aura)
+            if matchedAura then
+                currentUnitAuras[auraId] = matchedAura
+                needsIndicatorRefresh = true
             end
         end
     end
 
-    --If the unit got new auras added, check if they came from a cast
-    if updateInfo.addedAuras then
-        for _, aura in ipairs(updateInfo.addedAuras) do
-            if Util.IsAuraFromPlayer(unit, aura.auraInstanceID) and not state.auras[unit][aura.auraInstanceID] then
-                state.auras[unit][aura.auraInstanceID] = Util.MatchAuraInfo(unit, aura)
+    --Process full updates as a fresh snapshot from the API
+    if updateInfo.isFullUpdate then
+        wipe(currentUnitAuras)
+        local auras = C_UnitAuras.GetUnitAuras(unit, 'PLAYER|HELPFUL')
+        for _, aura in ipairs(auras) do
+            local auraId = aura.auraInstanceID
+            local matchedAura = Util.MatchAuraInfo(unit, aura)
+            if matchedAura then
+                currentUnitAuras[auraId] = matchedAura
+                needsIndicatorRefresh = true
+            end
+        end
+    else
+        --If a tracked auraInstanceID has been removed, remove it from state
+        if updateInfo.removedAuraInstanceIDs then
+            for _, auraId in ipairs(updateInfo.removedAuraInstanceIDs) do
+                if currentUnitAuras[auraId] then
+                    currentUnitAuras[auraId] = nil
+                    needsIndicatorRefresh = true
+                end
+            end
+        end
+
+        --If the unit got new auras added, classify only player-owned ones
+        if updateInfo.addedAuras then
+            for _, aura in ipairs(updateInfo.addedAuras) do
+                local auraId = aura.auraInstanceID
+                local previousAura = currentUnitAuras[auraId]
+                local matchedAura = Util.MatchAuraInfo(unit, aura)
+                if matchedAura ~= previousAura then
+                    if matchedAura then
+                        currentUnitAuras[auraId] = matchedAura
+                    else
+                        currentUnitAuras[auraId] = nil
+                    end
+                    needsIndicatorRefresh = true
+                end
+            end
+        end
+
+        --If tracked auras were updated, refresh duration displays and avoid rematch/API fetch work
+        if updateInfo.updatedAuraInstanceIDs then
+            for _, auraId in ipairs(updateInfo.updatedAuraInstanceIDs) do
+                if currentUnitAuras[auraId] then
+                    needsIndicatorRefresh = true
+                end
             end
         end
     end
@@ -208,8 +246,15 @@ function Core.UpdateAuraStatus(unit, updateInfo)
     local engineFunction = Data.engineFunctions[Data.playerSpec]
     if engineFunction then
         engineFunction(unit, updateInfo)
+        if updateInfo.isFullUpdate or updateInfo.addedAuras or updateInfo.removedAuraInstanceIDs or updateInfo.updatedAuraInstanceIDs then
+            if next(currentUnitAuras) then
+                needsIndicatorRefresh = true
+            end
+        end
     end
 
-    --Hit a refresh of the indicators at the end
-    Util.UpdateIndicatorsForUnit(unit)
+    --Hit a refresh only when tracked aura state or tracked durations may have changed
+    if needsIndicatorRefresh then
+        Util.UpdateIndicatorsForUnit(unit, updateInfo)
+    end
 end

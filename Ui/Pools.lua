@@ -588,10 +588,8 @@ Ui.BarIndicatorPool = CreateFramePool('StatusBar', nil, nil,
                 end
                 if duration then
                     self:SetTimerDuration(duration, Enum.StatusBarInterpolation.Immediate, Enum.StatusBarTimerDirection.RemainingTime)
-                    self:Show()
-                else
-                    self:Hide()
                 end
+                self:Show()
             else
                 self:Hide()
             end

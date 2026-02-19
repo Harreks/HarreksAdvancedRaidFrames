@@ -29,6 +29,14 @@ end
 function Core.ParsePreservationEvokerBuffs(unit, updateInfo)
     local unitAuras = Data.state.auras[unit]
     local state = Data.state
+    local currentTime = GetTime()
+    local dbPendingWindow = 0.35
+    local dbCastWindow = 1.0
+
+    local function DidRecentlyCastDreamBreath()
+        return Util.AreTimestampsEqual(currentTime, state.casts[355936], dbCastWindow)
+            or Util.AreTimestampsEqual(currentTime, state.casts[382614], dbCastWindow)
+    end
 
     --Pres handles separate lists to parse buffs
     if not state.extras.echo then state.extras.echo = {} end
@@ -40,7 +48,9 @@ function Core.ParsePreservationEvokerBuffs(unit, updateInfo)
         for _, removedAuraId in ipairs(updateInfo.removedAuraInstanceIDs) do
             --If echo was removed, we init this units table in the dbs to parse later
             if state.extras.echo[unit] == removedAuraId then
-                state.extras.db[unit] = { dbs = {}, timer = false, pending = true }
+                if DidRecentlyCastDreamBreath() then
+                    state.extras.db[unit] = { dbs = {}, timer = false, pending = true, startedAt = currentTime }
+                end
                 state.extras.echo[unit] = nil
                 break
             end
@@ -52,8 +62,19 @@ function Core.ParsePreservationEvokerBuffs(unit, updateInfo)
             if Util.IsAuraFromPlayer(unit, aura.auraInstanceID) then
                 if unitAuras[aura.auraInstanceID] == 'DreamBreath' and state.extras.db[unit] and state.extras.db[unit].pending then
                     local dbTable = state.extras.db[unit]
+                    local isPendingActive = dbTable and dbTable.pending
+                        and dbTable.startedAt
+                        and (currentTime - dbTable.startedAt) <= dbPendingWindow
+
+                    if dbTable and dbTable.pending and not isPendingActive then
+                        dbTable.pending = false
+                        dbTable.timer = false
+                        wipe(dbTable.dbs)
+                        dbTable.startedAt = nil
+                    end
+
                     --We check if this unit is preparing to parse its dbs
-                    if dbTable and dbTable.pending then
+                    if dbTable and dbTable.pending and isPendingActive then
                         --If this unit had its echo consumed, we insert the dbs in the table for later parsing
                         table.insert(dbTable.dbs, aura.auraInstanceID)
                         --If we haven't already, we start a timer to check the dbs after 0.2s
@@ -68,6 +89,7 @@ function Core.ParsePreservationEvokerBuffs(unit, updateInfo)
                                     unitAuras[dbTable.dbs[1]] = 'EchoDreamBreath'
                                 end
                                 wipe(dbTable.dbs)
+                                dbTable.startedAt = nil
                                 Util.UpdateIndicatorsForUnit(unit)
                             end)
                             state.extras.db[unit].timer = true

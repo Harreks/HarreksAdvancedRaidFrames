@@ -62,6 +62,36 @@ function Util.UpdateIndicatorsForUnit(unit, updateInfo)
         if not elements.auraInstanceMap then elements.auraInstanceMap = {} end
         if not elements.auraDurations then elements.auraDurations = {} end
 
+        local function HasTrackedStateForSpell(targetSpell)
+            if not auras then
+                return false
+            end
+            for _, trackedSpell in pairs(auras) do
+                if trackedSpell == targetSpell then
+                    return true
+                end
+            end
+            return false
+        end
+
+        local function SetSpellDisplayData(targetAuras, targetDurations, spell, auraData, duration)
+            targetAuras[spell] = auraData
+            targetDurations[spell] = duration
+        end
+
+        local function ClearCurrentSpellDisplayData(spell)
+            elements.auras[spell] = nil
+            elements.auraDurations[spell] = nil
+        end
+
+        local function FindTrackedInstanceForSpell(targetSpell, sourceInstanceMap)
+            for trackedInstanceId, trackedSpell in pairs(sourceInstanceMap) do
+                if trackedSpell == targetSpell then
+                    return trackedInstanceId
+                end
+            end
+        end
+
         local instanceMap = elements.auraInstanceMap
         local durationMap = elements.auraDurations
         local shouldFullRefresh = not updateInfo
@@ -69,26 +99,50 @@ function Util.UpdateIndicatorsForUnit(unit, updateInfo)
             or next(instanceMap) == nil
 
         if shouldFullRefresh then
-            wipe(elements.auras)
-            wipe(instanceMap)
-            wipe(durationMap)
+            local previousAuras = elements.auras
+            local previousInstanceMap = instanceMap
+            local previousDurations = durationMap
+
+            local nextAuras = {}
+            local nextInstanceMap = {}
+            local nextDurations = {}
 
             for instanceId, buff in pairs(auras or {}) do
-                instanceMap[instanceId] = buff
+                nextInstanceMap[instanceId] = buff
                 local auraData = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, instanceId)
-                elements.auras[buff] = auraData
                 if auraData then
-                    durationMap[buff] = C_UnitAuras.GetAuraDuration(unit, instanceId)
+                    SetSpellDisplayData(nextAuras, nextDurations, buff, auraData, C_UnitAuras.GetAuraDuration(unit, instanceId))
+                else
+                    local previousSpell = previousInstanceMap and previousInstanceMap[instanceId]
+                    if previousSpell == buff and previousAuras and previousAuras[buff] then
+                        SetSpellDisplayData(nextAuras, nextDurations, buff, previousAuras[buff], previousDurations and previousDurations[buff] or nil)
+                    end
                 end
             end
+
+            elements.auras = nextAuras
+            elements.auraInstanceMap = nextInstanceMap
+            elements.auraDurations = nextDurations
+            instanceMap = nextInstanceMap
+            durationMap = nextDurations
         else
             if updateInfo.removedAuraInstanceIDs then
                 for _, instanceId in ipairs(updateInfo.removedAuraInstanceIDs) do
                     local spell = instanceMap[instanceId]
                     if spell then
                         instanceMap[instanceId] = nil
-                        elements.auras[spell] = nil
-                        durationMap[spell] = nil
+
+                        local fallbackInstanceId = FindTrackedInstanceForSpell(spell, instanceMap)
+                        if fallbackInstanceId then
+                            local fallbackAuraData = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, fallbackInstanceId)
+                            if fallbackAuraData then
+                                SetSpellDisplayData(elements.auras, durationMap, spell, fallbackAuraData, C_UnitAuras.GetAuraDuration(unit, fallbackInstanceId))
+                            else
+                                ClearCurrentSpellDisplayData(spell)
+                            end
+                        elseif not HasTrackedStateForSpell(spell) then
+                            ClearCurrentSpellDisplayData(spell)
+                        end
                     end
                 end
             end
@@ -96,15 +150,31 @@ function Util.UpdateIndicatorsForUnit(unit, updateInfo)
             local function RefreshAuraByInstanceId(instanceId)
                 local spell = (auras and auras[instanceId]) or instanceMap[instanceId]
                 if spell then
+                    local hasTrackedState = auras and auras[instanceId] ~= nil
                     local auraData = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, instanceId)
                     if auraData then
                         instanceMap[instanceId] = spell
-                        elements.auras[spell] = auraData
-                        durationMap[spell] = C_UnitAuras.GetAuraDuration(unit, instanceId)
+                        SetSpellDisplayData(elements.auras, durationMap, spell, auraData, C_UnitAuras.GetAuraDuration(unit, instanceId))
                     else
-                        instanceMap[instanceId] = nil
-                        elements.auras[spell] = nil
-                        durationMap[spell] = nil
+                        if not hasTrackedState then
+                            local fallbackInstanceId = FindTrackedInstanceForSpell(spell, instanceMap)
+                            if fallbackInstanceId then
+                                local fallbackAuraData = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, fallbackInstanceId)
+                                if fallbackAuraData then
+                                    SetSpellDisplayData(elements.auras, durationMap, spell, fallbackAuraData, C_UnitAuras.GetAuraDuration(unit, fallbackInstanceId))
+                                else
+                                    if not HasTrackedStateForSpell(spell) then
+                                        instanceMap[instanceId] = nil
+                                        ClearCurrentSpellDisplayData(spell)
+                                    end
+                                end
+                            else
+                                if not HasTrackedStateForSpell(spell) then
+                                    instanceMap[instanceId] = nil
+                                    ClearCurrentSpellDisplayData(spell)
+                                end
+                            end
+                        end
                     end
                 end
             end
@@ -148,7 +218,7 @@ function Util.FigureOutBarAnchors(barData)
         sizing.Orientation = 'VERTICAL'
         sizing.xOffset = offset
         sizing.yOffset = 0
-    else
+    elseif barData.Orientation == 'Horizontal' then
         sizing.Orientation = 'HORIZONTAL'
         sizing.xOffset = 0
         sizing.yOffset = offset

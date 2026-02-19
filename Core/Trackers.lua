@@ -40,6 +40,10 @@ function Core.InstallTrackers()
                     if specInfo.casts[spellId] then
                         state.casts[spellId] = timestamp
                     end
+                elseif event == 'UNIT_SPELLCAST_EMPOWER_STOP' then
+                    if specInfo.empowers and specInfo.empowers[spellId] then
+                        state.casts[spellId] = timestamp
+                    end
                 end
             end
         end)

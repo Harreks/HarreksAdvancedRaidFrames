@@ -96,6 +96,9 @@ Ui.ContainerFramePool = CreateFramePool('Frame', nil, 'InsetFrameTemplate3',
                         xOff = 35
                     elseif rowAnchors[currentRow].type == 'Checkbox' then
                         xOff = 60
+                        if self.type == 'square' and element.indicatorSetting == 'showText' then
+                            xOff = 95
+                        end
                     end
                     rowAnchors[currentRow] = element
                 end
@@ -103,6 +106,9 @@ Ui.ContainerFramePool = CreateFramePool('Frame', nil, 'InsetFrameTemplate3',
                 element:SetPoint(point, parent, rel, xOff, yOff)
                 element:Show()
             end
+
+            self:UpdateDependentControlStates()
+
             self.deleteButton:ClearAllPoints()
             self.deleteButton:SetParent(self)
             self.deleteButton:SetPoint('TOPRIGHT', self, 'TOPRIGHT', -2, -2)
@@ -123,8 +129,44 @@ Ui.ContainerFramePool = CreateFramePool('Frame', nil, 'InsetFrameTemplate3',
             Ui.ContainerFramePool:Release(self)
         end
 
+        frame.UpdateDependentControlStates = function(self)
+            if self.type ~= 'square' then
+                return
+            end
+
+            local showCooldownControl = nil
+            local showTextControl = nil
+            for _, control in ipairs(self.elements) do
+                if control.type == 'Checkbox' then
+                    if control.indicatorSetting == 'showCooldown' then
+                        showCooldownControl = control
+                    elseif control.indicatorSetting == 'showText' then
+                        showTextControl = control
+                    end
+                end
+            end
+
+            if showCooldownControl and showTextControl then
+                if showCooldownControl:GetChecked() then
+                    showTextControl:Enable()
+                    showTextControl:SetAlpha(1)
+                    if showTextControl.Text then
+                        showTextControl.Text:SetTextColor(1, 0.82, 0)
+                    end
+                else
+                    showTextControl:SetChecked(false)
+                    showTextControl:Disable()
+                    showTextControl:SetAlpha(0.55)
+                    if showTextControl.Text then
+                        showTextControl.Text:SetTextColor(0.5, 0.5, 0.5)
+                    end
+                end
+            end
+        end
+
         --We update the saved data on the container when the children change
         frame.UpdateOptionsData = function(self)
+            self:UpdateDependentControlStates()
             local savedSetting = self.savedSetting
             if savedSetting.spec and savedSetting.index and SavedIndicators[savedSetting.spec][savedSetting.index] then
                 local dataTable = SavedIndicators[savedSetting.spec][savedSetting.index]
@@ -418,9 +460,9 @@ Ui.IndicatorOverlayPool = CreateFramePool('Frame', UIParent, nil,
             end
             wipe(self.elements)
         end
-        frame.UpdateIndicators = function(self, auraData)
+        frame.UpdateIndicators = function(self, auraData, auraDurations)
             for _, element in ipairs(self.elements) do
-                element:UpdateIndicator(self.unit, auraData)
+                element:UpdateIndicator(self.unit, auraData, auraDurations)
             end
         end
         frame.coloringFunc = nil
@@ -476,10 +518,13 @@ Ui.IconIndicatorPool = CreateFramePool('Frame', nil, nil,
             end
             self:Show()
         end
-        frame.UpdateIndicator = function(self, unit, auraData)
+        frame.UpdateIndicator = function(self, unit, auraData, auraDurations)
             if self.spell and auraData[self.spell] then
                 local aura = auraData[self.spell]
-                local duration = C_UnitAuras.GetAuraDuration(unit, aura.auraInstanceID)
+                local duration = auraDurations and auraDurations[self.spell]
+                if not duration then
+                    duration = C_UnitAuras.GetAuraDuration(unit, aura.auraInstanceID)
+                end
                 self.texture:SetTexture(aura.icon)
                 if duration then
                     self.cooldown:SetCooldownFromDurationObject(duration)
@@ -517,14 +562,19 @@ Ui.SquareIndicatorPool = CreateFramePool('Frame', nil, nil,
         frame.cooldown:Hide()
         frame.type = 'SquareIndicator'
         frame.spell = nil
-        frame.UpdateIndicator = function(self, unit, auraData)
+        frame.UpdateIndicator = function(self, unit, auraData, auraDurations)
             if self.spell and auraData[self.spell] then
                 if self.showCooldown then
                     local aura = auraData[self.spell]
-                    local duration = C_UnitAuras.GetAuraDuration(unit, aura.auraInstanceID)
+                    local duration = auraDurations and auraDurations[self.spell]
+                    if not duration then
+                        duration = C_UnitAuras.GetAuraDuration(unit, aura.auraInstanceID)
+                    end
                     if duration then
                         self.cooldown:SetCooldownFromDurationObject(duration)
                         self.cooldown:Show()
+                    else
+                        self.cooldown:Hide()
                     end
                 else
                     self.cooldown:Hide()
@@ -571,11 +621,16 @@ Ui.BarIndicatorPool = CreateFramePool('StatusBar', nil, nil,
         frame.type = 'BarIndicator'
         frame.previewTimer = nil
         frame.spell = nil
-        frame.UpdateIndicator = function(self, unit, auraData)
+        frame.UpdateIndicator = function(self, unit, auraData, auraDurations)
             if self.spell and auraData[self.spell] then
                 local aura = auraData[self.spell]
-                local duration = C_UnitAuras.GetAuraDuration(unit, aura.auraInstanceID)
-                self:SetTimerDuration(duration, Enum.StatusBarInterpolation.Immediate, Enum.StatusBarTimerDirection.RemainingTime)
+                local duration = auraDurations and auraDurations[self.spell]
+                if not duration then
+                    duration = C_UnitAuras.GetAuraDuration(unit, aura.auraInstanceID)
+                end
+                if duration then
+                    self:SetTimerDuration(duration, Enum.StatusBarInterpolation.Immediate, Enum.StatusBarTimerDirection.RemainingTime)
+                end
                 self:Show()
             else
                 self:Hide()

@@ -15,7 +15,7 @@ function Core.InstallTrackers()
                 local tracker = CreateFrame('Frame')
                 tracker:SetSize(25, 25)
                 tracker:SetScript('OnEvent', function(_, _, unitId, auraUpdateInfo)
-                    if Data.playerSpec then
+                    if Util.IsSupportedSpec(Data.playerSpec) then
                         Core.UpdateAuraStatus(unitId, auraUpdateInfo)
                     end
                 end)
@@ -33,11 +33,15 @@ function Core.InstallTrackers()
         castTracker:RegisterUnitEvent('UNIT_SPELLCAST_CHANNEL_START', 'player')
         castTracker:SetScript('OnEvent', function(_, event, _, _, spellId, empSuccess)
             local state = Data.state
-            if Data.playerSpec then --Getting some weird triggers on casts before the player logs in
+            if Util.IsSupportedSpec(Data.playerSpec) then --Getting some weird triggers on casts before the player logs in
                 local specInfo = Data.specInfo[Data.playerSpec]
                 local timestamp = GetTime()
                 if event == 'UNIT_SPELLCAST_SUCCEEDED' then
                     if specInfo.casts[spellId] then
+                        state.casts[spellId] = timestamp
+                    end
+                elseif event == 'UNIT_SPELLCAST_EMPOWER_STOP' then
+                    if specInfo.empowers and specInfo.empowers[spellId] then
                         state.casts[spellId] = timestamp
                     end
                 end

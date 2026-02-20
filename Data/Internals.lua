@@ -125,6 +125,7 @@ Data.indicatorTypeSettings = {
             xOffset = 0,
             yOffset = 0,
             textSize = 1,
+            showText = false,
             showCooldown = false
         },
         controls = {
@@ -135,7 +136,8 @@ Data.indicatorTypeSettings = {
             { controlType = 'Slider', sliderType = 'xOffset', setting = 'xOffset', row = 1 },
             { controlType = 'Slider', sliderType = 'yOffset', setting = 'yOffset', row = 1 },
             { controlType = 'Slider', sliderType = 'textSize', setting = 'textSize', row = 2 },
-            { controlType = 'Checkbox', setting = 'showCooldown', text = 'Show Cooldown', row = 2 }
+            { controlType = 'Checkbox', setting = 'showCooldown', text = 'Show Cooldown', row = 2 },
+            { controlType = 'Checkbox', setting = 'showText', text = 'Show Text', row = 2 }
         }
     },
     bar = {

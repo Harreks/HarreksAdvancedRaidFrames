@@ -126,6 +126,7 @@ function Ui.CreateIndicatorOptions(type, spec, savedSettings)
                 end
             end
         end
+        self:UpdateDependentControlStates()
         self:AnchorElements()
     end
 
@@ -150,6 +151,7 @@ local indicatorOverlayRenderers = {
     square = function(overlay, indicatorData)
         local newSquare = Ui.SquareIndicatorPool:Acquire()
         newSquare.spell = indicatorData.Spell
+        local showText = indicatorData.showText ~= false
         local color = indicatorData.Color
         newSquare:SetParent(overlay)
         newSquare:SetSize(indicatorData.Size, indicatorData.Size)
@@ -157,6 +159,7 @@ local indicatorOverlayRenderers = {
         newSquare.texture:SetColorTexture(color.r, color.g, color.b, color.a)
         newSquare.showCooldown = indicatorData.showCooldown
         newSquare.cooldown:SetScale(indicatorData.textSize)
+        newSquare.cooldown:SetHideCountdownNumbers(not showText)
         newSquare.cooldown:SetShown(indicatorData.showCooldown)
         return newSquare
     end,

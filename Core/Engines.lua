@@ -20,6 +20,11 @@ end
 
 --Check data of UNIT_AURA to update its status
 function Core.UpdateAuraStatus(unit, updateInfo)
+    local playerSpec = Data.playerSpec
+    if not Util.IsSupportedSpec(playerSpec) then
+        return
+    end
+
     local state = Data.state
     if not updateInfo then updateInfo = {} end
 
@@ -76,12 +81,9 @@ function Core.UpdateAuraStatus(unit, updateInfo)
     end
 
     --We pass the data to specialized functions
-    local engineFunction = Data.engineFunctions[Data.playerSpec]
-    if engineFunction then
-        local parserChanged = engineFunction(unit, updateInfo)
-        if parserChanged then
-            needsIndicatorRefresh = true
-        end
+    local parserChanged = Data.engineFunctions[playerSpec](unit, updateInfo)
+    if parserChanged then
+        needsIndicatorRefresh = true
     end
 
     --Hit a refresh only when tracked aura state or tracked durations may have changed

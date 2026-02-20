@@ -42,6 +42,16 @@ function Util.NormalizeSavedIndicators()
                         end
                     end
 
+                    if indicatorData.Type == 'square' then
+                        if indicatorData.showCooldown then
+                            if indicatorData.showText == nil then
+                                indicatorData.showText = true
+                            end
+                        else
+                            indicatorData.showText = false
+                        end
+                    end
+
                     if not indicatorData.Spell then
                         indicatorData.Spell = GetFirstSpellForSpec(spec)
                             or GetFirstSpellForSpec(Options.editingSpec)

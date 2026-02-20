@@ -317,3 +317,7 @@ function Util.MapEngineFunctions()
         functionMap[spec] = Core['Parse' .. spec .. 'Buffs']
     end
 end
+
+function Util.IsSupportedSpec(spec)
+    return spec and Data.specInfo[spec] and Data.engineFunctions[spec]
+end

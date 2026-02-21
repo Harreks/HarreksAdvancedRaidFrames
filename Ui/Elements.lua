@@ -21,6 +21,7 @@ local indicatorOverlayRenderers = {
     square = function(overlay, indicatorData)
         local newSquare = Ui.SquareIndicatorPool:Acquire()
         newSquare.spell = indicatorData.Spell
+        local showText = indicatorData.showText ~= false
         local color = indicatorData.Color
         local backgroundColor = indicatorData.BackgroundColor or { r = 0, g = 0, b = 0, a = 0.8 }
         newSquare:SetParent(overlay)
@@ -32,7 +33,11 @@ local indicatorOverlayRenderers = {
         newSquare.texture:SetColorTexture(color.r, color.g, color.b, color.a)
         newSquare.cooldownSwipeColor = { r = color.r, g = color.g, b = color.b, a = color.a }
         newSquare.showCooldown = indicatorData.showCooldown
-        newSquare.showCooldownText = indicatorData.showCooldownText ~= false
+        if indicatorData.showCooldownText == nil then
+            newSquare.showCooldownText = showText
+        else
+            newSquare.showCooldownText = indicatorData.showCooldownText ~= false
+        end
         newSquare.cooldownStyle = indicatorData.cooldownStyle or 'Swipe'
         newSquare.depleteDirection = indicatorData.depleteDirection or 'Right to Left'
         newSquare.texture:SetShown(not newSquare.showCooldown)

@@ -46,6 +46,13 @@ Utility/Helpers.lua
 Utility/Visuals.lua
 Utility/Debug.lua
 
+Core/Engines/Common.lua
+Core/Engines/Druid.lua
+Core/Engines/Evoker.lua
+Core/Engines/Monk.lua
+Core/Engines/Paladin.lua
+Core/Engines/Priest.lua
+Core/Engines/Shaman.lua
 Core/Engines.lua
 Core/Options.lua
 Core/Trackers.lua

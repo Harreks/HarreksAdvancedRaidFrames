@@ -25,9 +25,9 @@ Ui.IndicatorOverlayPool = CreateFramePool('Frame', UIParent, nil,
             end
             wipe(self.elements)
         end
-        frame.UpdateIndicators = function(self, auraData)
+        frame.UpdateIndicators = function(self, auraData, auraDurations)
             for _, element in ipairs(self.elements) do
-                element:UpdateIndicator(self.unit, auraData)
+                element:UpdateIndicator(self.unit, auraData, auraDurations)
             end
         end
         frame.coloringFunc = nil
@@ -84,10 +84,13 @@ Ui.IconIndicatorPool = CreateFramePool('Frame', nil, nil,
             end
             self:Show()
         end
-        frame.UpdateIndicator = function(self, unit, auraData)
+        frame.UpdateIndicator = function(self, unit, auraData, auraDurations)
             if self.spell and auraData[self.spell] then
                 local aura = auraData[self.spell]
-                local duration = C_UnitAuras.GetAuraDuration(unit, aura.auraInstanceID)
+                local duration = auraDurations and auraDurations[self.spell]
+                if not duration then
+                    duration = C_UnitAuras.GetAuraDuration(unit, aura.auraInstanceID)
+                end
                 self.texture:SetTexture(aura.icon)
                 if duration then
                     self.cooldown:SetCooldownFromDurationObject(duration)
@@ -181,11 +184,14 @@ Ui.SquareIndicatorPool = CreateFramePool('Frame', nil, nil,
                 self.depleteBar:SetReverseFill(false)
             end
         end
-        frame.UpdateIndicator = function(self, unit, auraData)
+        frame.UpdateIndicator = function(self, unit, auraData, auraDurations)
             if self.spell and auraData[self.spell] then
                 if self.showCooldown then
                     local aura = auraData[self.spell]
-                    local duration = C_UnitAuras.GetAuraDuration(unit, aura.auraInstanceID)
+                    local duration = auraDurations and auraDurations[self.spell]
+                    if not duration then
+                        duration = C_UnitAuras.GetAuraDuration(unit, aura.auraInstanceID)
+                    end
                     if self.cooldownStyle == 'Deplete' then
                         self.cooldown:Hide()
                         self:ApplyDepleteDirection()
@@ -275,11 +281,16 @@ Ui.BarIndicatorPool = CreateFramePool('StatusBar', nil, nil,
         frame.type = 'BarIndicator'
         frame.previewTimer = nil
         frame.spell = nil
-        frame.UpdateIndicator = function(self, unit, auraData)
+        frame.UpdateIndicator = function(self, unit, auraData, auraDurations)
             if self.spell and auraData[self.spell] then
                 local aura = auraData[self.spell]
-                local duration = C_UnitAuras.GetAuraDuration(unit, aura.auraInstanceID)
-                self:SetTimerDuration(duration, Enum.StatusBarInterpolation.Immediate, Enum.StatusBarTimerDirection.RemainingTime)
+                local duration = auraDurations and auraDurations[self.spell]
+                if not duration then
+                    duration = C_UnitAuras.GetAuraDuration(unit, aura.auraInstanceID)
+                end
+                if duration then
+                    self:SetTimerDuration(duration, Enum.StatusBarInterpolation.Immediate, Enum.StatusBarTimerDirection.RemainingTime)
+                end
                 self:Show()
             else
                 self:Hide()

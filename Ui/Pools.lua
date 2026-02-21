@@ -207,7 +207,6 @@ Ui.SquareIndicatorPool = CreateFramePool('Frame', nil, nil,
                         end
                     else
                         self.depleteBar:Hide()
-                        self:ApplySwipeStyle()
                         if duration then
                             self.cooldown:SetCooldownFromDurationObject(duration)
                             self:ApplySwipeStyle()
@@ -242,7 +241,6 @@ Ui.SquareIndicatorPool = CreateFramePool('Frame', nil, nil,
                     end
                 else
                     self.depleteBar:Hide()
-                    self:ApplySwipeStyle()
                     self.cooldown:SetCooldown(GetTime(), 30)
                     self:ApplySwipeStyle()
                     self.cooldown:Show()

@@ -183,12 +183,25 @@ function Core.ParsePreservationEvokerBuffs(unit, updateInfo)
         state.extras.echoConsume[unit] = nil
     end
 
+    if updateInfo and updateInfo.isFullUpdate then
+        state.extras.echo[unit] = nil
+        for instanceId, auraName in pairs(unitAuras) do
+            if auraName == 'Echo' then
+                state.extras.echo[unit] = instanceId
+                break
+            end
+        end
+    end
+
     HandleEchoRemovalForPres(unit, updateInfo, state, currentTime, PRES_ECHO_CONSUME_CAST_WINDOW)
 
     if updateInfo.addedAuras then
         for _, aura in ipairs(updateInfo.addedAuras) do
             local auraId = aura.auraInstanceID
             local spell = unitAuras[auraId]
+            if spell == 'Echo' then
+                state.extras.echo[unit] = auraId
+            end
             if (spell == 'DreamBreath' or spell == 'VerdantEmbrace') and Util.IsAuraFromPlayer(unit, auraId) then
                 if spell == 'DreamBreath' then
                     HandleDreamBreathAuraForPres(unit, auraId, state, unitAuras, currentTime, PRES_ECHO_CONSUME_CAST_WINDOW, PRES_DB_PENDING_WINDOW)
@@ -196,12 +209,6 @@ function Core.ParsePreservationEvokerBuffs(unit, updateInfo)
                     HandleVerdantEmbraceAuraForPres(unit, auraId, state, unitAuras, currentTime, PRES_ECHO_CONSUME_CAST_WINDOW, PRES_VE_PENDING_WINDOW)
                 end
             end
-        end
-    end
-
-    for instanceId, aura in pairs(unitAuras) do
-        if aura == 'Echo' and not state.extras.echo[unit] then
-            state.extras.echo[unit] = instanceId
         end
     end
 

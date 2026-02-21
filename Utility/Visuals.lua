@@ -71,17 +71,33 @@ function Util.UpdateIndicatorsForUnit(unit, updateInfo)
         if not elements.auras then elements.auras = {} end
         if not elements.auraInstanceMap then elements.auraInstanceMap = {} end
         if not elements.auraDurations then elements.auraDurations = {} end
+        if not elements.spellInstanceCounts then elements.spellInstanceCounts = {} end
+        if not elements.spellInstanceAny then elements.spellInstanceAny = {} end
+        if not elements.snapshotAuras then elements.snapshotAuras = {} end
+        if not elements.snapshotInstanceMap then elements.snapshotInstanceMap = {} end
+        if not elements.snapshotDurations then elements.snapshotDurations = {} end
+        if not elements.trackedSpellCounts then elements.trackedSpellCounts = {} end
+
+        local instanceMap = elements.auraInstanceMap
+        local durationMap = elements.auraDurations
+        local spellInstanceCounts = elements.spellInstanceCounts
+        local spellInstanceAny = elements.spellInstanceAny
+
+        wipe(spellInstanceCounts)
+        wipe(spellInstanceAny)
+        for trackedInstanceId, trackedSpell in pairs(instanceMap) do
+            spellInstanceCounts[trackedSpell] = (spellInstanceCounts[trackedSpell] or 0) + 1
+            spellInstanceAny[trackedSpell] = trackedInstanceId
+        end
+
+        local trackedSpellCounts = elements.trackedSpellCounts
+        wipe(trackedSpellCounts)
+        for _, trackedSpell in pairs(auras or {}) do
+            trackedSpellCounts[trackedSpell] = (trackedSpellCounts[trackedSpell] or 0) + 1
+        end
 
         local function HasTrackedStateForSpell(targetSpell)
-            if not auras then
-                return false
-            end
-            for _, trackedSpell in pairs(auras) do
-                if trackedSpell == targetSpell then
-                    return true
-                end
-            end
-            return false
+            return (trackedSpellCounts[targetSpell] or 0) > 0
         end
 
         local function SetSpellDisplayData(targetAuras, targetDurations, spell, auraData, duration)
@@ -94,55 +110,100 @@ function Util.UpdateIndicatorsForUnit(unit, updateInfo)
             elements.auraDurations[spell] = nil
         end
 
-        local function FindTrackedInstanceForSpell(targetSpell, sourceInstanceMap)
-            for trackedInstanceId, trackedSpell in pairs(sourceInstanceMap) do
-                if trackedSpell == targetSpell then
-                    return trackedInstanceId
+        local function RemoveTrackedInstance(instanceId)
+            local spell = instanceMap[instanceId]
+            if not spell then
+                return nil
+            end
+
+            instanceMap[instanceId] = nil
+            local nextCount = (spellInstanceCounts[spell] or 1) - 1
+            if nextCount <= 0 then
+                spellInstanceCounts[spell] = nil
+                spellInstanceAny[spell] = nil
+            else
+                spellInstanceCounts[spell] = nextCount
+                if spellInstanceAny[spell] == instanceId then
+                    spellInstanceAny[spell] = nil
+                    for trackedInstanceId, trackedSpell in pairs(instanceMap) do
+                        if trackedSpell == spell then
+                            spellInstanceAny[spell] = trackedInstanceId
+                            break
+                        end
+                    end
+                end
+            end
+
+            return spell
+        end
+
+        local function SetTrackedInstance(instanceId, spell)
+            local previousSpell = instanceMap[instanceId]
+            if previousSpell == spell then
+                return
+            end
+
+            if previousSpell then
+                RemoveTrackedInstance(instanceId)
+            end
+
+            if spell then
+                instanceMap[instanceId] = spell
+                spellInstanceCounts[spell] = (spellInstanceCounts[spell] or 0) + 1
+                if not spellInstanceAny[spell] then
+                    spellInstanceAny[spell] = instanceId
                 end
             end
         end
 
-        local instanceMap = elements.auraInstanceMap
-        local durationMap = elements.auraDurations
         local shouldFullRefresh = not updateInfo
             or updateInfo.isFullUpdate
             or next(instanceMap) == nil
 
         if shouldFullRefresh then
-            local previousAuras = elements.auras
-            local previousInstanceMap = instanceMap
-            local previousDurations = durationMap
+            local previousAuras = elements.snapshotAuras
+            local previousInstanceMap = elements.snapshotInstanceMap
+            local previousDurations = elements.snapshotDurations
 
-            local nextAuras = {}
-            local nextInstanceMap = {}
-            local nextDurations = {}
+            wipe(previousAuras)
+            for spell, auraData in pairs(elements.auras) do
+                previousAuras[spell] = auraData
+            end
+
+            wipe(previousInstanceMap)
+            for trackedInstanceId, trackedSpell in pairs(instanceMap) do
+                previousInstanceMap[trackedInstanceId] = trackedSpell
+            end
+
+            wipe(previousDurations)
+            for spell, duration in pairs(durationMap) do
+                previousDurations[spell] = duration
+            end
+
+            wipe(elements.auras)
+            wipe(instanceMap)
+            wipe(durationMap)
+            wipe(spellInstanceCounts)
+            wipe(spellInstanceAny)
 
             for instanceId, buff in pairs(auras or {}) do
-                nextInstanceMap[instanceId] = buff
+                SetTrackedInstance(instanceId, buff)
                 local auraData = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, instanceId)
                 if auraData then
-                    SetSpellDisplayData(nextAuras, nextDurations, buff, auraData, C_UnitAuras.GetAuraDuration(unit, instanceId))
+                    SetSpellDisplayData(elements.auras, durationMap, buff, auraData, C_UnitAuras.GetAuraDuration(unit, instanceId))
                 else
                     local previousSpell = previousInstanceMap and previousInstanceMap[instanceId]
                     if previousSpell == buff and previousAuras and previousAuras[buff] then
-                        SetSpellDisplayData(nextAuras, nextDurations, buff, previousAuras[buff], previousDurations and previousDurations[buff] or nil)
+                        SetSpellDisplayData(elements.auras, durationMap, buff, previousAuras[buff], previousDurations and previousDurations[buff] or nil)
                     end
                 end
             end
-
-            elements.auras = nextAuras
-            elements.auraInstanceMap = nextInstanceMap
-            elements.auraDurations = nextDurations
-            instanceMap = nextInstanceMap
-            durationMap = nextDurations
         else
             if updateInfo.removedAuraInstanceIDs then
                 for _, instanceId in ipairs(updateInfo.removedAuraInstanceIDs) do
-                    local spell = instanceMap[instanceId]
+                    local spell = RemoveTrackedInstance(instanceId)
                     if spell then
-                        instanceMap[instanceId] = nil
-
-                        local fallbackInstanceId = FindTrackedInstanceForSpell(spell, instanceMap)
+                        local fallbackInstanceId = spellInstanceAny[spell]
                         if fallbackInstanceId then
                             local fallbackAuraData = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, fallbackInstanceId)
                             if fallbackAuraData then
@@ -163,24 +224,23 @@ function Util.UpdateIndicatorsForUnit(unit, updateInfo)
                     local hasTrackedState = auras and auras[instanceId] ~= nil
                     local auraData = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, instanceId)
                     if auraData then
-                        instanceMap[instanceId] = spell
+                        SetTrackedInstance(instanceId, spell)
                         SetSpellDisplayData(elements.auras, durationMap, spell, auraData, C_UnitAuras.GetAuraDuration(unit, instanceId))
                     else
                         if not hasTrackedState then
-                            local fallbackInstanceId = FindTrackedInstanceForSpell(spell, instanceMap)
+                            RemoveTrackedInstance(instanceId)
+                            local fallbackInstanceId = spellInstanceAny[spell]
                             if fallbackInstanceId then
                                 local fallbackAuraData = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, fallbackInstanceId)
                                 if fallbackAuraData then
                                     SetSpellDisplayData(elements.auras, durationMap, spell, fallbackAuraData, C_UnitAuras.GetAuraDuration(unit, fallbackInstanceId))
                                 else
                                     if not HasTrackedStateForSpell(spell) then
-                                        instanceMap[instanceId] = nil
                                         ClearCurrentSpellDisplayData(spell)
                                     end
                                 end
                             else
                                 if not HasTrackedStateForSpell(spell) then
-                                    instanceMap[instanceId] = nil
                                     ClearCurrentSpellDisplayData(spell)
                                 end
                             end

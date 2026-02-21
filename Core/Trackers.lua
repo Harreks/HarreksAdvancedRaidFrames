@@ -3,26 +3,22 @@ local Data = NS.Data
 local Ui = NS.Ui
 local Util = NS.Util
 local Core = NS.Core
-local API = NS.API
 local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
 function Core.InstallTrackers()
-    for groupType, units in pairs(Data.unitList) do
-        for unit, _ in pairs(units) do
-            local elements = Data.unitList[groupType][unit]
-            if not elements.tracker then
-                local tracker = CreateFrame('Frame')
-                tracker:SetSize(25, 25)
-                tracker:SetScript('OnEvent', function(_, _, unitId, auraUpdateInfo)
-                    if Util.IsSupportedSpec(Data.playerSpec) then
-                        Core.UpdateAuraStatus(unitId, auraUpdateInfo)
-                    end
-                end)
-                tracker:RegisterUnitEvent('UNIT_AURA', unit)
-                elements.tracker = tracker
+    if not Core.AuraTracker then
+        local auraTracker = CreateFrame('Frame')
+        auraTracker:SetSize(25, 25)
+        auraTracker:SetScript('OnEvent', function(_, _, unitId, auraUpdateInfo)
+            if Util.IsSupportedSpec(Data.playerSpec) and unitId and Util.GetRelevantList()[unitId] then
+                Core.UpdateAuraStatus(unitId, auraUpdateInfo)
             end
-        end
+        end)
+
+        auraTracker:RegisterEvent('UNIT_AURA')
+
+        Core.AuraTracker = auraTracker
     end
 
     if not Core.CastTracker then
@@ -31,7 +27,7 @@ function Core.InstallTrackers()
         castTracker:RegisterUnitEvent('UNIT_SPELLCAST_EMPOWER_STOP', 'player')
         castTracker:RegisterUnitEvent('UNIT_SPELLCAST_CHANNEL_STOP', 'player')
         castTracker:RegisterUnitEvent('UNIT_SPELLCAST_CHANNEL_START', 'player')
-        castTracker:SetScript('OnEvent', function(_, event, _, _, spellId, empSuccess)
+        castTracker:SetScript('OnEvent', function(_, event, _, _, spellId)
             local state = Data.state
             if Util.IsSupportedSpec(Data.playerSpec) then --Getting some weird triggers on casts before the player logs in
                 local specInfo = Data.specInfo[Data.playerSpec]

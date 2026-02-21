@@ -54,12 +54,34 @@ function Core.InstallTrackers()
         local stateTracker = CreateFrame('Frame')
         stateTracker:RegisterEvent('PLAYER_LOGIN')
         stateTracker:RegisterEvent('GROUP_ROSTER_UPDATE')
-        stateTracker:SetScript('OnEvent', function(self, event)
+        stateTracker:RegisterEvent('PLAYER_SPECIALIZATION_CHANGED')
+        stateTracker:RegisterEvent('ACTIVE_PLAYER_SPECIALIZATION_CHANGED')
+        stateTracker:RegisterEvent('ACTIVE_TALENT_GROUP_CHANGED')
+
+        local function HandlePlayerSpecializationChanged()
+            local previousSpec = Data.playerSpec
+            Util.UpdatePlayerSpec()
+            if previousSpec == Data.playerSpec then
+                return
+            end
+
+            Util.MapOutUnits()
+
+            if Ui.DesignerFrame then
+                Ui.DesignerFrame:RefreshScrollBox()
+                Ui.DesignerFrame:RefreshPreview()
+            end
+        end
+
+        stateTracker:SetScript('OnEvent', function(self, event, unitTarget)
             if event == 'PLAYER_LOGIN' then
                 Util.DebugData(Data.state, 'State')
                 Util.DebugData(Data.unitList, 'Units')
                 Util.DebugData(SavedIndicators, 'Indicators')
                 Util.UpdatePlayerSpec()
+                if not Options.editingSpec or not Data.specInfo[Options.editingSpec] then
+                    Options.editingSpec = Data.playerSpec
+                end
                 Util.MapEngineFunctions()
 
                 Ui.CreateOptionsPanel(Data.settings)
@@ -136,6 +158,10 @@ function Core.InstallTrackers()
                 })
             elseif event == 'GROUP_ROSTER_UPDATE' then
                 Core.ModifySettings()
+            elseif event == 'ACTIVE_PLAYER_SPECIALIZATION_CHANGED' or event == 'ACTIVE_TALENT_GROUP_CHANGED' then
+                HandlePlayerSpecializationChanged()
+            elseif event == 'PLAYER_SPECIALIZATION_CHANGED' and unitTarget and UnitIsUnit(unitTarget, 'player') then
+                HandlePlayerSpecializationChanged()
             end
         end)
     end

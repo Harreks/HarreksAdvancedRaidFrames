@@ -120,12 +120,16 @@ Data.indicatorTypeSettings = {
     square = {
         defaults = {
             Color = { r = 0, g = 1, b = 0, a = 1 },
+            BackgroundColor = { r = 0, g = 0, b = 0, a = 0.8 },
             Position = 'CENTER',
             Size = 25,
             xOffset = 0,
             yOffset = 0,
             textSize = 1,
-            showCooldown = false
+            showCooldown = false,
+            showCooldownText = true,
+            cooldownStyle = 'Swipe',
+            depleteDirection = 'Right to Left'
         },
         controls = {
             { controlType = 'SpellSelector', setting = 'Spell', row = 1 },
@@ -141,6 +145,7 @@ Data.indicatorTypeSettings = {
     bar = {
         defaults = {
             Color = { r = 0, g = 1, b = 0, a = 1 },
+            BackgroundColor = { r = 0, g = 0, b = 0, a = 0.8 },
             Position = 'TOPRIGHT',
             Scale = 'Full',
             Orientation = 'Horizontal',
@@ -179,6 +184,16 @@ Data.dropdownOptions = {
         text = 'Select Bar Orientation',
         default = 'Horizontal',
         options = { 'Horizontal', 'Vertical' }
+    },
+    squareCooldownStyle = {
+        text = 'Select Cooldown Style',
+        default = 'Swipe',
+        options = { 'Swipe', 'Deplete' }
+    },
+    squareDepleteDirection = {
+        text = 'Select Deplete Direction',
+        default = 'Right to Left',
+        options = { 'Right to Left', 'Left to Right', 'Top to Bottom', 'Bottom to Top' }
     },
 }
 

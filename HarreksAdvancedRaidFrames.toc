@@ -15,10 +15,23 @@ Libraries/LibDataBroker-1.1.lua
 Libraries/LibDBIcon-1.0.lua
 Libraries/LibCustomGlow-1.0.lua
 Libraries/LibGetFrame-1.0.lua
-Libraries/LibEditMode/namespaced.lua
-Libraries/LibEditMode/embed.xml
+Libraries/LibEQOL/LibEQOL.xml
 
 Init.lua
+
+Locale/Localization.lua
+Locale/enUS.lua
+Locale/enGB.lua
+Locale/deDE.lua
+Locale/frFR.lua
+Locale/esES.lua
+Locale/esMX.lua
+Locale/itIT.lua
+Locale/ptBR.lua
+Locale/ruRU.lua
+Locale/koKR.lua
+Locale/zhCN.lua
+Locale/zhTW.lua
 
 Data/Internals.lua
 Data/Specs.lua

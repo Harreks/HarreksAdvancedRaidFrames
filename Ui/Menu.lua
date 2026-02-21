@@ -190,9 +190,7 @@ function Ui.CreateOptionsPanel(optionsTable)
         Ui.CreateOptionsElement(data, { category = defaultFramesSubcategory, layout = defaultFramesLayout })
     end
 
-    local designer = Ui.GetDesignerFrame()
-    local designerSubCategory = Settings.RegisterCanvasLayoutSubcategory(category, designer, 'Designer')
-    Settings.RegisterAddOnCategory(designerSubCategory)
+    Ui.CreateDesignerCategory(category)
 
     local addonsPanel = Ui.GetOptionsAddonsPanel()
     local addonsSubcategory = Settings.RegisterCanvasLayoutSubcategory(category, addonsPanel, 'Other Frames')

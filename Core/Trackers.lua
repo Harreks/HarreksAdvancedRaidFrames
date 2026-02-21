@@ -82,6 +82,8 @@ function Core.InstallTrackers()
 
                 Ui.CreateOptionsPanel(Data.settings)
 
+                Core.ModifySettings()
+
                 local spotlightFrame = Ui.GetSpotlightFrame()
                 local LEM = (LibEQOL and LibEQOL.EditMode) or LibStub('LibEQOLEditMode-1.0')
 

@@ -45,3 +45,15 @@ L.ANCHOR_BOTTOMRIGHT = 'Unten rechts'
 
 L.INDICATOR_EMPTY = 'Leerer Indikator'
 L.INDICATOR_GENERIC = 'Indikator'
+
+L.MENU_CATEGORY_ADDON = 'Advanced Raid Frames'
+L.MENU_CATEGORY_DEFAULT_FRAMES = 'Standardrahmen'
+L.MENU_CATEGORY_DESIGNER = 'Designer'
+L.MENU_CATEGORY_OTHER_FRAMES = 'Andere Rahmen'
+
+L.MENU_UTILITIES_HEADER = 'Werkzeuge'
+L.MENU_UTILITIES_DESC = 'Nutze diese Werkzeuge, um die Aura-Verarbeitung zu profilieren, Laufzeitmetriken im Chat zu prüfen und Addon-Daten für Tests zurückzusetzen. Das Zurücksetzen erfordert eine Bestätigung und lädt die UI neu.'
+L.MENU_BUTTON_TOGGLE_PROFILING = 'Profiling umschalten'
+L.MENU_BUTTON_PRINT_PROFILING = 'Profiling-Statistiken ausgeben'
+L.MENU_BUTTON_RESET_PROFILING = 'Profiling-Statistiken zurücksetzen'
+L.MENU_BUTTON_RESET_DATA = 'Addon-Daten zurücksetzen'

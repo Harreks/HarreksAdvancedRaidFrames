@@ -3,6 +3,10 @@ local Data = NS.Data
 local Util = NS.Util
 local Core = NS.Core
 
+local ipairs = ipairs
+local wipe = wipe
+
+
 local function RebuildTrackedUnitAuras(unit, currentUnitAuras)
     local needsIndicatorRefresh = false
     local auras = C_UnitAuras.GetUnitAuras(unit, 'PLAYER|HELPFUL')
@@ -20,8 +24,10 @@ end
 
 --Check data of UNIT_AURA to update its status
 function Core.UpdateAuraStatus(unit, updateInfo)
+    local profileStart = Util.ProfileStart()
     local playerSpec = Data.playerSpec
     if not Util.IsSupportedSpec(playerSpec) then
+        Util.ProfileStop('UpdateAuraStatus', profileStart)
         return
     end
 
@@ -90,4 +96,6 @@ function Core.UpdateAuraStatus(unit, updateInfo)
     if needsIndicatorRefresh then
         Util.UpdateIndicatorsForUnit(unit, updateInfo)
     end
+
+    Util.ProfileStop('UpdateAuraStatus', profileStart)
 end

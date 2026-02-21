@@ -4,9 +4,16 @@ local Util = NS.Util
 local Core = NS.Core
 local Common = Core.EngineCommon
 
+local pairs = pairs
+local ipairs = ipairs
+local wipe = wipe
+local UnitExists = UnitExists
+local C_Timer_After = C_Timer.After
+
 local PRES_ECHO_CONSUME_CAST_WINDOW = 0.9
 local PRES_DB_PENDING_WINDOW = 0.35
 local PRES_VE_PENDING_WINDOW = 0.35
+local PRES_STALE_PRUNE_INTERVAL = 2
 
 local function EnsurePreservationExtras(state)
     if not state.extras.echo then state.extras.echo = {} end
@@ -42,6 +49,49 @@ end
 
 local function ClearDreamBreathPending(dbTable)
     Common.ClearPendingState(dbTable, 'dbs')
+end
+
+local function PrunePreservationExtras(state, currentTime)
+    local extras = state.extras
+    if not extras then
+        return
+    end
+
+    local lastPruneAt = extras.lastPresPruneAt or 0
+    if (currentTime - lastPruneAt) < PRES_STALE_PRUNE_INTERVAL then
+        return
+    end
+    extras.lastPresPruneAt = currentTime
+
+    for unit, consumeData in pairs(extras.echoConsume) do
+        if not UnitExists(unit) or not consumeData or not Util.AreTimestampsEqual(currentTime, consumeData.at, PRES_ECHO_CONSUME_CAST_WINDOW) then
+            extras.echoConsume[unit] = nil
+        end
+    end
+
+    for unit, dbTable in pairs(extras.db) do
+        if not UnitExists(unit) then
+            extras.db[unit] = nil
+        elseif dbTable and dbTable.pending and not Common.IsWithinPendingWindow(dbTable.startedAt, currentTime, PRES_DB_PENDING_WINDOW) then
+            ClearDreamBreathPending(dbTable)
+        end
+    end
+
+    for unit, veTable in pairs(extras.ve) do
+        if not UnitExists(unit) then
+            extras.ve[unit] = nil
+        elseif veTable and veTable.pending and not Common.IsWithinPendingWindow(veTable.startedAt, currentTime, PRES_VE_PENDING_WINDOW) then
+            Common.ClearPendingState(veTable, 'buffs')
+        end
+    end
+
+    for unit, echoAuraId in pairs(extras.echo) do
+        if not UnitExists(unit) then
+            extras.echo[unit] = nil
+        elseif not state.auras[unit] or not state.auras[unit][echoAuraId] then
+            extras.echo[unit] = nil
+        end
+    end
 end
 
 local function HandleEchoRemovalForPres(unit, updateInfo, state, currentTime, consumeCastWindow)
@@ -96,7 +146,7 @@ local function HandleDreamBreathAuraForPres(unit, auraId, state, unitAuras, curr
     end
 
     dbTable.timer = true
-    C_Timer.After(0.1, function()
+    C_Timer_After(0.1, function()
         dbTable.timer = false
         dbTable.pending = false
         if #dbTable.dbs == 2 then
@@ -148,7 +198,7 @@ local function HandleVerdantEmbraceAuraForPres(unit, auraId, state, unitAuras, c
     end
 
     veTable.timer = true
-    C_Timer.After(0.1, function()
+    C_Timer_After(0.1, function()
         veTable.timer = false
         veTable.pending = false
         if #veTable.buffs == 2 then
@@ -177,6 +227,7 @@ function Core.ParsePreservationEvokerBuffs(unit, updateInfo)
     local currentTime = GetTime()
 
     EnsurePreservationExtras(state)
+    PrunePreservationExtras(state, currentTime)
 
     local unitConsumeData = state.extras.echoConsume[unit]
     if unitConsumeData and not Util.AreTimestampsEqual(currentTime, unitConsumeData.at, PRES_ECHO_CONSUME_CAST_WINDOW) then

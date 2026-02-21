@@ -45,3 +45,15 @@ L.ANCHOR_BOTTOMRIGHT = '우하단'
 
 L.INDICATOR_EMPTY = '빈 지시자'
 L.INDICATOR_GENERIC = '지시자'
+
+L.MENU_CATEGORY_ADDON = 'Advanced Raid Frames'
+L.MENU_CATEGORY_DEFAULT_FRAMES = '기본 프레임'
+L.MENU_CATEGORY_DESIGNER = '디자이너'
+L.MENU_CATEGORY_OTHER_FRAMES = '기타 프레임'
+
+L.MENU_UTILITIES_HEADER = '유틸리티'
+L.MENU_UTILITIES_DESC = '이 도구를 사용해 오라 처리 성능을 프로파일링하고, 채팅에서 런타임 지표를 확인하며, 테스트 중 애드온 데이터를 초기화할 수 있습니다. 데이터 초기화는 확인 후 UI를 다시 불러옵니다.'
+L.MENU_BUTTON_TOGGLE_PROFILING = '프로파일링 켜기/끄기'
+L.MENU_BUTTON_PRINT_PROFILING = '프로파일링 통계 출력'
+L.MENU_BUTTON_RESET_PROFILING = '프로파일링 통계 초기화'
+L.MENU_BUTTON_RESET_DATA = '애드온 데이터 초기화'

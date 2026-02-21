@@ -45,3 +45,15 @@ L.ANCHOR_BOTTOMRIGHT = 'Basso destra'
 
 L.INDICATOR_EMPTY = 'Indicatore vuoto'
 L.INDICATOR_GENERIC = 'Indicatore'
+
+L.MENU_CATEGORY_ADDON = 'Advanced Raid Frames'
+L.MENU_CATEGORY_DEFAULT_FRAMES = 'Frame predefiniti'
+L.MENU_CATEGORY_DESIGNER = 'Designer'
+L.MENU_CATEGORY_OTHER_FRAMES = 'Altri frame'
+
+L.MENU_UTILITIES_HEADER = 'Utilità'
+L.MENU_UTILITIES_DESC = 'Usa questi strumenti per profilare l’elaborazione delle aure, controllare le metriche di runtime in chat e reimpostare i dati dell’addon durante i test. Il reset richiede conferma e ricarica l’interfaccia.'
+L.MENU_BUTTON_TOGGLE_PROFILING = 'Attiva/Disattiva profiling'
+L.MENU_BUTTON_PRINT_PROFILING = 'Mostra statistiche profiling'
+L.MENU_BUTTON_RESET_PROFILING = 'Reimposta statistiche profiling'
+L.MENU_BUTTON_RESET_DATA = 'Reimposta dati addon'

@@ -2,10 +2,18 @@ local _, NS = ...
 local Data = NS.Data
 local Ui = NS.Ui
 local Util = NS.Util
-local Core = NS.Core
 local API = NS.API
 local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
+
+local pairs = pairs
+local ipairs = ipairs
+local wipe = wipe
+local next = next
+local type = type
+
+local GetAuraDataByAuraInstanceID = C_UnitAuras.GetAuraDataByAuraInstanceID
+local GetAuraDuration = C_UnitAuras.GetAuraDuration
 
 local function GetFirstSpellForSpec(spec)
     if spec and Data.specInfo[spec] and Data.specInfo[spec].auras then
@@ -64,6 +72,7 @@ function Util.NormalizeSavedIndicators()
 end
 
 function Util.UpdateIndicatorsForUnit(unit, updateInfo)
+    local profileStart = Util.ProfileStart()
     local unitList = Util.GetRelevantList()
     local auras = Data.state.auras[unit]
     local elements = unitList[unit]
@@ -188,9 +197,9 @@ function Util.UpdateIndicatorsForUnit(unit, updateInfo)
 
             for instanceId, buff in pairs(auras or {}) do
                 SetTrackedInstance(instanceId, buff)
-                local auraData = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, instanceId)
+                local auraData = GetAuraDataByAuraInstanceID(unit, instanceId)
                 if auraData then
-                    SetSpellDisplayData(elements.auras, durationMap, buff, auraData, C_UnitAuras.GetAuraDuration(unit, instanceId))
+                    SetSpellDisplayData(elements.auras, durationMap, buff, auraData, GetAuraDuration(unit, instanceId))
                 else
                     local previousSpell = previousInstanceMap and previousInstanceMap[instanceId]
                     if previousSpell == buff and previousAuras and previousAuras[buff] then
@@ -205,9 +214,9 @@ function Util.UpdateIndicatorsForUnit(unit, updateInfo)
                     if spell then
                         local fallbackInstanceId = spellInstanceAny[spell]
                         if fallbackInstanceId then
-                            local fallbackAuraData = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, fallbackInstanceId)
+                            local fallbackAuraData = GetAuraDataByAuraInstanceID(unit, fallbackInstanceId)
                             if fallbackAuraData then
-                                SetSpellDisplayData(elements.auras, durationMap, spell, fallbackAuraData, C_UnitAuras.GetAuraDuration(unit, fallbackInstanceId))
+                                SetSpellDisplayData(elements.auras, durationMap, spell, fallbackAuraData, GetAuraDuration(unit, fallbackInstanceId))
                             else
                                 ClearCurrentSpellDisplayData(spell)
                             end
@@ -222,18 +231,18 @@ function Util.UpdateIndicatorsForUnit(unit, updateInfo)
                 local spell = (auras and auras[instanceId]) or instanceMap[instanceId]
                 if spell then
                     local hasTrackedState = auras and auras[instanceId] ~= nil
-                    local auraData = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, instanceId)
+                    local auraData = GetAuraDataByAuraInstanceID(unit, instanceId)
                     if auraData then
                         SetTrackedInstance(instanceId, spell)
-                        SetSpellDisplayData(elements.auras, durationMap, spell, auraData, C_UnitAuras.GetAuraDuration(unit, instanceId))
+                        SetSpellDisplayData(elements.auras, durationMap, spell, auraData, GetAuraDuration(unit, instanceId))
                     else
                         if not hasTrackedState then
                             RemoveTrackedInstance(instanceId)
                             local fallbackInstanceId = spellInstanceAny[spell]
                             if fallbackInstanceId then
-                                local fallbackAuraData = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, fallbackInstanceId)
+                                local fallbackAuraData = GetAuraDataByAuraInstanceID(unit, fallbackInstanceId)
                                 if fallbackAuraData then
-                                    SetSpellDisplayData(elements.auras, durationMap, spell, fallbackAuraData, C_UnitAuras.GetAuraDuration(unit, fallbackInstanceId))
+                                    SetSpellDisplayData(elements.auras, durationMap, spell, fallbackAuraData, GetAuraDuration(unit, fallbackInstanceId))
                                 else
                                     if not HasTrackedStateForSpell(spell) then
                                         ClearCurrentSpellDisplayData(spell)
@@ -274,6 +283,8 @@ function Util.UpdateIndicatorsForUnit(unit, updateInfo)
         end
         API.Callbacks:Fire('HARF_UNIT_AURA', unit, elements.auras)
     end
+
+    Util.ProfileStop('UpdateIndicatorsForUnit', profileStart)
 end
 
 --What a stupid fucking function to have to write

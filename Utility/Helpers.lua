@@ -6,6 +6,15 @@ local Core = NS.Core
 local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
+local pairs = pairs
+local ipairs = ipairs
+local tonumber = tonumber
+local table_insert = table.insert
+local table_sort = table.sort
+local type = type
+
+local IsAuraFilteredOutByInstanceID = C_UnitAuras.IsAuraFilteredOutByInstanceID
+
 local auraSignatureLookupBySpec = {}
 
 local function MakeAuraSignature(pointCount, passesRaid, passesRic, passesExt, passesDisp)
@@ -91,7 +100,7 @@ function Util.GetSpotlightNames()
         local raidNameList = {}
         if Options.spotlight.names then
             for name, _ in pairs(Options.spotlight.names) do
-                table.insert(raidNameList, { text = name })
+                table_insert(raidNameList, { text = name })
             end
         end
         for frameString, _ in pairs(frames) do
@@ -99,7 +108,7 @@ function Util.GetSpotlightNames()
                 local frame = _G[frameString]
                 local unitName = UnitName(frame.unit)
                 if not UnitIsUnit(frame.unit, 'player') and not Options.spotlight.names[unitName] then
-                    table.insert(raidNameList, { text = unitName })
+                    table_insert(raidNameList, { text = unitName })
                 end
             end
         end
@@ -137,9 +146,9 @@ function Util.MapSpotlightAnchors()
     for type, list in pairs(Data.spotlightAnchors) do
         local framesIndexes = {}
         for index in pairs(list) do
-            table.insert(framesIndexes, tonumber(index)) --Insert the frame number into a new list
+            table_insert(framesIndexes, tonumber(index)) --Insert the frame number into a new list
         end
-        table.sort(framesIndexes) --Sort the numbers
+        table_sort(framesIndexes) --Sort the numbers
         local orderedFrameList = {}
         local order = 1
         --Now we use the ordered indices to list the frames in the order they're supposed to go
@@ -287,22 +296,22 @@ end
 
 --it says "is from player" but really we are checking it is not a trash buff
 function Util.IsAuraFromPlayer(unit, auraId)
-    local passesRic = not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, auraId, 'PLAYER|HELPFUL|RAID_IN_COMBAT')
-    local passesRaid = not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, auraId, 'PLAYER|HELPFUL|RAID')
+    local passesRic = not IsAuraFilteredOutByInstanceID(unit, auraId, 'PLAYER|HELPFUL|RAID_IN_COMBAT')
+    local passesRaid = not IsAuraFilteredOutByInstanceID(unit, auraId, 'PLAYER|HELPFUL|RAID')
     return passesRic or passesRaid
 end
 
 --We sus out the buff, match the info we can get from it
 function Util.MatchAuraInfo(unit, aura)
-    local passesRaid = not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|RAID')
-    local passesRic = not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|RAID_IN_COMBAT')
+    local passesRaid = not IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|RAID')
+    local passesRic = not IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|RAID_IN_COMBAT')
 
     if not (passesRaid or passesRic) then
         return nil
     end
 
-    local passesExt = not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|EXTERNAL_DEFENSIVE')
-    local passesDisp = not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|RAID_PLAYER_DISPELLABLE')
+    local passesExt = not IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|EXTERNAL_DEFENSIVE')
+    local passesDisp = not IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|RAID_PLAYER_DISPELLABLE')
     local pointCount = #aura.points
 
     local spec = Data.playerSpec

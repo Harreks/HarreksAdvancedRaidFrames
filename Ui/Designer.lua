@@ -544,7 +544,7 @@ local function buildDesignerEqol(parentCategory)
     local EQOL = getEqolSettingsMode()
     EQOL:SetVariablePrefix('harfDesigner_')
 
-    local category = EQOL:CreateCategory(parentCategory, 'Designer', false)
+    local category = EQOL:CreateCategory(parentCategory, L.MENU_CATEGORY_DESIGNER, false)
     Ui.DesignerEqolCategory = category
 
     Ui.DesignerTrackedSettings = {}

@@ -1,7 +1,7 @@
 local unitIndexMap = {}
 local dandersIndexMap = {}
-local LGF = LibStub("LibGetFrame-1.0")
-local LCG = LibStub('LibCustomGlow-1.0')
+local LGF = LibStub("LibGetFrame-1.0", true)
+local LCG = LibStub('LibCustomGlow-1.0', true)
 
 local dandersRecoloringFunc = function(frame, shouldBeColored, color)
     if frame and DandersFrames_IsReady and DandersFrames_IsReady() then
@@ -14,7 +14,7 @@ local dandersRecoloringFunc = function(frame, shouldBeColored, color)
 end
 
 local recoloringFunc = function(frame, shouldBeColored, color)
-    if frame then
+    if frame and LCG then
         if shouldBeColored then
             LCG.PixelGlow_Start(frame, {color.r, color.g, color.b, color.a})
         else
@@ -33,10 +33,14 @@ local excludedFrames = {
 }
 
 local function GetFrameScanCallback()
+    if not AdvancedRaidFramesAPI or not LGF then
+        return
+    end
+
     for unit, index in pairs(unitIndexMap) do
         if unit and index then
-            local frame = LGF.GetUnitFrame('player')
-            if frame then
+            local frame = LGF.GetUnitFrame(unit)
+            if frame and LCG then
                 LCG.PixelGlow_Stop(frame)
             end
             AdvancedRaidFramesAPI.UnregisterFrameForUnit(unit, index)
@@ -74,13 +78,18 @@ groupTracker:RegisterEvent('GROUP_ROSTER_UPDATE')
 groupTracker:RegisterEvent('PLAYER_LOGIN')
 groupTracker:SetScript('OnEvent', function(_, event)
 
-    if event == 'PLAYER_LOGIN' and not DandersFrames_IsReady then
-        LGF.RegisterCallback('HarreksAdvancedRaidFrames', 'GETFRAME_REFRESH', GetFrameScanCallback)
+    if not AdvancedRaidFramesAPI then
+        return
     end
 
-    if AdvancedRaidFramesAPI then
-        --If we have Danders
-        if DandersFrames_IsReady and DandersFrames_IsReady() then
+    if event == 'PLAYER_LOGIN' and not DandersFrames_IsReady then
+        if LGF and LGF.RegisterCallback then
+            LGF.RegisterCallback('HarreksAdvancedRaidFrames', 'GETFRAME_REFRESH', GetFrameScanCallback)
+        end
+    end
+
+    --If we have Danders
+    if DandersFrames_IsReady and DandersFrames_IsReady() and DandersFrames_GetFrameForUnit then
             C_Timer.After(1, function()
                 for unit, index in pairs(dandersIndexMap) do
                     if unit and index then
@@ -114,7 +123,8 @@ groupTracker:SetScript('OnEvent', function(_, event)
                     end
                 end
             end)
-        else
+    else
+        if LGF and LGF.ScanForUnitFrames then
             LGF:ScanForUnitFrames()
         end
     end

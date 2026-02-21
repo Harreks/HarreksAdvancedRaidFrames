@@ -45,3 +45,15 @@ L.ANCHOR_BOTTOMRIGHT = 'Bottom Right'
 
 L.INDICATOR_EMPTY = 'Empty Indicator'
 L.INDICATOR_GENERIC = 'Indicator'
+
+L.MENU_CATEGORY_ADDON = 'Advanced Raid Frames'
+L.MENU_CATEGORY_DEFAULT_FRAMES = 'Default Frames'
+L.MENU_CATEGORY_DESIGNER = 'Designer'
+L.MENU_CATEGORY_OTHER_FRAMES = 'Other Frames'
+
+L.MENU_UTILITIES_HEADER = 'Utilities'
+L.MENU_UTILITIES_DESC = 'Use these tools to profile aura processing, inspect runtime metrics in chat, and reset addon data when testing. Data reset requires confirmation and reloads the UI.'
+L.MENU_BUTTON_TOGGLE_PROFILING = 'Toggle Profiling'
+L.MENU_BUTTON_PRINT_PROFILING = 'Print Profile Stats'
+L.MENU_BUTTON_RESET_PROFILING = 'Reset Profile Stats'
+L.MENU_BUTTON_RESET_DATA = 'Reset Addon Data'

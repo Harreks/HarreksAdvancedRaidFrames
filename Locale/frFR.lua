@@ -45,3 +45,15 @@ L.ANCHOR_BOTTOMRIGHT = 'Bas droite'
 
 L.INDICATOR_EMPTY = 'Indicateur vide'
 L.INDICATOR_GENERIC = 'Indicateur'
+
+L.MENU_CATEGORY_ADDON = 'Advanced Raid Frames'
+L.MENU_CATEGORY_DEFAULT_FRAMES = 'Cadres par défaut'
+L.MENU_CATEGORY_DESIGNER = 'Designer'
+L.MENU_CATEGORY_OTHER_FRAMES = 'Autres cadres'
+
+L.MENU_UTILITIES_HEADER = 'Utilitaires'
+L.MENU_UTILITIES_DESC = 'Utilisez ces outils pour profiler le traitement des auras, consulter les métriques d’exécution dans le chat et réinitialiser les données de l’addon pendant les tests. La réinitialisation demande une confirmation et recharge l’interface.'
+L.MENU_BUTTON_TOGGLE_PROFILING = 'Activer/Désactiver le profilage'
+L.MENU_BUTTON_PRINT_PROFILING = 'Afficher les statistiques de profilage'
+L.MENU_BUTTON_RESET_PROFILING = 'Réinitialiser les statistiques de profilage'
+L.MENU_BUTTON_RESET_DATA = 'Réinitialiser les données de l’addon'

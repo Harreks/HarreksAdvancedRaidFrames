@@ -45,3 +45,15 @@ L.ANCHOR_BOTTOMRIGHT = 'Снизу справа'
 
 L.INDICATOR_EMPTY = 'Пустой индикатор'
 L.INDICATOR_GENERIC = 'Индикатор'
+
+L.MENU_CATEGORY_ADDON = 'Advanced Raid Frames'
+L.MENU_CATEGORY_DEFAULT_FRAMES = 'Стандартные фреймы'
+L.MENU_CATEGORY_DESIGNER = 'Дизайнер'
+L.MENU_CATEGORY_OTHER_FRAMES = 'Другие фреймы'
+
+L.MENU_UTILITIES_HEADER = 'Утилиты'
+L.MENU_UTILITIES_DESC = 'Используйте эти инструменты для профилирования обработки аур, просмотра метрик выполнения в чате и сброса данных аддона во время тестов. Сброс требует подтверждения и перезагружает интерфейс.'
+L.MENU_BUTTON_TOGGLE_PROFILING = 'Вкл./выкл. профилирование'
+L.MENU_BUTTON_PRINT_PROFILING = 'Показать статистику профилирования'
+L.MENU_BUTTON_RESET_PROFILING = 'Сбросить статистику профилирования'
+L.MENU_BUTTON_RESET_DATA = 'Сбросить данные аддона'

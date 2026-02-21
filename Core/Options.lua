@@ -80,6 +80,52 @@ function Core.ConfirmResetDatabase()
     StaticPopup_Show('HARF_CONFIRM_RESET_DB')
 end
 
+function Core.OpenSpotlightEditMode()
+    if InCombatLockdown() then
+        Print('Cannot open Edit Mode in combat.')
+        return
+    end
+
+    if C_AddOns and C_AddOns.LoadAddOn and C_AddOns.IsAddOnLoaded and not C_AddOns.IsAddOnLoaded('Blizzard_EditMode') then
+        C_AddOns.LoadAddOn('Blizzard_EditMode')
+    end
+
+    local spotlightFrame = Ui.GetSpotlightFrame and Ui.GetSpotlightFrame()
+    local LEM = (LibEQOL and LibEQOL.EditMode) or LibStub('LibEQOLEditMode-1.0', true)
+
+    if EditModeManagerFrame and not EditModeManagerFrame:IsShown() then
+        EditModeManagerFrame:Show()
+    end
+
+    local function TrySelectSpotlight()
+        if not (LEM and spotlightFrame and LEM.selectionRegistry) then
+            return
+        end
+
+        local selection = LEM.selectionRegistry[spotlightFrame]
+        if not selection then
+            return
+        end
+
+        if EditModeManagerFrame and EditModeManagerFrame.ClearSelectedSystem then
+            EditModeManagerFrame:ClearSelectedSystem()
+        end
+
+        selection.parent:SetMovable(true)
+        selection:ShowSelected(true)
+        selection.isSelected = true
+
+        if LEM.internal and LEM.internal.dialog and LEM.internal.dialog.Update then
+            LEM.internal.dialog:Update(selection)
+        end
+    end
+
+    TrySelectSpotlight()
+    if C_Timer and C_Timer.After then
+        C_Timer.After(0, TrySelectSpotlight)
+    end
+end
+
 --Controls visibility on buff icons, takes how many buffs are to be shown and the element list of the frame to be modified
 function Core.ToggleBuffIcons(amount, _, elements)
     for i = 1, 6 do

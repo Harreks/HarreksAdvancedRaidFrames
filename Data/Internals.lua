@@ -4,6 +4,7 @@ local Ui = NS.Ui
 local Util = NS.Util
 local Core = NS.Core
 local API = NS.API
+local L = NS.L
 local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
@@ -307,6 +308,19 @@ Data.settings = {
         default = false,
         tooltip = 'Replaces the unit name for class-colored ones.',
         func = 'ColorNames'
+    },
+    {
+        key = 'spotlightHeader',
+        type = 'header',
+        text = L.SPOTLIGHT_SETTINGS_HEADER
+    },
+    {
+        key = 'spotlightOpenEditMode',
+        type = 'button',
+        text = L.SPOTLIGHT_SETTINGS_BUTTON_TITLE,
+        content = L.SPOTLIGHT_SETTINGS_BUTTON,
+        tooltip = L.SPOTLIGHT_SETTINGS_BUTTON_TOOLTIP,
+        func = 'OpenSpotlightEditMode'
     },
     {
         key = 'miscOptionsHeader',

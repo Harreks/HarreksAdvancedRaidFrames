@@ -57,3 +57,9 @@ L.MENU_BUTTON_TOGGLE_PROFILING = 'Вкл./выкл. профилирование
 L.MENU_BUTTON_PRINT_PROFILING = 'Показать статистику профилирования'
 L.MENU_BUTTON_RESET_PROFILING = 'Сбросить статистику профилирования'
 L.MENU_BUTTON_RESET_DATA = 'Сбросить данные аддона'
+
+L.SPOTLIGHT_SETTINGS_HEADER = 'Spotlight'
+L.SPOTLIGHT_SETTINGS_DESC = 'Spotlight помогает выбрать конкретных участников рейда для приоритета, в первую очередь для поддерживающих баффов Вызывателя специализации Усиление, таких как Prescience.'
+L.SPOTLIGHT_SETTINGS_BUTTON_TITLE = 'Изменить якорь Spotlight'
+L.SPOTLIGHT_SETTINGS_BUTTON = 'Открыть Spotlight в режиме редактирования'
+L.SPOTLIGHT_SETTINGS_BUTTON_TOOLTIP = 'Открывает режим редактирования и переводит к якорю Spotlight, чтобы его можно было переместить. Используйте список игроков для выбора конкретных участников рейда (полезно для баффов Вызывателя специализации Усиление, например Prescience). Список заполняется только в рейде.'

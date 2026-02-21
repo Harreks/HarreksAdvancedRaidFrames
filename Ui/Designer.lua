@@ -113,6 +113,27 @@ local function updateAfterDesignerChange(refreshList)
     end
 end
 
+local function refreshDesignerColorOverrideControls()
+    if not SettingsPanel or not SettingsPanel:IsShown() then
+        return
+    end
+
+    local queue = { SettingsPanel }
+    while #queue > 0 do
+        local frame = table.remove(queue)
+        if frame and frame.RefreshAll then
+            pcall(frame.RefreshAll, frame)
+        end
+
+        if frame and frame.GetChildren then
+            local children = { frame:GetChildren() }
+            for _, child in ipairs(children) do
+                table.insert(queue, child)
+            end
+        end
+    end
+end
+
 local function stopSelectedPreviewGlow(widget)
     if not (widget and widget.HighlightedPreviewElement and LCG) then
         return
@@ -152,6 +173,29 @@ local function applySelectedPreviewGlow(widget)
         'harfDesignerPreviewSelected'
     )
     widget.HighlightedPreviewElement = selectedElement
+end
+
+local function bindPreviewSelectionHandlers(widget, onSelect)
+    if not (widget and widget.Overlay and widget.Overlay.elements and onSelect) then
+        return
+    end
+
+    for index, element in ipairs(widget.Overlay.elements) do
+        if element and element.EnableMouse and element.SetScript then
+            local isHealthColorIndicator = element.type == 'HealthColorIndicator'
+            element:EnableMouse(not isHealthColorIndicator)
+            if not isHealthColorIndicator then
+                element:SetScript('OnMouseDown', function(_, button)
+                    if button ~= 'LeftButton' then
+                        return
+                    end
+                    onSelect(index)
+                end)
+            else
+                element:SetScript('OnMouseDown', nil)
+            end
+        end
+    end
 end
 
 local function ensureDesignerPreviewWidget()
@@ -516,6 +560,13 @@ local function buildDesignerEqol(parentCategory)
         end
     end
 
+    local function setSelectedIndicatorIndex(index)
+        Options.designerSelectedIndicatorIndex = tonumber(index) or 1
+        notifyTrackedSettings()
+        refreshDesignerColorOverrideControls()
+        updateAfterDesignerChange(true)
+    end
+
     ensureDesignerPreviewWidget()
 
     Ui.RefreshDesignerPreview = function()
@@ -559,6 +610,7 @@ local function buildDesignerEqol(parentCategory)
             overlay:AttachToFrame(widget.ExampleFrame)
             overlay:ShowPreview()
             widget.Overlay = overlay
+            bindPreviewSelectionHandlers(widget, setSelectedIndicatorIndex)
             applySelectedPreviewGlow(widget)
         end
 
@@ -602,9 +654,7 @@ local function buildDesignerEqol(parentCategory)
             return getSelectedIndicatorIndex() or 0
         end,
         set = function(value)
-            Options.designerSelectedIndicatorIndex = tonumber(value) or 1
-            notifyTrackedSettings()
-            updateAfterDesignerChange(true)
+            setSelectedIndicatorIndex(value)
         end,
         height = 320,
         isEnabled = selectedIndicatorExists

@@ -193,7 +193,9 @@ Ui.SquareIndicatorPool = CreateFramePool('Frame', nil, nil,
                         duration = C_UnitAuras.GetAuraDuration(unit, aura.auraInstanceID)
                     end
                     if self.cooldownStyle == 'Deplete' then
-                        self.cooldown:Hide()
+                        self.cooldown:SetDrawSwipe(false)
+                        self.cooldown:SetDrawEdge(false)
+                        self.cooldown:SetDrawBling(false)
                         self:ApplyDepleteDirection()
                         if duration and self.depleteBar and self.depleteBar.SetTimerDuration then
                             self.depleteBar:SetTimerDuration(
@@ -202,15 +204,27 @@ Ui.SquareIndicatorPool = CreateFramePool('Frame', nil, nil,
                                 Enum.StatusBarTimerDirection.RemainingTime
                             )
                             self.depleteBar:Show()
+                            if self.showCooldownText then
+                                self.cooldown:SetCooldownFromDurationObject(duration)
+                                self.cooldown:Show()
+                            else
+                                self.cooldown:Hide()
+                            end
                         else
                             self.depleteBar:Hide()
+                            self.cooldown:Hide()
                         end
                     else
                         self.depleteBar:Hide()
+                        self.cooldown:SetDrawSwipe(true)
+                        self.cooldown:SetDrawEdge(false)
+                        self.cooldown:SetDrawBling(false)
                         if duration then
                             self.cooldown:SetCooldownFromDurationObject(duration)
                             self:ApplySwipeStyle()
                             self.cooldown:Show()
+                        else
+                            self.cooldown:Hide()
                         end
                     end
                 else
@@ -225,7 +239,9 @@ Ui.SquareIndicatorPool = CreateFramePool('Frame', nil, nil,
         frame.ShowPreview = function(self)
             if self.showCooldown then
                 if self.cooldownStyle == 'Deplete' then
-                    self.cooldown:Hide()
+                    self.cooldown:SetDrawSwipe(false)
+                    self.cooldown:SetDrawEdge(false)
+                    self.cooldown:SetDrawBling(false)
                     self:ApplyDepleteDirection()
                     if self.depleteBar and self.depleteBar.SetTimerDuration then
                         local duration = C_DurationUtil.CreateDuration()
@@ -236,11 +252,21 @@ Ui.SquareIndicatorPool = CreateFramePool('Frame', nil, nil,
                             Enum.StatusBarTimerDirection.RemainingTime
                         )
                         self.depleteBar:Show()
+                        if self.showCooldownText then
+                            self.cooldown:SetCooldown(GetTime(), 30)
+                            self.cooldown:Show()
+                        else
+                            self.cooldown:Hide()
+                        end
                     else
                         self.depleteBar:Hide()
+                        self.cooldown:Hide()
                     end
                 else
                     self.depleteBar:Hide()
+                    self.cooldown:SetDrawSwipe(true)
+                    self.cooldown:SetDrawEdge(false)
+                    self.cooldown:SetDrawBling(false)
                     self.cooldown:SetCooldown(GetTime(), 30)
                     self:ApplySwipeStyle()
                     self.cooldown:Show()

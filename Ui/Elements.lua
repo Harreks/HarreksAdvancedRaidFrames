@@ -6,16 +6,18 @@ local Util = NS.Util
 local indicatorOverlayRenderers = {
     icon = function(overlay, indicatorData)
         local newIcon = Ui.IconIndicatorPool:Acquire()
+        local showText = indicatorData.showText ~= false
+        local showTexture = indicatorData.showTexture ~= false
         newIcon.spell = indicatorData.Spell
         newIcon:SetParent(overlay)
         newIcon:SetSize(indicatorData.Size, indicatorData.Size)
         newIcon:SetPoint(indicatorData.Position, overlay, indicatorData.Position, indicatorData.xOffset, indicatorData.yOffset)
         newIcon.cooldown:SetScale(indicatorData.textSize)
-        newIcon.cooldown:SetHideCountdownNumbers(not indicatorData.showText)
-        newIcon.texture:SetShown(indicatorData.showTexture)
-        newIcon.cooldown:SetDrawSwipe(indicatorData.showTexture)
-        newIcon.cooldown:SetDrawEdge(indicatorData.showTexture)
-        newIcon.cooldown:SetDrawBling(indicatorData.showTexture)
+        newIcon.cooldown:SetHideCountdownNumbers(not showText)
+        newIcon.texture:SetShown(showTexture)
+        newIcon.cooldown:SetDrawSwipe(showTexture)
+        newIcon.cooldown:SetDrawEdge(showTexture)
+        newIcon.cooldown:SetDrawBling(showTexture)
         return newIcon
     end,
     square = function(overlay, indicatorData)

@@ -645,7 +645,7 @@ local function buildDesignerEqol(parentCategory)
         height = 260
     })
 
-    EQOL:CreateScrollDropdown(category, {
+    local _, selectedIndicatorSetting = EQOL:CreateScrollDropdown(category, {
         key = 'selectedIndicator',
         name = L.DESIGNER_INDICATORS,
         default = 1,
@@ -659,6 +659,7 @@ local function buildDesignerEqol(parentCategory)
         height = 320,
         isEnabled = selectedIndicatorExists
     })
+    trackSetting(selectedIndicatorSetting)
 
     EQOL:CreateButton(category, {
         key = 'createIndicator',
@@ -668,10 +669,7 @@ local function buildDesignerEqol(parentCategory)
                 local spec = ensureEditingSpec()
                 local indicators = ensureSpecIndicators(spec)
                 table.insert(indicators, Util.GetDefaultSettingsForIndicator(indicatorType or 'icon'))
-                Options.designerSelectedIndicatorIndex = #indicators
-                notifyTrackedSettings()
-                refreshSettingsDisplay()
-                updateAfterDesignerChange(false)
+                setSelectedIndicatorIndex(#indicators)
             end)
         end
     })
@@ -838,51 +836,16 @@ local function buildDesignerEqol(parentCategory)
     })
     trackSetting(indicatorOffsetSetting)
 
-    local _, indicatorTextSizeSetting = EQOL:CreateSlider(category, {
-        key = 'indicatorTextSize',
-        name = L.LABEL_TEXT_SCALE,
-        default = 1,
-        min = 0.5,
-        max = 3,
-        step = 0.1,
-        formatter = Util.FormatForDisplay,
-        get = function()
-            local indicator = getSelectedIndicator()
-            return indicator and indicator.textSize or 1
-        end,
-        set = function(value)
-            local indicator = getSelectedIndicator()
-            if not indicator then return end
-            indicator.textSize = value
-            updateAfterDesignerChange(false)
-        end,
-        isEnabled = selectedIndicatorExists,
-        expandWith = function()
-            local indicator = getSelectedIndicator()
-            if not indicator then
-                return false
-            end
-
-            if indicator.Type == 'icon' then
-                return indicator.showText ~= false
-            end
-
-            if indicator.Type == 'square' then
-                return indicator.showCooldown and (indicator.showCooldownText ~= false)
-            end
-
-            return false
-        end
-    })
-    trackSetting(indicatorTextSizeSetting)
-
     local _, indicatorShowTextSetting = EQOL:CreateCheckbox(category, {
         key = 'indicatorShowText',
         name = L.LABEL_SHOW_TEXT,
         default = true,
         get = function()
             local indicator = getSelectedIndicator()
-            return indicator and indicator.showText or true
+            if not indicator then
+                return true
+            end
+            return indicator.showText ~= false
         end,
         set = function(value)
             local indicator = getSelectedIndicator()
@@ -903,7 +866,10 @@ local function buildDesignerEqol(parentCategory)
         default = true,
         get = function()
             local indicator = getSelectedIndicator()
-            return indicator and indicator.showTexture or true
+            if not indicator then
+                return true
+            end
+            return indicator.showTexture ~= false
         end,
         set = function(value)
             local indicator = getSelectedIndicator()
@@ -996,7 +962,10 @@ local function buildDesignerEqol(parentCategory)
         default = true,
         get = function()
             local indicator = getSelectedIndicator()
-            return indicator and indicator.showCooldownText ~= false or true
+            if not indicator then
+                return true
+            end
+            return indicator.showCooldownText ~= false
         end,
         set = function(value)
             local indicator = getSelectedIndicator()
@@ -1011,6 +980,44 @@ local function buildDesignerEqol(parentCategory)
         end
     })
     trackSetting(indicatorShowCooldownTextSetting)
+
+    local _, indicatorTextSizeSetting = EQOL:CreateSlider(category, {
+        key = 'indicatorTextSize',
+        name = L.LABEL_TEXT_SCALE,
+        default = 1,
+        min = 0.5,
+        max = 3,
+        step = 0.1,
+        formatter = Util.FormatForDisplay,
+        get = function()
+            local indicator = getSelectedIndicator()
+            return indicator and indicator.textSize or 1
+        end,
+        set = function(value)
+            local indicator = getSelectedIndicator()
+            if not indicator then return end
+            indicator.textSize = value
+            updateAfterDesignerChange(false)
+        end,
+        isEnabled = selectedIndicatorExists,
+        expandWith = function()
+            local indicator = getSelectedIndicator()
+            if not indicator then
+                return false
+            end
+
+            if indicator.Type == 'icon' then
+                return indicator.showText ~= false
+            end
+
+            if indicator.Type == 'square' then
+                return indicator.showCooldown and (indicator.showCooldownText ~= false)
+            end
+
+            return false
+        end
+    })
+    trackSetting(indicatorTextSizeSetting)
 
     local _, barScaleSetting = EQOL:CreateScrollDropdown(category, {
         key = 'barScale',
@@ -1127,14 +1134,15 @@ local function buildDesignerEqol(parentCategory)
             if not indicator then return end
 
             table.remove(indicators, index)
-            if #indicators == 0 then
-                Options.designerSelectedIndicatorIndex = 1
-            else
-                Options.designerSelectedIndicatorIndex = 1
+            local nextIndex = 1
+            if #indicators > 0 then
+                if index > #indicators then
+                    nextIndex = #indicators
+                else
+                    nextIndex = index
+                end
             end
-
-            refreshSettingsDisplay()
-            updateAfterDesignerChange(false)
+            setSelectedIndicatorIndex(nextIndex)
         end,
         isEnabled = selectedIndicatorExists
     })

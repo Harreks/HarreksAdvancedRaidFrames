@@ -95,27 +95,27 @@ function Util.AreTimestampsEqual(time1, time2, delay)
 end
 
 function Util.GetSpotlightNames()
+    local spotlight = Options.spotlight or {}
+    local selectedNames = spotlight.names or {}
+    local spotlightNameList = {}
+    for name, _ in pairs(selectedNames) do
+        table_insert(spotlightNameList, { text = name })
+    end
+
     if IsInRaid() then
         local frames = Util.GetRelevantList()
-        local raidNameList = {}
-        if Options.spotlight.names then
-            for name, _ in pairs(Options.spotlight.names) do
-                table_insert(raidNameList, { text = name })
-            end
-        end
         for frameString, _ in pairs(frames) do
             if _G[frameString] then
                 local frame = _G[frameString]
                 local unitName = UnitName(frame.unit)
-                if not UnitIsUnit(frame.unit, 'player') and not Options.spotlight.names[unitName] then
-                    table_insert(raidNameList, { text = unitName })
+                if unitName and not UnitIsUnit(frame.unit, 'player') and not selectedNames[unitName] then
+                    table_insert(spotlightNameList, { text = unitName })
                 end
             end
         end
-        return raidNameList
-    else
-        return Options.spotlight.names
     end
+
+    return spotlightNameList
 end
 
 --Use the spotlight name list to map out where each frame is supposed to go

@@ -84,6 +84,24 @@ function Core.InstallTrackers()
 
                 local spotlightFrame = Ui.GetSpotlightFrame()
                 local LEM = (LibEQOL and LibEQOL.EditMode) or LibStub('LibEQOLEditMode-1.0')
+
+                if not Options.spotlight then
+                    Options.spotlight = {
+                        pos = { p = 'CENTER', x = 0, y = 0 },
+                        names = {},
+                        grow = 'right'
+                    }
+                end
+
+                if type(Options.spotlight.names) ~= 'table' then
+                    Options.spotlight.names = {}
+                end
+
+                local spotlightNameValues = Util.GetSpotlightNames()
+                if type(spotlightNameValues) ~= 'table' then
+                    spotlightNameValues = {}
+                end
+
                 LEM:RegisterCallback('enter', function()
                     spotlightFrame:SetAlpha(1)
                 end)
@@ -120,12 +138,19 @@ function Core.InstallTrackers()
                         multiple = true,
                         get = function()
                             local nameList = {}
-                            for name, _ in pairs(Options.spotlight.names) do
+                            local selectedNames = (Options.spotlight and Options.spotlight.names) or {}
+                            for name, _ in pairs(selectedNames) do
                                 table.insert(nameList, name)
                             end
                             return nameList
                         end,
                         set = function(_, value)
+                            if not Options.spotlight then
+                                Options.spotlight = { pos = { p = 'CENTER', x = 0, y = 0 }, names = {}, grow = 'right' }
+                            end
+                            if type(Options.spotlight.names) ~= 'table' then
+                                Options.spotlight.names = {}
+                            end
                             if Options.spotlight.names[value] then
                                 Options.spotlight.names[value] = nil
                             else
@@ -133,7 +158,7 @@ function Core.InstallTrackers()
                             end
                             Util.MapSpotlightAnchors()
                         end,
-                        values = Util.GetSpotlightNames
+                        values = spotlightNameValues
                     },
                     {
                         name = 'Grow Direction',

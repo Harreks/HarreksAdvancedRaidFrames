@@ -125,6 +125,7 @@ end
 function Ui.GetSpotlightFrame()
     if not Ui.SpotlightFrame then
         local spotlightFrame = CreateFrame('Frame', 'AdvancedRaidFramesSpotlight', UIParent, 'InsetFrameTemplate')
+        spotlightFrame.editModeName = 'Advanced Raid Frames Spotlight'
         spotlightFrame:SetSize(200, 50)
         spotlightFrame:SetPoint('CENTER', UIParent, 'CENTER')
         spotlightFrame.text = spotlightFrame:CreateFontString(nil, 'OVERLAY', 'GameFontHighlight')

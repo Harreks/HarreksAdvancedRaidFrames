@@ -4,6 +4,7 @@ local Ui = NS.Ui
 local Util = NS.Util
 local Core = NS.Core
 local API = NS.API
+local L = NS.L
 local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
@@ -120,12 +121,17 @@ Data.indicatorTypeSettings = {
     square = {
         defaults = {
             Color = { r = 0, g = 1, b = 0, a = 1 },
+            BackgroundColor = { r = 0, g = 0, b = 0, a = 0.8 },
             Position = 'CENTER',
             Size = 25,
             xOffset = 0,
             yOffset = 0,
             textSize = 1,
-            showCooldown = false
+            showText = false,
+                showCooldown = false,
+                showCooldownText = true,
+                cooldownStyle = 'Swipe',
+                depleteDirection = 'Right to Left'
         },
         controls = {
             { controlType = 'SpellSelector', setting = 'Spell', row = 1 },
@@ -135,12 +141,14 @@ Data.indicatorTypeSettings = {
             { controlType = 'Slider', sliderType = 'xOffset', setting = 'xOffset', row = 1 },
             { controlType = 'Slider', sliderType = 'yOffset', setting = 'yOffset', row = 1 },
             { controlType = 'Slider', sliderType = 'textSize', setting = 'textSize', row = 2 },
-            { controlType = 'Checkbox', setting = 'showCooldown', text = 'Show Cooldown', row = 2 }
+            { controlType = 'Checkbox', setting = 'showCooldown', text = 'Show Cooldown', row = 2 },
+            { controlType = 'Checkbox', setting = 'showText', text = 'Show Text', row = 2 }
         }
     },
     bar = {
         defaults = {
             Color = { r = 0, g = 1, b = 0, a = 1 },
+            BackgroundColor = { r = 0, g = 0, b = 0, a = 0.8 },
             Position = 'TOPRIGHT',
             Scale = 'Full',
             Orientation = 'Horizontal',
@@ -179,6 +187,16 @@ Data.dropdownOptions = {
         text = 'Select Bar Orientation',
         default = 'Horizontal',
         options = { 'Horizontal', 'Vertical' }
+    },
+    squareCooldownStyle = {
+        text = 'Select Cooldown Style',
+        default = 'Swipe',
+        options = { 'Swipe', 'Deplete' }
+    },
+    squareDepleteDirection = {
+        text = 'Select Deplete Direction',
+        default = 'Right to Left',
+        options = { 'Right to Left', 'Left to Right', 'Top to Bottom', 'Bottom to Top' }
     },
 }
 
@@ -290,6 +308,19 @@ Data.settings = {
         default = false,
         tooltip = 'Replaces the unit name for class-colored ones.',
         func = 'ColorNames'
+    },
+    {
+        key = 'spotlightHeader',
+        type = 'header',
+        text = L.SPOTLIGHT_SETTINGS_HEADER
+    },
+    {
+        key = 'spotlightOpenEditMode',
+        type = 'button',
+        text = L.SPOTLIGHT_SETTINGS_BUTTON_TITLE,
+        content = L.SPOTLIGHT_SETTINGS_BUTTON,
+        tooltip = L.SPOTLIGHT_SETTINGS_BUTTON_TOOLTIP,
+        func = 'OpenSpotlightEditMode'
     },
     {
         key = 'miscOptionsHeader',

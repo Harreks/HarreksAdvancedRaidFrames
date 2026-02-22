@@ -2,169 +2,80 @@ local _, NS = ...
 local Data = NS.Data
 local Ui = NS.Ui
 local Util = NS.Util
-local Core = NS.Core
-local API = NS.API
-local SavedIndicators = HARFDB.savedIndicators
-local Options = HARFDB.options
-
-function Ui.CreateDropdown(type)
-    local newDropdown = Ui.DropdownSelectorPool:Acquire()
-    newDropdown:Setup(type)
-    return newDropdown
-end
-
-function Ui.CreateSlider(type)
-    local newSlider = Ui.SliderPool:Acquire()
-    newSlider:Setup(type)
-    return newSlider
-end
-
-local indicatorControlFactories = {
-    SpellSelector = function(spec, controlData, savedSettings)
-        local control = Ui.SpellSelectorFramePool:Acquire()
-        control.spec = spec
-        if savedSettings and savedSettings[controlData.setting] then
-            control.selectedOption = savedSettings[controlData.setting]
-        end
-        control:GenerateMenu()
-        return control
-    end,
-    ColorPicker = function(_, controlData, savedSettings)
-        local control = Ui.ColorPickerFramePool:Acquire()
-        if savedSettings and savedSettings[controlData.setting] then
-            local color = savedSettings[controlData.setting]
-            control.Color:SetVertexColor(color.r, color.g, color.b, color.a)
-        end
-        return control
-    end,
-    Dropdown = function(_, controlData, savedSettings)
-        local control = Ui.CreateDropdown(controlData.dropdownType)
-        if savedSettings and savedSettings[controlData.setting] then
-            control.selectedOption = savedSettings[controlData.setting]
-            control:GenerateMenu()
-        end
-        return control
-    end,
-    Slider = function(_, controlData, savedSettings)
-        local control = Ui.CreateSlider(controlData.sliderType)
-        if savedSettings and savedSettings[controlData.setting] ~= nil then
-            control:SetValue(savedSettings[controlData.setting])
-        end
-        return control
-    end,
-    Checkbox = function(_, controlData, savedSettings)
-        local control = Ui.CheckboxPool:Acquire()
-        control.setting = controlData.setting
-        control.Text:SetText(controlData.text)
-        if savedSettings and savedSettings[controlData.setting] ~= nil then
-            control:SetChecked(savedSettings[controlData.setting])
-        end
-        return control
-    end
-}
-
---Create the options for a given indicator type. if saved settings is passed that data is used to init the control
-function Ui.CreateIndicatorOptions(type, spec, savedSettings)
-    local containerFrame = Ui.ContainerFramePool:Acquire()
-    containerFrame.type = type
-    containerFrame.savedSetting.spec = spec
-
-    local typeSettings = Data.indicatorTypeSettings[type]
-    if typeSettings and typeSettings.controls then
-        for _, controlData in ipairs(typeSettings.controls) do
-            local factory = indicatorControlFactories[controlData.controlType]
-            local control = factory and factory(spec, controlData, savedSettings)
-
-            if control then
-                control.indicatorSetting = controlData.setting
-                control.layoutRow = controlData.row or 1
-                table.insert(containerFrame.elements, control)
-            end
-        end
-    end
-
-    local deleteButton = Ui.DeleteIndicatorOptionsButtonPool:Acquire()
-    deleteButton.parent = containerFrame
-    containerFrame.deleteButton = deleteButton
-    containerFrame:AnchorElements()
-
-    -- This is a bit stupid *shrug* should rework it along with the whole indicators
-    -- At least is a fix to that bug i guess?
-    containerFrame.LoadSavedSettings = function(self, saved)
-        local data = saved or (self.savedSetting and self.savedSetting.spec and self.savedSetting.index and SavedIndicators[self.savedSetting.spec] and SavedIndicators[self.savedSetting.spec][self.savedSetting.index])
-        if not data then return end
-        for _, control in ipairs(self.elements) do
-            if control.type == 'SpellSelector' then
-                control.selectedOption = data.Spell
-                control:GenerateMenu()
-            elseif control.type == 'ColorPicker' then
-                if data.Color then
-                    local c = data.Color
-                    control.Color:SetVertexColor(c.r, c.g, c.b, c.a)
-                end
-            elseif control.type == 'Dropdown' then
-                if control.dropdownType == 'iconPosition' and data.Position then
-                    control.selectedOption = data.Position
-                    control:GenerateMenu()
-                elseif control.dropdownType == 'barPosition' and data.Position then
-                    control.selectedOption = data.Position
-                    control:GenerateMenu()
-                elseif control.dropdownType == 'barScale' and data.Scale then
-                    control.selectedOption = data.Scale
-                    control:GenerateMenu()
-                elseif control.dropdownType == 'barOrientation' and data.Orientation then
-                    control.selectedOption = data.Orientation
-                    control:GenerateMenu()
-                end
-            elseif control.type == 'Slider' then
-                if data[control.sliderType] ~= nil then
-                    control:SetValue(data[control.sliderType])
-                end
-            elseif control.type == 'Checkbox' then
-                if data[control.setting] ~= nil then
-                    control:SetChecked(data[control.setting])
-                end
-            end
-        end
-        self:AnchorElements()
-    end
-
-    return containerFrame
-end
 
 local indicatorOverlayRenderers = {
     icon = function(overlay, indicatorData)
         local newIcon = Ui.IconIndicatorPool:Acquire()
+        local showText = indicatorData.showText ~= false
+        local showTexture = indicatorData.showTexture ~= false
         newIcon.spell = indicatorData.Spell
         newIcon:SetParent(overlay)
         newIcon:SetSize(indicatorData.Size, indicatorData.Size)
         newIcon:SetPoint(indicatorData.Position, overlay, indicatorData.Position, indicatorData.xOffset, indicatorData.yOffset)
         newIcon.cooldown:SetScale(indicatorData.textSize)
-        newIcon.cooldown:SetHideCountdownNumbers(not indicatorData.showText)
-        newIcon.texture:SetShown(indicatorData.showTexture)
-        newIcon.cooldown:SetDrawSwipe(indicatorData.showTexture)
-        newIcon.cooldown:SetDrawEdge(indicatorData.showTexture)
-        newIcon.cooldown:SetDrawBling(indicatorData.showTexture)
+        newIcon.cooldown:SetHideCountdownNumbers(not showText)
+        newIcon.texture:SetShown(showTexture)
+        newIcon.cooldown:SetDrawSwipe(showTexture)
+        newIcon.cooldown:SetDrawEdge(showTexture)
+        newIcon.cooldown:SetDrawBling(showTexture)
         return newIcon
     end,
     square = function(overlay, indicatorData)
         local newSquare = Ui.SquareIndicatorPool:Acquire()
         newSquare.spell = indicatorData.Spell
+        local showText = indicatorData.showText ~= false
         local color = indicatorData.Color
+        local backgroundColor = indicatorData.BackgroundColor or { r = 0, g = 0, b = 0, a = 0.8 }
         newSquare:SetParent(overlay)
         newSquare:SetSize(indicatorData.Size, indicatorData.Size)
         newSquare:SetPoint(indicatorData.Position, overlay, indicatorData.Position, indicatorData.xOffset, indicatorData.yOffset)
+        if newSquare.background then
+            newSquare.background:SetColorTexture(backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a)
+        end
         newSquare.texture:SetColorTexture(color.r, color.g, color.b, color.a)
+        newSquare.cooldownSwipeColor = { r = color.r, g = color.g, b = color.b, a = color.a }
         newSquare.showCooldown = indicatorData.showCooldown
+        if indicatorData.showCooldownText == nil then
+            newSquare.showCooldownText = showText
+        else
+            newSquare.showCooldownText = indicatorData.showCooldownText ~= false
+        end
+        newSquare.cooldownStyle = indicatorData.cooldownStyle or 'Swipe'
+        newSquare.depleteDirection = indicatorData.depleteDirection or 'Right to Left'
+        newSquare.texture:SetShown(not newSquare.showCooldown)
+        if newSquare.background then
+            newSquare.background:SetShown(newSquare.showCooldown)
+        end
+        if newSquare.depleteBar and newSquare.depleteBar.SetStatusBarColor then
+            newSquare.depleteBar:SetStatusBarColor(color.r, color.g, color.b, color.a)
+        end
+        if newSquare.ApplyDepleteDirection then
+            newSquare:ApplyDepleteDirection()
+        end
         newSquare.cooldown:SetScale(indicatorData.textSize)
-        newSquare.cooldown:SetShown(indicatorData.showCooldown)
+        newSquare.cooldown:SetHideCountdownNumbers(not newSquare.showCooldownText)
+        newSquare.cooldown:SetReverse(false)
+        newSquare.cooldown:SetDrawSwipe(true)
+        newSquare.cooldown:SetDrawEdge(false)
+        newSquare.cooldown:SetDrawBling(false)
+        if newSquare.cooldown.SetSwipeColor then
+            newSquare.cooldown:SetSwipeColor(newSquare.cooldownSwipeColor.r, newSquare.cooldownSwipeColor.g, newSquare.cooldownSwipeColor.b, newSquare.cooldownSwipeColor.a)
+        end
+        newSquare.cooldown:SetShown(indicatorData.showCooldown and newSquare.cooldownStyle ~= 'Deplete')
+        if newSquare.depleteBar then
+            newSquare.depleteBar:SetShown(indicatorData.showCooldown and newSquare.cooldownStyle == 'Deplete')
+        end
         return newSquare
     end,
     bar = function(overlay, indicatorData)
         local newBar = Ui.BarIndicatorPool:Acquire()
         newBar.spell = indicatorData.Spell
         local color = indicatorData.Color
+        local backgroundColor = indicatorData.BackgroundColor or { r = 0, g = 0, b = 0, a = 0.8 }
         newBar:SetStatusBarColor(color.r, color.g, color.b, color.a)
+        if newBar.background then
+            newBar.background:SetColorTexture(backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a)
+        end
         newBar:SetParent(overlay)
         local anchorData = Util.FigureOutBarAnchors(indicatorData)
         if anchorData.points then
@@ -214,6 +125,7 @@ end
 function Ui.GetSpotlightFrame()
     if not Ui.SpotlightFrame then
         local spotlightFrame = CreateFrame('Frame', 'AdvancedRaidFramesSpotlight', UIParent, 'InsetFrameTemplate')
+        spotlightFrame.editModeName = 'Advanced Raid Frames Spotlight'
         spotlightFrame:SetSize(200, 50)
         spotlightFrame:SetPoint('CENTER', UIParent, 'CENTER')
         spotlightFrame.text = spotlightFrame:CreateFontString(nil, 'OVERLAY', 'GameFontHighlight')

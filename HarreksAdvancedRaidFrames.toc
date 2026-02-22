@@ -15,10 +15,23 @@ Libraries/LibDataBroker-1.1.lua
 Libraries/LibDBIcon-1.0.lua
 Libraries/LibCustomGlow-1.0.lua
 Libraries/LibGetFrame-1.0.lua
-Libraries/LibEditMode/namespaced.lua
-Libraries/LibEditMode/embed.xml
+Libraries/LibEQOL/LibEQOL.xml
 
 Init.lua
+
+Locale/Localization.lua
+Locale/enUS.lua
+Locale/enGB.lua
+Locale/deDE.lua
+Locale/frFR.lua
+Locale/esES.lua
+Locale/esMX.lua
+Locale/itIT.lua
+Locale/ptBR.lua
+Locale/ruRU.lua
+Locale/koKR.lua
+Locale/zhCN.lua
+Locale/zhTW.lua
 
 Data/Internals.lua
 Data/Specs.lua
@@ -26,6 +39,8 @@ Data/Units.lua
 
 Ui/Pools.lua
 Ui/Elements.lua
+Ui/DesignerImportExport.lua
+Ui/DesignerPreview.lua
 Ui/Designer.lua
 Ui/Menu.lua
 
@@ -33,6 +48,13 @@ Utility/Helpers.lua
 Utility/Visuals.lua
 Utility/Debug.lua
 
+Core/Engines/Common.lua
+Core/Engines/Druid.lua
+Core/Engines/Evoker.lua
+Core/Engines/Monk.lua
+Core/Engines/Paladin.lua
+Core/Engines/Priest.lua
+Core/Engines/Shaman.lua
 Core/Engines.lua
 Core/Options.lua
 Core/Trackers.lua

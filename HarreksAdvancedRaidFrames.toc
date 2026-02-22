@@ -39,6 +39,8 @@ Data/Units.lua
 
 Ui/Pools.lua
 Ui/Elements.lua
+Ui/DesignerImportExport.lua
+Ui/DesignerPreview.lua
 Ui/Designer.lua
 Ui/Menu.lua
 

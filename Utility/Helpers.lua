@@ -10,7 +10,6 @@ local pairs = pairs
 local ipairs = ipairs
 local tonumber = tonumber
 local table_insert = table.insert
-local table_sort = table.sort
 local type = type
 
 local IsAuraFilteredOutByInstanceID = C_UnitAuras.IsAuraFilteredOutByInstanceID
@@ -103,12 +102,12 @@ function Util.GetSpotlightNames()
     end
 
     if IsInRaid() then
-        local frames = Util.GetRelevantList()
-        for frameString, _ in pairs(frames) do
-            if _G[frameString] then
-                local frame = _G[frameString]
-                local unitName = UnitName(frame.unit)
-                if unitName and not UnitIsUnit(frame.unit, 'player') and not selectedNames[unitName] then
+        local groupSize = GetNumGroupMembers() or 0
+        for i = 1, groupSize do
+            local unit = 'raid' .. i
+            if UnitExists(unit) and not UnitIsUnit(unit, 'player') then
+                local unitName = UnitName(unit)
+                if unitName and unitName ~= '' and not selectedNames[unitName] then
                     table_insert(spotlightNameList, { text = unitName })
                 end
             end
@@ -125,77 +124,76 @@ function Util.MapSpotlightAnchors()
     wipe(Data.spotlightAnchors.defaults)
     local units = Options.spotlight.names
     local frames = Data.frameList.raid --Spotlight only works in raid
-    for frameString, _ in pairs(frames) do
-        if _G[frameString] and _G[frameString].unit then
-            local currentFrame = _G[frameString]
+    local seenUnits = {}
+    for _, frameString in ipairs(frames) do
+        local currentFrame = _G[frameString]
+        if currentFrame and currentFrame.unit then
             local unit = currentFrame.unit
-            if unit ~= 'player' then --The player can't be spotlight
+            if unit ~= 'player' and not seenUnits[unit] then --The player can't be spotlight
+                seenUnits[unit] = true
                 local unitName = UnitName(unit)
-                local frameIndex = frameString:gsub('CompactRaidFrame', '') --We grab the number of this frame to keep them in order
-                --If the unit is in our name list we save it in the spotlights, otherwise we save it on defaults
-                if units[unitName] then
-                    Data.spotlightAnchors.spotlights[frameIndex] = frameString
+                if unitName and units[unitName] then
+                    table_insert(Data.spotlightAnchors.spotlights, frameString)
                 else
-                    Data.spotlightAnchors.defaults[frameIndex] = frameString
+                    table_insert(Data.spotlightAnchors.defaults, frameString)
                 end
             end
         end
-    end
-    --We are gonna sort our frames to know what goes anchored to what
-    --The goal here is to have two ordered lists of what order the frames must follow for ReanchorSpotlights() to work with
-    for type, list in pairs(Data.spotlightAnchors) do
-        local framesIndexes = {}
-        for index in pairs(list) do
-            table_insert(framesIndexes, tonumber(index)) --Insert the frame number into a new list
-        end
-        table_sort(framesIndexes) --Sort the numbers
-        local orderedFrameList = {}
-        local order = 1
-        --Now we use the ordered indices to list the frames in the order they're supposed to go
-        for _, index in ipairs(framesIndexes) do
-            orderedFrameList[order] = list[tostring(index)]
-            order = order + 1
-        end
-        --Save the sorted data in our spotlight anchors list
-        Data.spotlightAnchors[type] = orderedFrameList
     end
 end
 
 --Use the mapped spotlight anchors to attach the frames where they are supposed to go
 function Util.ReanchorSpotlights()
+    local spotlightFrame = Ui.GetSpotlightFrame()
+    if not spotlightFrame then
+        return
+    end
+
     for index, frameString in ipairs(Data.spotlightAnchors.spotlights) do
         local frame = _G[frameString]
-        frame:ClearAllPoints()
-        --The first frame goes attached directly to the spotlight anchor
-        if index == 1 then
-            frame:SetPoint('TOP', 'AdvancedRaidFramesSpotlight', 'TOP')
-        --Other frames go attached to the previous one in the list
-        else
-            local previousFrame = _G[Data.spotlightAnchors.spotlights[index - 1]]
-            local childPoint, parentPoint
-            if Options.spotlight.grow == 'right' then
-                childPoint, parentPoint = 'LEFT', 'RIGHT'
+        if frame then
+            frame:ClearAllPoints()
+            --The first frame goes attached directly to the spotlight anchor
+            if index == 1 then
+                frame:SetPoint('TOP', spotlightFrame, 'TOP')
+            --Other frames go attached to the previous one in the list
             else
-                childPoint, parentPoint = 'TOP', 'BOTTOM'
+                local previousFrame = _G[Data.spotlightAnchors.spotlights[index - 1]]
+                if previousFrame then
+                    local childPoint, parentPoint
+                    if Options.spotlight.grow == 'right' then
+                        childPoint, parentPoint = 'LEFT', 'RIGHT'
+                    else
+                        childPoint, parentPoint = 'TOP', 'BOTTOM'
+                    end
+                    frame:SetPoint(childPoint, previousFrame, parentPoint)
+                else
+                    frame:SetPoint('TOP', spotlightFrame, 'TOP')
+                end
             end
-            frame:SetPoint(childPoint, previousFrame, parentPoint)
         end
     end
     --Similar logic for the frames that remain in the default position
     --This currently has a bug if the user has 'separate tanks' turned on, because the tanks' targets and targetoftarget also use frames but of different size
     for index, frameString in ipairs(Data.spotlightAnchors.defaults) do
         local frame = _G[frameString]
-        frame:ClearAllPoints()
-        if index == 1 then
-            frame:SetPoint('TOPLEFT', 'CompactRaidFrameContainer', 'TOPLEFT')
-        else
-            --This 5 is a magic number that assumes people have 5 frames before breaking into a new row (needs updating)
-            if (index - 1) % 5 == 0 then
-                local previousFrame = _G[Data.spotlightAnchors.defaults[index - 5]]
-                frame:SetPoint('TOP', previousFrame, 'BOTTOM')
+        if frame then
+            frame:ClearAllPoints()
+            if index == 1 then
+                frame:SetPoint('TOPLEFT', 'CompactRaidFrameContainer', 'TOPLEFT')
             else
-                local previousFrame = _G[Data.spotlightAnchors.defaults[index - 1]]
-                frame:SetPoint('LEFT', previousFrame, 'RIGHT')
+                --This 5 is a magic number that assumes people have 5 frames before breaking into a new row (needs updating)
+                if (index - 1) % 5 == 0 then
+                    local previousFrame = _G[Data.spotlightAnchors.defaults[index - 5]]
+                    if previousFrame then
+                        frame:SetPoint('TOP', previousFrame, 'BOTTOM')
+                    end
+                else
+                    local previousFrame = _G[Data.spotlightAnchors.defaults[index - 1]]
+                    if previousFrame then
+                        frame:SetPoint('LEFT', previousFrame, 'RIGHT')
+                    end
+                end
             end
         end
     end

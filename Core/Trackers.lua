@@ -80,11 +80,11 @@ function Core.InstallTrackers()
                 end
                 Util.MapEngineFunctions()
 
+                local spotlightFrame = Ui.GetSpotlightFrame()
+
                 Ui.CreateOptionsPanel(Data.settings)
 
                 Core.ModifySettings()
-
-                local spotlightFrame = Ui.GetSpotlightFrame()
                 local LEM = (LibEQOL and LibEQOL.EditMode) or LibStub('LibEQOLEditMode-1.0')
 
                 if not Options.spotlight then
@@ -97,11 +97,6 @@ function Core.InstallTrackers()
 
                 if type(Options.spotlight.names) ~= 'table' then
                     Options.spotlight.names = {}
-                end
-
-                local spotlightNameValues = Util.GetSpotlightNames()
-                if type(spotlightNameValues) ~= 'table' then
-                    spotlightNameValues = {}
                 end
 
                 LEM:RegisterCallback('enter', function()
@@ -134,33 +129,36 @@ function Core.InstallTrackers()
                 LEM:AddFrameSettings(spotlightFrame, {
                     {
                         name = 'Player List',
-                        kind = LEM.SettingType.Dropdown,
+                        kind = LEM.SettingType.MultiDropdown,
                         default = {},
                         desc = 'Select the players to be shown in the spotlight',
-                        multiple = true,
                         get = function()
-                            local nameList = {}
-                            local selectedNames = (Options.spotlight and Options.spotlight.names) or {}
-                            for name, _ in pairs(selectedNames) do
-                                table.insert(nameList, name)
-                            end
-                            return nameList
+                            return (Options.spotlight and Options.spotlight.names) or {}
                         end,
-                        set = function(_, value)
+                        setSelected = function(_, value, shouldSelect)
                             if not Options.spotlight then
                                 Options.spotlight = { pos = { p = 'CENTER', x = 0, y = 0 }, names = {}, grow = 'right' }
                             end
                             if type(Options.spotlight.names) ~= 'table' then
                                 Options.spotlight.names = {}
                             end
-                            if Options.spotlight.names[value] then
-                                Options.spotlight.names[value] = nil
-                            else
+                            if shouldSelect then
                                 Options.spotlight.names[value] = true
+                            else
+                                Options.spotlight.names[value] = nil
                             end
                             Util.MapSpotlightAnchors()
+                            if IsInRaid() and not InCombatLockdown() then
+                                Util.ReanchorSpotlights()
+                            end
                         end,
-                        values = spotlightNameValues
+                        optionfunc = function()
+                            local values = Util.GetSpotlightNames()
+                            if type(values) ~= 'table' then
+                                return {}
+                            end
+                            return values
+                        end
                     },
                     {
                         name = 'Grow Direction',
@@ -172,6 +170,10 @@ function Core.InstallTrackers()
                         end,
                         set = function(_, value)
                             Options.spotlight.grow = value
+                            if IsInRaid() and not InCombatLockdown() and Options.spotlight.names then
+                                Util.MapSpotlightAnchors()
+                                Util.ReanchorSpotlights()
+                            end
                         end,
                         values = {
                             { text = 'Right', value = 'right' },

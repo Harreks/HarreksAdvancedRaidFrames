@@ -4,12 +4,12 @@ local Ui = NS.Ui
 local Util = NS.Util
 local L = NS.L
 local LibStub = _G.LibStub
-local LCG = LibStub and LibStub('LibCustomGlow-1.0', true)
 local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
-local PREVIEW_FLOAT_WIDTH = 360
-local PREVIEW_FLOAT_HEIGHT = 320
+local function printDesignerMessage(message)
+    print('|cnNORMAL_FONT_COLOR:AdvancedRaidFrames|r: ' .. message)
+end
 
 local function getEqolSettingsMode()
     return (LibEQOL and LibEQOL.SettingsMode) or LibStub('LibEQOLSettingsMode-1.0')
@@ -43,13 +43,79 @@ local function ensureSpecIndicators(spec)
     return SavedIndicators[spec]
 end
 
+local function deepCopyValue(value)
+    if type(value) ~= 'table' then
+        return value
+    end
+
+    local copy = {}
+    for key, entry in pairs(value) do
+        copy[key] = deepCopyValue(entry)
+    end
+    return copy
+end
+local function applyImportedIndicatorsForSpec(spec, importText, setSelectedIndicatorIndex, updateAfterDesignerChange)
+    local result, errorText = Ui.DesignerImportSpecIndicators(spec, importText)
+    if not result then
+        printDesignerMessage(errorText or L.DESIGNER_IMPORT_INVALID)
+        return false
+    end
+
+    SavedIndicators[spec] = result.indicators
+
+    if #result.indicators > 0 then
+        setSelectedIndicatorIndex(1)
+    else
+        Options.designerSelectedIndicatorIndex = nil
+        updateAfterDesignerChange(true)
+    end
+
+    if result.invalidCount and result.invalidCount > 0 then
+        printDesignerMessage(string.format(L.DESIGNER_IMPORT_PARTIAL_FMT, #result.indicators, result.totalCount, result.invalidCount))
+    else
+        printDesignerMessage(string.format(L.DESIGNER_IMPORT_SUCCESS_FMT, #result.indicators))
+    end
+
+    return true
+end
+
+local function getDuplicateIndexForIndicator(indicators, targetIndex, indicator)
+    if not (indicators and indicator and targetIndex) then
+        return nil
+    end
+
+    local duplicateIndex = 0
+    local spell = indicator.Spell
+    local indicatorType = indicator.Type
+
+    for index, existingIndicator in ipairs(indicators) do
+        if existingIndicator and existingIndicator.Spell == spell and existingIndicator.Type == indicatorType then
+            duplicateIndex = duplicateIndex + 1
+            if index == targetIndex then
+                return duplicateIndex
+            end
+        end
+    end
+
+    return nil
+end
+
+
 local function buildIndicatorLabel(index, indicator)
     if not indicator then
         return L.INDICATOR_EMPTY
     end
+
+    local spec = ensureEditingSpec()
+    local indicators = ensureSpecIndicators(spec)
     local spell = indicator.Spell or L.DESIGNER_UNKNOWN
     local typeName = (indicator.Type and Data.indicatorTypes[indicator.Type] and Data.indicatorTypes[indicator.Type].display) or L.INDICATOR_GENERIC
-    return spell .. ' ' .. typeName
+    local label = spell .. ' ' .. typeName
+    local duplicateIndex = getDuplicateIndexForIndicator(indicators, index, indicator)
+    if duplicateIndex and duplicateIndex > 1 then
+        return label .. ' #' .. duplicateIndex
+    end
+    return label
 end
 
 local function getSelectedIndicatorIndex()
@@ -83,6 +149,12 @@ end
 local function selectedIndicatorExists()
     local indicator = getSelectedIndicator()
     return indicator ~= nil
+end
+
+local function currentSpecHasIndicators()
+    local spec = ensureEditingSpec()
+    local indicators = ensureSpecIndicators(spec)
+    return #indicators > 0
 end
 
 local function selectedIndicatorTypeIs(expectedType)
@@ -132,238 +204,6 @@ local function refreshDesignerColorOverrideControls()
             end
         end
     end
-end
-
-local function stopSelectedPreviewGlow(widget)
-    if not (widget and widget.HighlightedPreviewElement and LCG) then
-        return
-    end
-
-    LCG.PixelGlow_Stop(widget.HighlightedPreviewElement, 'harfDesignerPreviewSelected')
-    widget.HighlightedPreviewElement = nil
-end
-
-local function applySelectedPreviewGlow(widget)
-    if not (widget and widget.Overlay and widget.Overlay.elements and LCG) then
-        return
-    end
-
-    stopSelectedPreviewGlow(widget)
-
-    local selectedIndex = getSelectedIndicatorIndex()
-    if not selectedIndex then
-        return
-    end
-
-    local selectedElement = widget.Overlay.elements[selectedIndex]
-    if not selectedElement then
-        return
-    end
-
-    LCG.PixelGlow_Start(
-        selectedElement,
-        { 0.95, 0.82, 0.20, 0.9 },
-        4,
-        0.25,
-        4,
-        1,
-        0,
-        0,
-        false,
-        'harfDesignerPreviewSelected'
-    )
-    widget.HighlightedPreviewElement = selectedElement
-end
-
-local function bindPreviewSelectionHandlers(widget, onSelect)
-    if not (widget and widget.Overlay and widget.Overlay.elements and onSelect) then
-        return
-    end
-
-    for index, element in ipairs(widget.Overlay.elements) do
-        if element and element.EnableMouse and element.SetScript then
-            local isHealthColorIndicator = element.type == 'HealthColorIndicator'
-            element:EnableMouse(not isHealthColorIndicator)
-            if not isHealthColorIndicator then
-                element:SetScript('OnMouseDown', function(_, button)
-                    if button ~= 'LeftButton' then
-                        return
-                    end
-                    onSelect(index)
-                end)
-            else
-                element:SetScript('OnMouseDown', nil)
-            end
-        end
-    end
-end
-
-local function ensureDesignerPreviewWidget()
-    if Ui.DesignerPreviewWidget then
-        return Ui.DesignerPreviewWidget
-    end
-
-    local widget = CreateFrame('Frame', nil, UIParent, 'InsetFrameTemplate3')
-    widget:SetSize(PREVIEW_FLOAT_WIDTH, PREVIEW_FLOAT_HEIGHT)
-    widget:SetFrameStrata('DIALOG')
-    widget:SetFrameLevel(200)
-    widget:Hide()
-    widget:SetScript('OnHide', function(self)
-        stopSelectedPreviewGlow(self)
-    end)
-
-    local title = widget:CreateFontString(nil, 'OVERLAY', 'GameFontNormal')
-    title:SetScale(1.2)
-    title:SetPoint('TOP', widget, 'TOP', 0, -10)
-    title:SetText(L.DESIGNER_PREVIEW_TITLE)
-    widget.Title = title
-
-    local specLabel = widget:CreateFontString(nil, 'OVERLAY', 'GameFontHighlightSmall')
-    specLabel:SetPoint('TOP', title, 'BOTTOM', 0, -6)
-    widget.SpecLabel = specLabel
-
-    local exampleFrame = CreateFrame('Frame', nil, widget)
-    exampleFrame:SetSize(165, 65)
-    exampleFrame:SetScale(1.5)
-    exampleFrame:SetPoint('TOP', widget, 'TOP', 0, -85)
-    exampleFrame.bg = exampleFrame:CreateTexture(nil, 'BACKGROUND')
-    exampleFrame.bg:SetAllPoints(exampleFrame)
-    exampleFrame.bg:SetTexture('Interface\\RaidFrame\\Raid-Bar-Hp-Fill')
-    widget.ExampleFrame = exampleFrame
-
-    local disclaimer = exampleFrame:CreateFontString(nil, 'OVERLAY', 'GameFontNormal')
-    disclaimer:SetPoint('TOP', exampleFrame, 'BOTTOM', 0, -3)
-    disclaimer:SetWidth(250)
-    disclaimer:SetScale(0.7)
-    disclaimer:SetText(L.DESIGNER_PREVIEW_DISCLAIMER)
-    widget.Disclaimer = disclaimer
-
-    local name = exampleFrame:CreateFontString(nil, 'OVERLAY', 'GameFontNormal')
-    name:SetPoint('TOP', exampleFrame, 'TOP', 0, -5)
-    name:SetText('Harrek')
-
-    local health = exampleFrame:CreateFontString(nil, 'OVERLAY', 'GameTooltipText')
-    health:SetPoint('CENTER', exampleFrame, 'CENTER')
-    health:SetText('100%')
-
-    Ui.DesignerPreviewWidget = widget
-
-    local function getCategoryIdFromObject(categoryObject)
-        if type(categoryObject) == 'number' then
-            return categoryObject
-        end
-        if type(categoryObject) == 'table' and categoryObject.GetID then
-            local ok, id = pcall(categoryObject.GetID, categoryObject)
-            if ok then
-                return id
-            end
-        end
-    end
-
-    local function getCurrentSettingsCategoryId()
-        if not SettingsPanel then
-            return nil
-        end
-
-        if SettingsPanel.GetCurrentCategory then
-            local ok, categoryObject = pcall(SettingsPanel.GetCurrentCategory, SettingsPanel)
-            if ok and categoryObject ~= nil then
-                local id = getCategoryIdFromObject(categoryObject)
-                if id ~= nil then
-                    return id
-                end
-            end
-        end
-
-        if SettingsPanel.GetCurrentCategoryID then
-            local ok, id = pcall(SettingsPanel.GetCurrentCategoryID, SettingsPanel)
-            if ok then
-                return id
-            end
-        end
-
-        return nil
-    end
-
-    Ui.UpdateDesignerPreviewPlacement = function()
-        local currentWidget = Ui.DesignerPreviewWidget
-        if not currentWidget then
-            return
-        end
-
-        local wasShown = currentWidget:IsShown()
-
-        local designerCategory = Ui.DesignerEqolCategory
-        local designerCategoryId = designerCategory and designerCategory.GetID and designerCategory:GetID() or nil
-        local currentCategoryId = getCurrentSettingsCategoryId()
-
-        local categoryMatches = false
-        if designerCategoryId and currentCategoryId then
-            categoryMatches = designerCategoryId == currentCategoryId
-        elseif currentCategoryId == nil then
-            categoryMatches = true
-        end
-
-        local shouldShow = SettingsPanel and SettingsPanel:IsShown() and categoryMatches
-        if not shouldShow then
-            stopSelectedPreviewGlow(currentWidget)
-            currentWidget:Hide()
-            return
-        end
-
-        currentWidget:Show()
-        currentWidget:ClearAllPoints()
-        local uiTop = UIParent:GetTop() or UIParent:GetHeight() or 0
-        local uiBottom = UIParent:GetBottom() or 0
-        local availableHeight = math.max(180, (uiTop - uiBottom) - 40)
-        local clampedHeight = math.min(PREVIEW_FLOAT_HEIGHT, availableHeight)
-        currentWidget:SetSize(PREVIEW_FLOAT_WIDTH, clampedHeight)
-
-        local panelRight = SettingsPanel:GetRight() or 0
-        local availableRight = (UIParent:GetRight() or UIParent:GetWidth() or 0) - panelRight - 16
-
-        if availableRight >= PREVIEW_FLOAT_WIDTH then
-            currentWidget:SetPoint('TOPLEFT', SettingsPanel, 'TOPRIGHT', 10, -12)
-        else
-            currentWidget:SetPoint('TOPRIGHT', SettingsPanel, 'BOTTOMRIGHT', 0, -8)
-        end
-
-        if (not wasShown or not currentWidget.Overlay) and Ui.RefreshDesignerPreview and not Ui._designerPreviewRefreshing then
-            Ui.RefreshDesignerPreview()
-        end
-    end
-
-    if SettingsPanel and not Ui._designerPreviewPanelHooked then
-        SettingsPanel:HookScript('OnShow', function()
-            if Ui.UpdateDesignerPreviewPlacement then
-                Ui.UpdateDesignerPreviewPlacement()
-            end
-            if Ui.RefreshDesignerPreview then
-                Ui.RefreshDesignerPreview()
-            end
-        end)
-
-        SettingsPanel:HookScript('OnHide', function()
-            if Ui.DesignerPreviewWidget then
-                stopSelectedPreviewGlow(Ui.DesignerPreviewWidget)
-                Ui.DesignerPreviewWidget:Hide()
-            end
-        end)
-
-        SettingsPanel:HookScript('OnUpdate', function(_, elapsed)
-            Ui._designerPreviewElapsed = (Ui._designerPreviewElapsed or 0) + elapsed
-            if Ui._designerPreviewElapsed >= 0.25 then
-                Ui._designerPreviewElapsed = 0
-                if Ui.UpdateDesignerPreviewPlacement then
-                    Ui.UpdateDesignerPreviewPlacement()
-                end
-            end
-        end)
-
-        Ui._designerPreviewPanelHooked = true
-    end
-
-    return widget
 end
 
 local function getSpellOptionsForCurrentSpec()
@@ -567,55 +407,11 @@ local function buildDesignerEqol(parentCategory)
         updateAfterDesignerChange(true)
     end
 
-    ensureDesignerPreviewWidget()
-
-    Ui.RefreshDesignerPreview = function()
-        local widget = Ui.DesignerPreviewWidget
-        if not widget then
-            return
-        end
-
-        if Ui._designerPreviewRefreshing then
-            return
-        end
-        Ui._designerPreviewRefreshing = true
-
-        if Ui.UpdateDesignerPreviewPlacement then
-            Ui.UpdateDesignerPreviewPlacement()
-        end
-
-        if not widget:IsShown() then
-            Ui._designerPreviewRefreshing = nil
-            return
-        end
-
-        local spec = ensureEditingSpec()
-        local specData = spec and Data.specInfo[spec]
-        if specData and widget.SpecLabel then
-            widget.SpecLabel:SetText(string.format(L.DESIGNER_CURRENT_SPEC_FMT, specData.display))
-        elseif widget.SpecLabel then
-            widget.SpecLabel:SetText(string.format(L.DESIGNER_CURRENT_SPEC_FMT, L.DESIGNER_UNKNOWN))
-        end
-
-        if widget.Overlay then
-            stopSelectedPreviewGlow(widget)
-            widget.Overlay:Delete()
-            widget.Overlay = nil
-        end
-
-        local indicatorData = SavedIndicators[spec]
-        local overlay = Ui.CreateIndicatorOverlay(indicatorData)
-        if overlay then
-            overlay:SetParent(widget)
-            overlay:AttachToFrame(widget.ExampleFrame)
-            overlay:ShowPreview()
-            widget.Overlay = overlay
-            bindPreviewSelectionHandlers(widget, setSelectedIndicatorIndex)
-            applySelectedPreviewGlow(widget)
-        end
-
-        Ui._designerPreviewRefreshing = nil
-    end
+    Ui.InitializeDesignerPreview({
+        ensureEditingSpec = ensureEditingSpec,
+        getSelectedIndicatorIndex = getSelectedIndicatorIndex,
+        setSelectedIndicatorIndex = setSelectedIndicatorIndex
+    })
 
     ensureEditingSpec()
 
@@ -657,7 +453,8 @@ local function buildDesignerEqol(parentCategory)
             setSelectedIndicatorIndex(value)
         end,
         height = 320,
-        isEnabled = selectedIndicatorExists
+        isEnabled = selectedIndicatorExists,
+        expandWith = currentSpecHasIndicators
     })
     trackSetting(selectedIndicatorSetting)
 
@@ -674,7 +471,25 @@ local function buildDesignerEqol(parentCategory)
         end
     })
 
-    EQOL:CreateHeader(category, L.DESIGNER_EDIT_INDICATOR)
+    EQOL:CreateButton(category, {
+        key = 'duplicateSelectedIndicator',
+        text = L.DESIGNER_DUPLICATE_INDICATOR,
+        click = function()
+            local indicator, index, _, indicators = getSelectedIndicator()
+            if not indicator then return end
+
+            local duplicatedIndicator = deepCopyValue(indicator)
+            table.insert(indicators, index + 1, duplicatedIndicator)
+            setSelectedIndicatorIndex(index + 1)
+        end,
+        isEnabled = selectedIndicatorExists,
+        expandWith = currentSpecHasIndicators
+    })
+
+    EQOL:CreateHeader(category, {
+        name = L.DESIGNER_EDIT_INDICATOR,
+        expandWith = currentSpecHasIndicators
+    })
 
     local _, indicatorSpellSetting = EQOL:CreateScrollDropdown(category, {
         key = 'indicatorSpell',
@@ -689,7 +504,7 @@ local function buildDesignerEqol(parentCategory)
             local indicator = getSelectedIndicator()
             if not indicator then return end
             indicator.Spell = value
-            refreshSettingsDisplay()
+            notifyTrackedSettings()
             updateAfterDesignerChange(false)
         end,
         height = 260,
@@ -1144,7 +959,38 @@ local function buildDesignerEqol(parentCategory)
             end
             setSelectedIndicatorIndex(nextIndex)
         end,
-        isEnabled = selectedIndicatorExists
+        isEnabled = selectedIndicatorExists,
+        expandWith = currentSpecHasIndicators
+    })
+
+    EQOL:CreateHeader(category, {
+        name = L.DESIGNER_IMPORT_EXPORT_HEADER
+    })
+
+    EQOL:CreateButton(category, {
+        key = 'exportCurrentSpecIndicators',
+        text = L.DESIGNER_EXPORT_SPEC_INDICATORS,
+        click = function()
+            local spec = ensureEditingSpec()
+            local exportString, errorText = Ui.DesignerExportSpecIndicators(spec)
+            if not exportString then
+                printDesignerMessage(errorText or L.DESIGNER_EXPORT_FAILED)
+                return
+            end
+
+            Util.DisplayPopupTextbox(string.format(L.DESIGNER_EXPORT_POPUP_TITLE_FMT, spec), exportString)
+        end
+    })
+
+    EQOL:CreateButton(category, {
+        key = 'importCurrentSpecIndicators',
+        text = L.DESIGNER_IMPORT_SPEC_INDICATORS,
+        click = function()
+            local spec = ensureEditingSpec()
+            Ui.ShowDesignerImportPopup(spec, function(importText)
+                applyImportedIndicatorsForSpec(spec, importText, setSelectedIndicatorIndex, updateAfterDesignerChange)
+            end)
+        end
     })
 
     updateAfterDesignerChange(false)

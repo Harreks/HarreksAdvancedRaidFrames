@@ -32,6 +32,7 @@ function Core.InstallTrackers()
             if Util.IsSupportedSpec(Data.playerSpec) then --Getting some weird triggers on casts before the player logs in
                 local specInfo = Data.specInfo[Data.playerSpec]
                 local timestamp = GetTime()
+
                 if event == 'UNIT_SPELLCAST_SUCCEEDED' then
                     if specInfo.casts[spellId] then
                         state.casts[spellId] = timestamp

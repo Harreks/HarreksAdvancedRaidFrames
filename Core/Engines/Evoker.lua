@@ -63,6 +63,32 @@ local function IsRecentDreamBreathCast(state, currentTime, castWindow)
         or Util.AreTimestampsEqual(currentTime, state.casts[382614], castWindow)
 end
 
+local function OpenDreamBreathPending(state, unit, currentTime, mode)
+    local dbTable = state.extras.db[unit]
+    if not dbTable then
+        dbTable = { dbs = {}, timer = false, pending = true, startedAt = currentTime, mode = mode }
+        state.extras.db[unit] = dbTable
+        return dbTable
+    end
+
+    dbTable.pending = true
+    dbTable.timer = false
+    dbTable.startedAt = currentTime
+    dbTable.mode = mode
+    wipe(dbTable.dbs)
+    return dbTable
+end
+
+local function ClassifyPreservationSpellId(spellId)
+    if spellId == SPELL_ID_ECHO then
+        return 'Echo'
+    elseif spellId == SPELL_ID_DREAM_BREATH_HOT then
+        return 'DreamBreath'
+    elseif spellId == SPELL_ID_VERDANT_EMBRACE_BUFF then
+        return 'VerdantEmbrace'
+    end
+end
+
 local function PrunePreservationExtras(state, currentTime)
     local extras = state.extras
     if not extras then
@@ -118,7 +144,7 @@ local function HandleEchoRemovalForPres(unit, updateInfo, state, currentTime, co
             if consumeData then
                 state.extras.echoConsume[unit] = consumeData
                 if consumeData.spell == 'DreamBreath' then
-                    state.extras.db[unit] = { dbs = {}, timer = false, pending = true, startedAt = currentTime, mode = 'echoConsume' }
+                    OpenDreamBreathPending(state, unit, currentTime, 'echoConsume')
                 end
             else
                 state.extras.echoConsume[unit] = nil
@@ -144,16 +170,7 @@ local function HandleImplicitEchoRemovalForPres(unit, state, currentTime, consum
     if consumeData then
         state.extras.echoConsume[unit] = consumeData
         if consumeData.spell == 'DreamBreath' then
-            local dbTable = state.extras.db[unit]
-            if not dbTable then
-                state.extras.db[unit] = { dbs = {}, timer = false, pending = true, startedAt = currentTime, mode = 'echoConsume' }
-            else
-                dbTable.pending = true
-                dbTable.timer = false
-                dbTable.startedAt = currentTime
-                dbTable.mode = 'echoConsume'
-                wipe(dbTable.dbs)
-            end
+            OpenDreamBreathPending(state, unit, currentTime, 'echoConsume')
         end
     else
         state.extras.echoConsume[unit] = nil
@@ -166,13 +183,7 @@ local function HandleDreamBreathAuraForPres(unit, auraId, state, unitAuras, curr
     local dbTable = state.extras.db[unit]
     if not (dbTable and dbTable.pending) then
         if IsRecentDreamBreathCast(state, currentTime, consumeCastWindow) then
-            dbTable = state.extras.db[unit] or { dbs = {}, timer = false, pending = false, startedAt = nil, mode = nil }
-            state.extras.db[unit] = dbTable
-            dbTable.pending = true
-            dbTable.timer = false
-            dbTable.startedAt = currentTime
-            dbTable.mode = 'fallback'
-            wipe(dbTable.dbs)
+            dbTable = OpenDreamBreathPending(state, unit, currentTime, 'fallback')
         else
             return
         end
@@ -282,10 +293,6 @@ local function HandleVerdantEmbraceAuraForPres(unit, auraId, state, unitAuras, c
     end)
 end
 
---PENDING ISSUES FOR PRES TODO:
---Lifebind+VerdantEmbrace and DreamBreath+EchoDreamBreath are finalized via short pending windows and a delayed resolution pass.
---This is now cast-gated (echo consume context + recency checks), but labels can still settle ~0.1s after apply in ambiguous ordering/travel-time cases.
---Further hardening would require replacing timer-based finalization with a more direct consume/application correlation path from available events.
 function Core.ParsePreservationEvokerBuffs(unit, updateInfo)
     local unitAuras = Data.state.auras[unit]
     local state = Data.state
@@ -303,7 +310,7 @@ function Core.ParsePreservationEvokerBuffs(unit, updateInfo)
     HandleEchoRemovalForPres(unit, updateInfo, state, currentTime, PRES_ECHO_CONSUME_CAST_WINDOW)
     HandleImplicitEchoRemovalForPres(unit, state, currentTime, PRES_ECHO_CONSUME_CAST_WINDOW)
 
-    if updateInfo and updateInfo.isFullUpdate then
+    if updateInfo.isFullUpdate then
         state.extras.echo[unit] = nil
         for instanceId, auraName in pairs(unitAuras) do
             if auraName == 'Echo' then
@@ -320,13 +327,7 @@ function Core.ParsePreservationEvokerBuffs(unit, updateInfo)
             local spellId = aura.spellId or aura.spellID
 
             if not spell and spellId then
-                if spellId == SPELL_ID_ECHO then
-                    spell = 'Echo'
-                elseif spellId == SPELL_ID_DREAM_BREATH_HOT then
-                    spell = 'DreamBreath'
-                elseif spellId == SPELL_ID_VERDANT_EMBRACE_BUFF then
-                    spell = 'VerdantEmbrace'
-                end
+                spell = ClassifyPreservationSpellId(spellId)
                 if spell then
                     unitAuras[auraId] = spell
                     parserChanged = true

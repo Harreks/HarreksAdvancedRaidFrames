@@ -14,10 +14,7 @@ local PRES_ECHO_CONSUME_CAST_WINDOW = 0.9
 local PRES_DB_PENDING_WINDOW = 0.35
 local PRES_VE_PENDING_WINDOW = 0.35
 local PRES_STALE_PRUNE_INTERVAL = 2
-
-local SPELL_ID_ECHO = 364343
-local SPELL_ID_DREAM_BREATH_HOT = 355941
-local SPELL_ID_VERDANT_EMBRACE_BUFF = 409895
+local PRES_CAST_APPLY_WINDOW = 0.35
 
 local function EnsurePreservationExtras(state)
     if not state.extras.echo then state.extras.echo = {} end
@@ -79,13 +76,17 @@ local function OpenDreamBreathPending(state, unit, currentTime, mode)
     return dbTable
 end
 
-local function ClassifyPreservationSpellId(spellId)
-    if spellId == SPELL_ID_ECHO then
-        return 'Echo'
-    elseif spellId == SPELL_ID_DREAM_BREATH_HOT then
+local function InferPreservationSpellFromCastContext(state, currentTime, castWindow)
+    if IsRecentDreamBreathCast(state, currentTime, castWindow) then
         return 'DreamBreath'
-    elseif spellId == SPELL_ID_VERDANT_EMBRACE_BUFF then
+    end
+
+    if Util.AreTimestampsEqual(currentTime, state.casts[360995], castWindow) then
         return 'VerdantEmbrace'
+    end
+
+    if Util.AreTimestampsEqual(currentTime, state.casts[364343], castWindow) then
+        return 'Echo'
     end
 end
 
@@ -324,10 +325,10 @@ function Core.ParsePreservationEvokerBuffs(unit, updateInfo)
         for _, aura in ipairs(updateInfo.addedAuras) do
             local auraId = aura.auraInstanceID
             local spell = unitAuras[auraId]
-            local spellId = aura.spellId or aura.spellID
+            local isPlayerOwned = Util.IsAuraFromPlayer(unit, auraId)
 
-            if not spell and spellId then
-                spell = ClassifyPreservationSpellId(spellId)
+            if not spell and isPlayerOwned then
+                spell = InferPreservationSpellFromCastContext(state, currentTime, PRES_CAST_APPLY_WINDOW)
                 if spell then
                     unitAuras[auraId] = spell
                     parserChanged = true
@@ -337,7 +338,7 @@ function Core.ParsePreservationEvokerBuffs(unit, updateInfo)
             if spell == 'Echo' then
                 state.extras.echo[unit] = auraId
             end
-            if (spell == 'DreamBreath' or spell == 'VerdantEmbrace') and Util.IsAuraFromPlayer(unit, auraId) then
+            if (spell == 'DreamBreath' or spell == 'VerdantEmbrace') and isPlayerOwned then
                 if spell == 'DreamBreath' then
                     HandleDreamBreathAuraForPres(unit, auraId, state, unitAuras, currentTime, PRES_ECHO_CONSUME_CAST_WINDOW, PRES_DB_PENDING_WINDOW)
                 else

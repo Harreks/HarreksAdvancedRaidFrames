@@ -160,6 +160,10 @@ local function sanitizeImportedIndicator(indicator, spec)
         local borderWidth = clampNumber(indicator.borderWidth, 1, 10)
         if borderWidth then sanitized.borderWidth = borderWidth end
 
+        if type(indicator.borderPlacement) == 'string' and isAllowedDropdownValue('borderPlacement', indicator.borderPlacement) then
+            sanitized.borderPlacement = indicator.borderPlacement
+        end
+
         if type(indicator.borderCooldownDirection) == 'string' and isAllowedDropdownValue('borderCooldownDirection', indicator.borderCooldownDirection) then
             sanitized.borderCooldownDirection = indicator.borderCooldownDirection
         end

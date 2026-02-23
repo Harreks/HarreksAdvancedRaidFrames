@@ -487,6 +487,7 @@ Ui.HealthColorIndicatorPool = CreateFramePool('Frame', nil, 'BackdropTemplate',
         frame.showCooldown = false
         frame.borderAnimDuration = 0
         frame.borderAnimStartTime = 0
+        frame.borderPlacement = 'Inset'
         frame.borderCooldownDirection = 'Clockwise'
         frame.borderCooldownStartCorner = 'TOPRIGHT'
         frame.borderThickness = 3
@@ -609,6 +610,9 @@ Ui.HealthColorIndicatorPool = CreateFramePool('Frame', nil, 'BackdropTemplate',
 
         frame.SetSegmentFill = function(self, side, from, fillLength)
             local thickness = self.borderThickness or 3
+            local isOutset = (self.borderPlacement or 'Inset') == 'Outset'
+            local insetOffset = isOutset and math.floor(thickness / 2) or 0
+            local edgeOffset = isOutset and math.floor((thickness + 1) / 2) or 0
             local width = self:GetWidth()
             local height = self:GetHeight()
             if width <= 0 or height <= 0 then
@@ -645,33 +649,33 @@ Ui.HealthColorIndicatorPool = CreateFramePool('Frame', nil, 'BackdropTemplate',
                 texture:SetHeight(thickness)
                 texture:SetWidth(fillLength)
                 if from == 'left' then
-                    texture:SetPoint('TOPLEFT', self, 'TOPLEFT', 0, 0)
+                    texture:SetPoint('TOPLEFT', self, 'TOPLEFT', -insetOffset, edgeOffset)
                 else
-                    texture:SetPoint('TOPRIGHT', self, 'TOPRIGHT', 0, 0)
+                    texture:SetPoint('TOPRIGHT', self, 'TOPRIGHT', insetOffset, edgeOffset)
                 end
             elseif side == 'bottom' then
                 texture:SetHeight(thickness)
                 texture:SetWidth(fillLength)
                 if from == 'left' then
-                    texture:SetPoint('BOTTOMLEFT', self, 'BOTTOMLEFT', 0, 0)
+                    texture:SetPoint('BOTTOMLEFT', self, 'BOTTOMLEFT', -insetOffset, -edgeOffset)
                 else
-                    texture:SetPoint('BOTTOMRIGHT', self, 'BOTTOMRIGHT', 0, 0)
+                    texture:SetPoint('BOTTOMRIGHT', self, 'BOTTOMRIGHT', insetOffset, -edgeOffset)
                 end
             elseif side == 'left' then
                 texture:SetWidth(thickness)
                 texture:SetHeight(fillLength)
                 if from == 'top' then
-                    texture:SetPoint('TOPLEFT', self, 'TOPLEFT', 0, 0)
+                    texture:SetPoint('TOPLEFT', self, 'TOPLEFT', -edgeOffset, insetOffset)
                 else
-                    texture:SetPoint('BOTTOMLEFT', self, 'BOTTOMLEFT', 0, 0)
+                    texture:SetPoint('BOTTOMLEFT', self, 'BOTTOMLEFT', -edgeOffset, -insetOffset)
                 end
             else
                 texture:SetWidth(thickness)
                 texture:SetHeight(fillLength)
                 if from == 'top' then
-                    texture:SetPoint('TOPRIGHT', self, 'TOPRIGHT', 0, 0)
+                    texture:SetPoint('TOPRIGHT', self, 'TOPRIGHT', edgeOffset, insetOffset)
                 else
-                    texture:SetPoint('BOTTOMRIGHT', self, 'BOTTOMRIGHT', 0, 0)
+                    texture:SetPoint('BOTTOMRIGHT', self, 'BOTTOMRIGHT', edgeOffset, -insetOffset)
                 end
             end
             texture:Show()

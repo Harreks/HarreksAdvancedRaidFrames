@@ -100,6 +100,7 @@ local function getDuplicateIndexForIndicator(indicators, targetIndex, indicator)
     return nil
 end
 
+local getLocalizedSpellLabel
 
 local function buildIndicatorLabel(index, indicator)
     if not indicator then
@@ -108,7 +109,8 @@ local function buildIndicatorLabel(index, indicator)
 
     local spec = ensureEditingSpec()
     local indicators = ensureSpecIndicators(spec)
-    local spell = indicator.Spell or L.DESIGNER_UNKNOWN
+    local spell = getLocalizedSpellLabel(indicator.Spell)
+
     local typeName = (indicator.Type and Data.indicatorTypes[indicator.Type] and Data.indicatorTypes[indicator.Type].display) or L.INDICATOR_GENERIC
     local label = spell .. ' ' .. typeName
     local duplicateIndex = getDuplicateIndexForIndicator(indicators, index, indicator)
@@ -116,6 +118,28 @@ local function buildIndicatorLabel(index, indicator)
         return label .. ' #' .. duplicateIndex
     end
     return label
+end
+
+getLocalizedSpellLabel = function(spellKey)
+    if not spellKey then
+        return L.DESIGNER_UNKNOWN
+    end
+
+    if Data.spellIds and Data.spellIds[spellKey] then
+        local spellId = Data.spellIds[spellKey]
+        local localizedName
+        if C_Spell and C_Spell.GetSpellName then
+            localizedName = C_Spell.GetSpellName(spellId)
+        elseif GetSpellInfo then
+            localizedName = GetSpellInfo(spellId)
+        end
+
+        if localizedName and localizedName ~= '' then
+            return localizedName
+        end
+    end
+
+    return spellKey
 end
 
 local function getSelectedIndicatorIndex()
@@ -206,15 +230,38 @@ local function refreshDesignerColorOverrideControls()
     end
 end
 
+local function compareLocalizedText(leftText, rightText)
+    local left = tostring(leftText or '')
+    local right = tostring(rightText or '')
+
+    local utf8Compare = _G.strcmputf8i
+    if type(utf8Compare) == 'function' then
+        local cmp = utf8Compare(left, right)
+        if type(cmp) == 'number' then
+            if cmp == 0 then
+                return left < right
+            end
+            return cmp < 0
+        end
+    end
+
+    local lowerLeft = left:lower()
+    local lowerRight = right:lower()
+    if lowerLeft == lowerRight then
+        return left < right
+    end
+    return lowerLeft < lowerRight
+end
+
 local function getSpellOptionsForCurrentSpec()
     local spec = ensureEditingSpec()
     local options = {}
     if spec and Data.specInfo[spec] and Data.specInfo[spec].auras then
         for spell, _ in pairs(Data.specInfo[spec].auras) do
-            table.insert(options, { value = spell, text = spell })
+            table.insert(options, { value = spell, text = getLocalizedSpellLabel(spell) })
         end
         table.sort(options, function(a, b)
-            return tostring(a.text) < tostring(b.text)
+            return compareLocalizedText(a.text, b.text)
         end)
     end
     return options
@@ -268,6 +315,10 @@ local function getDropdownValues(dropdownType)
             return L.OPTION_FULL or value
         elseif value == 'Half' then
             return L.OPTION_HALF or value
+        elseif value == 'Inset' then
+            return L.OPTION_INSET or value
+        elseif value == 'Outset' then
+            return L.OPTION_OUTSET or value
         end
 
         if dropdownKey == 'borderCooldownDirection' then
@@ -298,6 +349,14 @@ local function getSelectedIndicatorOptions()
     for index, indicator in ipairs(indicators) do
         table.insert(options, { value = index, text = buildIndicatorLabel(index, indicator) })
     end
+
+    table.sort(options, function(a, b)
+        if tostring(a.text or '') == tostring(b.text or '') then
+            return (a.value or 0) < (b.value or 0)
+        end
+        return compareLocalizedText(a.text, b.text)
+    end)
+
     return options
 end
 
@@ -310,7 +369,7 @@ local function getSortedIndicatorTypeEntries()
         })
     end
     table.sort(entries, function(a, b)
-        return tostring(a.label) < tostring(b.label)
+        return compareLocalizedText(a.label, b.label)
     end)
     return entries
 end
@@ -463,7 +522,7 @@ local function buildDesignerEqol(parentCategory)
                 table.insert(options, { value = spec, text = data.display })
             end
             table.sort(options, function(a, b)
-                return tostring(a.text) < tostring(b.text)
+                return compareLocalizedText(a.text, b.text)
             end)
             return options
         end,
@@ -785,6 +844,30 @@ local function buildDesignerEqol(parentCategory)
         end
     })
     trackSetting(indicatorBorderWidthSetting)
+
+    local _, indicatorBorderPlacementSetting = EQOL:CreateScrollDropdown(category, {
+        key = 'indicatorBorderPlacement',
+        name = L.LABEL_BORDER_PLACEMENT,
+        desc = L.DESC_BORDER_PLACEMENT_HINT,
+        default = 'Inset',
+        values = getDropdownValues('borderPlacement'),
+        get = function()
+            local indicator = getSelectedIndicator()
+            return indicator and indicator.borderPlacement or 'Inset'
+        end,
+        set = function(value)
+            local indicator = getSelectedIndicator()
+            if not indicator then return end
+            indicator.borderPlacement = value
+            updateAfterDesignerChange(false)
+        end,
+        height = 120,
+        isEnabled = selectedIndicatorExists,
+        expandWith = function()
+            return selectedIndicatorTypeIs('healthColor')
+        end
+    })
+    trackSetting(indicatorBorderPlacementSetting)
 
     local _, indicatorBorderCooldownDirectionSetting = EQOL:CreateScrollDropdown(category, {
         key = 'indicatorBorderCooldownDirection',

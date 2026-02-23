@@ -111,6 +111,7 @@ local indicatorOverlayRenderers = {
         newHealthRecolor.color = indicatorData.Color
         newHealthRecolor.showCooldown = indicatorData.showCooldown == true
         newHealthRecolor.borderThickness = indicatorData.borderWidth or 3
+        newHealthRecolor.borderPlacement = indicatorData.borderPlacement or 'Inset'
         newHealthRecolor.borderCooldownDirection = indicatorData.borderCooldownDirection or 'Clockwise'
         newHealthRecolor.borderCooldownStartCorner = indicatorData.borderCooldownStartCorner or 'TOPRIGHT'
         if newHealthRecolor.ApplyBorderThickness then

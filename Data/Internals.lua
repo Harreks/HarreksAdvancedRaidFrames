@@ -72,6 +72,57 @@ Data.textures = {
     StrengthOfTheBlackOx = 615340
 }
 
+Data.spellIds = {
+    Echo = 364343,
+    Reversion = 366155,
+    EchoReversion = 367364,
+    DreamBreath = 355941,
+    EchoDreamBreath = 376788,
+    TimeDilation = 357170,
+    Rewind = 363534,
+    DreamFlight = 363502,
+    Lifebind = 373267,
+    VerdantEmbrace = 409895,
+    Prescience = 410089,
+    ShiftingSands = 413984,
+    InfernosBlessing = 410263,
+    EbonMight = 395152,
+    SymbioticBloom = 410686,
+    BlisteringScales = 360827,
+    PowerWordShield = 17,
+    Atonement = 194384,
+    PainSuppression = 33206,
+    VoidShield = 1253593,
+    Renew = 139,
+    EchoOfLight = 77489,
+    GuardianSpirit = 47788,
+    PrayerOfMending = 41635,
+    PowerInfusion = 10060,
+    RenewingMist = 119611,
+    EnvelopingMist = 124682,
+    SoothingMist = 115175,
+    LifeCocoon = 116849,
+    Rejuvenation = 774,
+    Regrowth = 8936,
+    Lifebloom = 33763,
+    Germination = 155777,
+    WildGrowth = 48438,
+    IronBark = 102342,
+    Riptide = 61295,
+    EarthShield = 383648,
+    BeaconOfFaith = 156910,
+    EternalFlame = 156322,
+    BeaconOfLight = 53563,
+    BlessingOfProtection = 1022,
+    HolyBulwark = 432496,
+    SacredWeapon = 432502,
+    BlessingOfSacrifice = 6940,
+    BeaconOfVirtue = 200025,
+    BeaconOfTheSavior = 1244893,
+    AspectOfHarmony = 450769,
+    StrengthOfTheBlackOx = 443113
+}
+
 Data.indicatorTypes = {
     icon = {
         display = 'Icon'
@@ -93,6 +144,7 @@ Data.indicatorTypeSettings = {
             Color = { r = 0, g = 1, b = 0, a = 1 },
             showCooldown = false,
             borderWidth = 3,
+            borderPlacement = 'Inset',
             borderCooldownDirection = 'Clockwise',
             borderCooldownStartCorner = 'TOPRIGHT'
         },
@@ -101,6 +153,7 @@ Data.indicatorTypeSettings = {
             { controlType = 'ColorPicker', setting = 'Color', row = 1 },
             { controlType = 'Checkbox', setting = 'showCooldown', text = 'Show Cooldown', row = 2 },
             { controlType = 'Slider', sliderType = 'borderWidth', setting = 'borderWidth', row = 2 },
+            { controlType = 'Dropdown', dropdownType = 'borderPlacement', setting = 'borderPlacement', row = 3 },
             { controlType = 'Dropdown', dropdownType = 'borderCooldownDirection', setting = 'borderCooldownDirection', row = 3 },
             { controlType = 'Dropdown', dropdownType = 'borderCooldownStartCorner', setting = 'borderCooldownStartCorner', row = 3 }
         }
@@ -221,6 +274,11 @@ Data.dropdownOptions = {
         text = 'Select Cooldown Start Corner',
         default = 'TOPRIGHT',
         options = { 'TOPLEFT', 'TOPRIGHT', 'BOTTOMLEFT', 'BOTTOMRIGHT' }
+    },
+    borderPlacement = {
+        text = 'Select Border Placement',
+        default = 'Inset',
+        options = { 'Inset', 'Outset' }
     },
 }
 

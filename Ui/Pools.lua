@@ -295,6 +295,7 @@ Ui.BarIndicatorPool = CreateFramePool('StatusBar', nil, nil,
         frame:SetScale(1)
         frame:ClearAllPoints()
         frame:SetParent()
+        frame:SetReverseFill(false)
         frame.spell = nil
     end, false,
     function(frame)

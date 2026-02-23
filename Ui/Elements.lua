@@ -77,6 +77,7 @@ local indicatorOverlayRenderers = {
             newBar.background:SetColorTexture(backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a)
         end
         newBar:SetParent(overlay)
+        newBar:ClearAllPoints()
         local anchorData = Util.FigureOutBarAnchors(indicatorData)
         if anchorData.points then
             for _, anchor in ipairs(anchorData.points) do
@@ -91,9 +92,7 @@ local indicatorOverlayRenderers = {
                 newBar:SetHeight(indicatorData.Size)
             end
         end
-        if anchorData.sizing.Reverse then
-            newBar:SetReverseFill(true)
-        end
+        newBar:SetReverseFill(anchorData.sizing.Reverse == true)
         return newBar
     end,
     healthColor = function(overlay, indicatorData)
@@ -125,7 +124,6 @@ end
 function Ui.GetSpotlightFrame()
     if not Ui.SpotlightFrame then
         local spotlightFrame = CreateFrame('Frame', 'AdvancedRaidFramesSpotlight', UIParent, 'InsetFrameTemplate')
-        spotlightFrame.editModeName = 'Advanced Raid Frames Spotlight'
         spotlightFrame:SetSize(200, 50)
         spotlightFrame:SetPoint('CENTER', UIParent, 'CENTER')
         spotlightFrame.text = spotlightFrame:CreateFontString(nil, 'OVERLAY', 'GameFontHighlight')

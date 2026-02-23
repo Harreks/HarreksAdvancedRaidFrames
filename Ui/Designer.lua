@@ -401,7 +401,12 @@ local function buildDesignerEqol(parentCategory)
     end
 
     local function setSelectedIndicatorIndex(index)
-        Options.designerSelectedIndicatorIndex = tonumber(index) or 1
+        local normalizedIndex = tonumber(index)
+        if normalizedIndex and normalizedIndex >= 1 then
+            Options.designerSelectedIndicatorIndex = normalizedIndex
+        else
+            Options.designerSelectedIndicatorIndex = nil
+        end
         notifyTrackedSettings()
         refreshDesignerColorOverrideControls()
         updateAfterDesignerChange(true)
@@ -434,9 +439,12 @@ local function buildDesignerEqol(parentCategory)
         end,
         set = function(value)
             Options.editingSpec = value
-            Options.designerSelectedIndicatorIndex = 1
-            refreshSettingsDisplay()
-            updateAfterDesignerChange(false)
+            local indicators = ensureSpecIndicators(value)
+            if #indicators > 0 then
+                setSelectedIndicatorIndex(1)
+            else
+                setSelectedIndicatorIndex(nil)
+            end
         end,
         height = 260
     })

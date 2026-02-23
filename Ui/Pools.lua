@@ -3,6 +3,41 @@ local Data = NS.Data
 local Ui = NS.Ui
 local Util = NS.Util
 
+local function clearOnUpdate(frame)
+    if frame and frame.SetScript then
+        frame:SetScript('OnUpdate', nil)
+    end
+end
+
+local function cancelFrameTicker(frame, tickerKey)
+    if not frame then
+        return
+    end
+
+    local ticker = frame[tickerKey]
+    if ticker then
+        ticker:Cancel()
+        frame[tickerKey] = nil
+    end
+end
+
+local function hideFrameRegions(frame, regionKeys)
+    if not frame then
+        return
+    end
+
+    for _, key in ipairs(regionKeys) do
+        local region = frame[key]
+        if region and region.Hide then
+            region:Hide()
+        end
+    end
+end
+
+local function hideBarSpark(frame)
+    hideFrameRegions(frame, { 'spark', 'sparkGlow' })
+end
+
 -- Legacy pre-EQOL designer pools removed.
 
 -- All indicators are created inside a container, then anchored to the frame to show indicators on top of it.
@@ -72,6 +107,7 @@ Ui.IconIndicatorPool = CreateFramePool('Frame', nil, nil,
         frame:SetParent()
         frame.spell = nil
         frame.cooldownSwipeColor = nil
+        cancelFrameTicker(frame, 'previewTimer')
     end, false,
     function(frame)
         frame.texture = frame:CreateTexture(nil, 'ARTWORK')
@@ -109,10 +145,7 @@ Ui.IconIndicatorPool = CreateFramePool('Frame', nil, nil,
             end
         end
         frame.Release = function(self)
-            if self.previewTimer then
-                self.previewTimer:Cancel()
-                self.previewTimer = nil
-            end
+            cancelFrameTicker(self, 'previewTimer')
             Ui.IconIndicatorPool:Release(self)
         end
     end
@@ -137,7 +170,8 @@ Ui.SquareIndicatorPool = CreateFramePool('Frame', nil, nil,
             frame.depleteBar:SetMinMaxValues(0, 1)
             frame.depleteBar:SetValue(1)
         end
-        frame:SetScript('OnUpdate', nil)
+        cancelFrameTicker(frame, 'previewTimer')
+        clearOnUpdate(frame)
     end, false,
     function(frame)
         frame.background = frame:CreateTexture(nil, 'BACKGROUND')
@@ -300,6 +334,8 @@ Ui.SquareIndicatorPool = CreateFramePool('Frame', nil, nil,
             self:Show()
         end
         frame.Release = function(self)
+            cancelFrameTicker(self, 'previewTimer')
+            clearOnUpdate(self)
             Ui.SquareIndicatorPool:Release(self)
         end
     end
@@ -315,13 +351,9 @@ Ui.BarIndicatorPool = CreateFramePool('StatusBar', nil, nil,
         frame:SetReverseFill(false)
         frame.spell = nil
         frame.showSpark = false
-        if frame.spark then
-            frame.spark:Hide()
-        end
-        if frame.sparkGlow then
-            frame.sparkGlow:Hide()
-        end
-        frame:SetScript('OnUpdate', nil)
+        hideBarSpark(frame)
+        clearOnUpdate(frame)
+        cancelFrameTicker(frame, 'previewTimer')
     end, false,
     function(frame)
         frame:SetStatusBarTexture("Interface/Buttons/WHITE8x8")
@@ -444,17 +476,9 @@ Ui.BarIndicatorPool = CreateFramePool('StatusBar', nil, nil,
             self:Show()
         end
         frame.Release = function(self)
-            if self.previewTimer then
-                self.previewTimer:Cancel()
-                self.previewTimer = nil
-            end
-            self:SetScript('OnUpdate', nil)
-            if self.spark then
-                self.spark:Hide()
-            end
-            if self.sparkGlow then
-                self.sparkGlow:Hide()
-            end
+            cancelFrameTicker(self, 'previewTimer')
+            clearOnUpdate(self)
+            hideBarSpark(self)
             Ui.BarIndicatorPool:Release(self)
         end
     end
@@ -467,19 +491,18 @@ Ui.HealthColorIndicatorPool = CreateFramePool('Frame', nil, 'BackdropTemplate',
         frame:SetParent()
         frame.coloringFunc = nil
         frame.spell = nil
-        if frame.previewTimer then
-            frame.previewTimer:Cancel()
-            frame.previewTimer = nil
-        end
-        if frame.topEdge then frame.topEdge:Hide() end
-        if frame.rightEdge then frame.rightEdge:Hide() end
-        if frame.bottomEdge then frame.bottomEdge:Hide() end
-        if frame.leftEdge then frame.leftEdge:Hide() end
-        if frame.topClip then frame.topClip:Hide() end
-        if frame.rightClip then frame.rightClip:Hide() end
-        if frame.bottomClip then frame.bottomClip:Hide() end
-        if frame.leftClip then frame.leftClip:Hide() end
-        frame:SetScript('OnUpdate', nil)
+        cancelFrameTicker(frame, 'previewTimer')
+        hideFrameRegions(frame, {
+            'topEdge',
+            'rightEdge',
+            'bottomEdge',
+            'leftEdge',
+            'topClip',
+            'rightClip',
+            'bottomClip',
+            'leftClip',
+        })
+        clearOnUpdate(frame)
     end, false,
     function(frame)
         frame.spell = nil

@@ -64,9 +64,16 @@ function Core.InstallTrackers()
 
             Util.MapOutUnits()
 
-            if Ui.DesignerFrame then
-                Ui.DesignerFrame:RefreshScrollBox()
-                Ui.DesignerFrame:RefreshPreview()
+            if Ui.DesignerTrackedSettings then
+                for _, setting in ipairs(Ui.DesignerTrackedSettings) do
+                    if setting and setting.NotifyUpdate then
+                        setting:NotifyUpdate()
+                    end
+                end
+            end
+
+            if Ui.RefreshDesignerPreview then
+                Ui.RefreshDesignerPreview()
             end
         end
 

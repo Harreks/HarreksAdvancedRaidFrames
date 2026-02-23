@@ -6,6 +6,7 @@ local L = NS.L
 local LibStub = _G.LibStub
 local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
+local DesignerState = Ui.DesignerState
 
 local function printDesignerMessage(message)
     print('|cnNORMAL_FONT_COLOR:AdvancedRaidFrames|r: ' .. message)
@@ -62,35 +63,15 @@ local function refreshSettingsDisplay()
 end
 
 local function ensureEditingSpec()
-    if Options.editingSpec and Data.specInfo[Options.editingSpec] then
-        return Options.editingSpec
-    end
-
-    for spec, _ in pairs(Data.specInfo) do
-        Options.editingSpec = spec
-        break
-    end
-
-    return Options.editingSpec
+    return DesignerState.EnsureEditingSpec()
 end
 
 local function ensureSpecIndicators(spec)
-    if not SavedIndicators[spec] then
-        SavedIndicators[spec] = {}
-    end
-    return SavedIndicators[spec]
+    return DesignerState.EnsureSpecIndicators(spec)
 end
 
 local function deepCopyValue(value)
-    if type(value) ~= 'table' then
-        return value
-    end
-
-    local copy = {}
-    for key, entry in pairs(value) do
-        copy[key] = deepCopyValue(entry)
-    end
-    return copy
+    return DesignerState.DeepCopyValue(value)
 end
 local function applyImportedIndicatorsForSpec(spec, importText, setSelectedIndicatorIndex, updateAfterDesignerChange)
     local result, errorText = Ui.DesignerImportSpecIndicators(spec, importText)
@@ -235,21 +216,7 @@ getLocalizedSpellLabel = function(spellKey, preferEchoVariantLabel)
 end
 
 local function getSelectedIndicatorIndex()
-    local spec = ensureEditingSpec()
-    local indicators = ensureSpecIndicators(spec)
-    if #indicators == 0 then
-        return nil
-    end
-
-    local index = tonumber(Options.designerSelectedIndicatorIndex) or 1
-    if index < 1 then
-        index = 1
-    elseif index > #indicators then
-        index = #indicators
-    end
-
-    Options.designerSelectedIndicatorIndex = index
-    return index
+    return DesignerState.GetSelectedIndicatorIndex()
 end
 
 local function getSelectedIndicator()
@@ -518,13 +485,13 @@ local function ensureCreateIndicatorTypePopup()
     popup.TypeButtons = {}
     Ui.DesignerCreateIndicatorTypePopup = popup
 
-    if SettingsPanel and not Ui._designerCreateIndicatorPopupHooked then
-        SettingsPanel:HookScript('OnHide', function()
+    if not popup._hideHookRegistered then
+        Ui.RegisterDesignerPanelHook('hide', function()
             if Ui.DesignerCreateIndicatorTypePopup then
                 Ui.DesignerCreateIndicatorTypePopup:Hide()
             end
         end)
-        Ui._designerCreateIndicatorPopupHooked = true
+        popup._hideHookRegistered = true
     end
 
     return popup
@@ -575,6 +542,79 @@ local function showCreateIndicatorTypePopup(onSelect)
     end
 
     popup:Show()
+end
+
+local function createIndicatorActionControls(EQOL, category, setSelectedIndicatorIndex)
+    EQOL:CreateButton(category, {
+        key = 'duplicateSelectedIndicator',
+        text = L.DESIGNER_DUPLICATE_INDICATOR,
+        click = function()
+            local indicator, index, _, indicators = getSelectedIndicator()
+            if not indicator then return end
+
+            local duplicatedIndicator = deepCopyValue(indicator)
+            table.insert(indicators, index + 1, duplicatedIndicator)
+            setSelectedIndicatorIndex(index + 1)
+        end,
+        isEnabled = selectedIndicatorExists,
+        expandWith = currentSpecHasIndicators
+    })
+
+    EQOL:CreateButton(category, {
+        key = 'deleteSelectedIndicator',
+        text = L.DESIGNER_DELETE_INDICATOR,
+        click = function()
+            local indicator, index, _, indicators = getSelectedIndicator()
+            if not indicator then return end
+
+            confirmDesignerDelete(function()
+                table.remove(indicators, index)
+                local nextIndex = 1
+                if #indicators > 0 then
+                    if index > #indicators then
+                        nextIndex = #indicators
+                    else
+                        nextIndex = index
+                    end
+                end
+                setSelectedIndicatorIndex(nextIndex)
+            end)
+        end,
+        isEnabled = selectedIndicatorExists,
+        expandWith = currentSpecHasIndicators
+    })
+end
+
+local function createImportExportControls(EQOL, category, setSelectedIndicatorIndex, updateAfterDesignerChange)
+    EQOL:CreateHeader(category, {
+        name = L.DESIGNER_IMPORT_EXPORT_HEADER
+    })
+
+    EQOL:CreateButton(category, {
+        key = 'exportCurrentSpecIndicators',
+        text = L.DESIGNER_EXPORT_SPEC_INDICATORS,
+        click = function()
+            local spec = ensureEditingSpec()
+            local exportString, errorText = Ui.DesignerExportSpecIndicators(spec)
+            if not exportString then
+                printDesignerMessage(errorText or L.DESIGNER_EXPORT_FAILED)
+                return
+            end
+
+            Util.DisplayPopupTextbox(string.format(L.DESIGNER_EXPORT_POPUP_TITLE_FMT, spec), exportString)
+        end
+    })
+
+    EQOL:CreateButton(category, {
+        key = 'importCurrentSpecIndicators',
+        text = L.DESIGNER_IMPORT_SPEC_INDICATORS,
+        click = function()
+            local spec = ensureEditingSpec()
+            Ui.ShowDesignerImportPopup(spec, function(importText)
+                applyImportedIndicatorsForSpec(spec, importText, setSelectedIndicatorIndex, updateAfterDesignerChange)
+            end)
+        end
+    })
 end
 
 local function buildDesignerEqol(parentCategory)
@@ -640,8 +680,8 @@ local function buildDesignerEqol(parentCategory)
 
     syncDesignerSpecToCurrent()
 
-    if SettingsPanel and not Ui._designerSpecSyncHooked then
-        SettingsPanel:HookScript('OnShow', function()
+    if not Ui._designerSpecSyncHooked then
+        Ui.RegisterDesignerPanelHook('show', function()
             syncDesignerSpecToCurrent()
         end)
         Ui._designerSpecSyncHooked = true
@@ -1352,74 +1392,8 @@ local function buildDesignerEqol(parentCategory)
     })
     trackSetting(indicatorTextSizeSetting)
 
-    EQOL:CreateButton(category, {
-        key = 'duplicateSelectedIndicator',
-        text = L.DESIGNER_DUPLICATE_INDICATOR,
-        click = function()
-            local indicator, index, _, indicators = getSelectedIndicator()
-            if not indicator then return end
-
-            local duplicatedIndicator = deepCopyValue(indicator)
-            table.insert(indicators, index + 1, duplicatedIndicator)
-            setSelectedIndicatorIndex(index + 1)
-        end,
-        isEnabled = selectedIndicatorExists,
-        expandWith = currentSpecHasIndicators
-    })
-
-    EQOL:CreateButton(category, {
-        key = 'deleteSelectedIndicator',
-        text = L.DESIGNER_DELETE_INDICATOR,
-        click = function()
-            local indicator, index, _, indicators = getSelectedIndicator()
-            if not indicator then return end
-
-            confirmDesignerDelete(function()
-                table.remove(indicators, index)
-                local nextIndex = 1
-                if #indicators > 0 then
-                    if index > #indicators then
-                        nextIndex = #indicators
-                    else
-                        nextIndex = index
-                    end
-                end
-                setSelectedIndicatorIndex(nextIndex)
-            end)
-        end,
-        isEnabled = selectedIndicatorExists,
-        expandWith = currentSpecHasIndicators
-    })
-
-    EQOL:CreateHeader(category, {
-        name = L.DESIGNER_IMPORT_EXPORT_HEADER
-    })
-
-    EQOL:CreateButton(category, {
-        key = 'exportCurrentSpecIndicators',
-        text = L.DESIGNER_EXPORT_SPEC_INDICATORS,
-        click = function()
-            local spec = ensureEditingSpec()
-            local exportString, errorText = Ui.DesignerExportSpecIndicators(spec)
-            if not exportString then
-                printDesignerMessage(errorText or L.DESIGNER_EXPORT_FAILED)
-                return
-            end
-
-            Util.DisplayPopupTextbox(string.format(L.DESIGNER_EXPORT_POPUP_TITLE_FMT, spec), exportString)
-        end
-    })
-
-    EQOL:CreateButton(category, {
-        key = 'importCurrentSpecIndicators',
-        text = L.DESIGNER_IMPORT_SPEC_INDICATORS,
-        click = function()
-            local spec = ensureEditingSpec()
-            Ui.ShowDesignerImportPopup(spec, function(importText)
-                applyImportedIndicatorsForSpec(spec, importText, setSelectedIndicatorIndex, updateAfterDesignerChange)
-            end)
-        end
-    })
+    createIndicatorActionControls(EQOL, category, setSelectedIndicatorIndex)
+    createImportExportControls(EQOL, category, setSelectedIndicatorIndex, updateAfterDesignerChange)
 
     updateAfterDesignerChange(false)
     return category

@@ -3,28 +3,9 @@ local Data = NS.Data
 local Ui = NS.Ui
 local Util = NS.Util
 local L = NS.L
-local SavedIndicators = HARFDB.savedIndicators
+local DesignerState = Ui.DesignerState
 
 local IMPORT_EXPORT_PREFIX = 'HARF1:'
-
-local function deepCopyValue(value)
-    if type(value) ~= 'table' then
-        return value
-    end
-
-    local copy = {}
-    for key, entry in pairs(value) do
-        copy[key] = deepCopyValue(entry)
-    end
-    return copy
-end
-
-local function ensureSpecIndicators(spec)
-    if not SavedIndicators[spec] then
-        SavedIndicators[spec] = {}
-    end
-    return SavedIndicators[spec]
-end
 
 local function isAllowedDropdownValue(dropdownType, value)
     local dropdownData = Data.dropdownOptions[dropdownType]
@@ -56,10 +37,10 @@ end
 
 local function sanitizeColorTable(value, defaultColor)
     if type(value) ~= 'table' then
-        return deepCopyValue(defaultColor)
+        return DesignerState.DeepCopyValue(defaultColor)
     end
 
-    local color = deepCopyValue(defaultColor)
+    local color = DesignerState.DeepCopyValue(defaultColor)
     local channels = { 'r', 'g', 'b', 'a' }
     for _, channel in ipairs(channels) do
         local channelValue = value[channel]
@@ -184,11 +165,11 @@ function Ui.DesignerExportSpecIndicators(spec)
         return nil, L.DESIGNER_IMPORT_EXPORT_UNSUPPORTED
     end
 
-    local indicators = ensureSpecIndicators(spec)
+    local indicators = DesignerState.EnsureSpecIndicators(spec)
     local payload = {
         version = 1,
         spec = spec,
-        indicators = deepCopyValue(indicators)
+        indicators = DesignerState.DeepCopyValue(indicators)
     }
 
     local okSerialize, jsonPayload = pcall(encoder.SerializeJSON, payload)

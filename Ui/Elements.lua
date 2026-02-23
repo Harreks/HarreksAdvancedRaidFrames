@@ -1,5 +1,4 @@
 local _, NS = ...
-local Data = NS.Data
 local Ui = NS.Ui
 local Util = NS.Util
 

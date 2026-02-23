@@ -4,7 +4,7 @@ local Ui = NS.Ui
 local L = NS.L
 local LibStub = _G.LibStub
 local LCG = LibStub and LibStub('LibCustomGlow-1.0', true)
-local SavedIndicators = HARFDB.savedIndicators
+local DesignerState = Ui.DesignerState
 
 local PREVIEW_FLOAT_WIDTH = 360
 local PREVIEW_FLOAT_HEIGHT = 320
@@ -292,7 +292,7 @@ function Ui.InitializeDesignerPreview(config)
             currentWidget.Overlay = nil
         end
 
-        local indicatorData = SavedIndicators[spec]
+        local indicatorData = spec and DesignerState.EnsureSpecIndicators(spec)
         local overlay = Ui.CreateIndicatorOverlay(indicatorData)
         if overlay then
             overlay:SetParent(currentWidget)
@@ -307,8 +307,8 @@ function Ui.InitializeDesignerPreview(config)
         Ui._designerPreviewRefreshing = nil
     end
 
-    if SettingsPanel and not Ui._designerPreviewPanelHooked then
-        SettingsPanel:HookScript('OnShow', function()
+    if not Ui._designerPreviewPanelHooked then
+        Ui.RegisterDesignerPanelHook('show', function()
             if Ui.UpdateDesignerPreviewPlacement then
                 Ui.UpdateDesignerPreviewPlacement()
             end
@@ -317,20 +317,16 @@ function Ui.InitializeDesignerPreview(config)
             end
         end)
 
-        SettingsPanel:HookScript('OnHide', function()
+        Ui.RegisterDesignerPanelHook('hide', function()
             if Ui.DesignerPreviewWidget then
                 stopSelectedPreviewGlow(Ui.DesignerPreviewWidget)
                 Ui.DesignerPreviewWidget:Hide()
             end
         end)
 
-        SettingsPanel:HookScript('OnUpdate', function(_, elapsed)
-            Ui._designerPreviewElapsed = (Ui._designerPreviewElapsed or 0) + elapsed
-            if Ui._designerPreviewElapsed >= 0.25 then
-                Ui._designerPreviewElapsed = 0
-                if Ui.UpdateDesignerPreviewPlacement then
-                    Ui.UpdateDesignerPreviewPlacement()
-                end
+        Ui.RegisterDesignerPanelHook('tick', function()
+            if Ui.UpdateDesignerPreviewPlacement then
+                Ui.UpdateDesignerPreviewPlacement()
             end
         end)
 

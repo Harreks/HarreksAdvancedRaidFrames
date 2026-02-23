@@ -120,23 +120,38 @@ Ui.SquareIndicatorPool = CreateFramePool('Frame', nil, nil,
         frame.spell = nil
         frame.cooldownStyle = nil
         frame.cooldownSwipeColor = nil
+        frame.shrinkDuration = 0
+        frame.shrinkStartTime = 0
         if frame.background then
             frame.background:Hide()
             frame.background:SetColorTexture(0, 0, 0, 0)
+        end
+        if frame.shrinkTexture then
+            frame.shrinkTexture:Hide()
+            frame.shrinkTexture:ClearAllPoints()
+            frame.shrinkTexture:SetPoint('CENTER', frame, 'CENTER', 0, 0)
+            frame.shrinkTexture:SetSize(1, 1)
         end
         if frame.depleteBar then
             frame.depleteBar:Hide()
             frame.depleteBar:SetMinMaxValues(0, 1)
             frame.depleteBar:SetValue(1)
         end
+        frame:SetScript('OnUpdate', nil)
     end, false,
     function(frame)
         frame.background = frame:CreateTexture(nil, 'BACKGROUND')
         frame.background:SetAllPoints()
         frame.background:SetColorTexture(0, 0, 0, 0)
         frame.background:Hide()
+
         frame.texture = frame:CreateTexture(nil, 'ARTWORK')
         frame.texture:SetAllPoints()
+
+        frame.shrinkTexture = frame:CreateTexture(nil, 'ARTWORK')
+        frame.shrinkTexture:SetPoint('CENTER', frame, 'CENTER', 0, 0)
+        frame.shrinkTexture:SetSize(1, 1)
+        frame.shrinkTexture:Hide()
 
         frame.depleteBar = CreateFrame('StatusBar', nil, frame)
         frame.depleteBar:SetAllPoints()
@@ -151,6 +166,8 @@ Ui.SquareIndicatorPool = CreateFramePool('Frame', nil, nil,
         frame.cooldown:Hide()
         frame.type = 'SquareIndicator'
         frame.spell = nil
+        frame.shrinkDuration = 0
+        frame.shrinkStartTime = 0
         frame.ApplySwipeStyle = function(self)
             if not self.cooldownSwipeColor then
                 return
@@ -184,6 +201,57 @@ Ui.SquareIndicatorPool = CreateFramePool('Frame', nil, nil,
                 self.depleteBar:SetReverseFill(false)
             end
         end
+        frame.ApplyShrinkDirection = function(self)
+            if not self.shrinkTexture then
+                return
+            end
+
+            local anchor = self.shrinkDirection or 'CENTER'
+            self.shrinkTexture:ClearAllPoints()
+            self.shrinkTexture:SetPoint(anchor, self, anchor, 0, 0)
+        end
+        frame.UpdateShrinkFill = function(self)
+            if not self.shrinkTexture then
+                return
+            end
+
+            if self.shrinkDuration <= 0 then
+                self.shrinkTexture:SetSize(1, 1)
+                return
+            end
+
+            local elapsed = GetTime() - self.shrinkStartTime
+            local remaining = self.shrinkDuration - elapsed
+            if remaining < 0 then
+                remaining = 0
+            end
+
+            local pct = remaining / self.shrinkDuration
+            local width = self:GetWidth() * pct
+            local height = self:GetHeight() * pct
+            if width < 1 then width = 1 end
+            if height < 1 then height = 1 end
+            self.shrinkTexture:SetSize(width, height)
+
+            if remaining <= 0 then
+                self:SetScript('OnUpdate', nil)
+            end
+        end
+        frame.StartShrinkFromCooldown = function(self)
+            local startTimeMs, durationMs = self.cooldown:GetCooldownTimes()
+            if not durationMs or durationMs <= 0 then
+                self.shrinkDuration = 0
+                self.shrinkStartTime = 0
+                self.shrinkTexture:SetSize(1, 1)
+                self:SetScript('OnUpdate', nil)
+                return
+            end
+
+            self.shrinkDuration = durationMs / 1000
+            self.shrinkStartTime = startTimeMs / 1000
+            self:UpdateShrinkFill()
+            self:SetScript('OnUpdate', self.UpdateShrinkFill)
+        end
         frame.UpdateIndicator = function(self, unit, auraData, auraDurations)
             if self.spell and auraData[self.spell] then
                 if self.showCooldown then
@@ -214,8 +282,32 @@ Ui.SquareIndicatorPool = CreateFramePool('Frame', nil, nil,
                             self.depleteBar:Hide()
                             self.cooldown:Hide()
                         end
+                        self.shrinkTexture:Hide()
+                        self:SetScript('OnUpdate', nil)
+                    elseif self.cooldownStyle == 'Shrink' then
+                        self.depleteBar:Hide()
+                        self.cooldown:SetDrawSwipe(false)
+                        self.cooldown:SetDrawEdge(false)
+                        self.cooldown:SetDrawBling(false)
+                        self:ApplyShrinkDirection()
+                        if duration then
+                            self.cooldown:SetCooldownFromDurationObject(duration)
+                            if self.showCooldownText then
+                                self.cooldown:Show()
+                            else
+                                self.cooldown:Hide()
+                            end
+                            self.shrinkTexture:Show()
+                            self:StartShrinkFromCooldown()
+                        else
+                            self.cooldown:Hide()
+                            self.shrinkTexture:Hide()
+                            self:SetScript('OnUpdate', nil)
+                        end
                     else
                         self.depleteBar:Hide()
+                        self.shrinkTexture:Hide()
+                        self:SetScript('OnUpdate', nil)
                         self.cooldown:SetDrawSwipe(true)
                         self.cooldown:SetDrawEdge(false)
                         self.cooldown:SetDrawBling(false)
@@ -230,9 +322,12 @@ Ui.SquareIndicatorPool = CreateFramePool('Frame', nil, nil,
                 else
                     self.cooldown:Hide()
                     self.depleteBar:Hide()
+                    self.shrinkTexture:Hide()
+                    self:SetScript('OnUpdate', nil)
                 end
                 self:Show()
             else
+                self:SetScript('OnUpdate', nil)
                 self:Hide()
             end
         end
@@ -262,8 +357,26 @@ Ui.SquareIndicatorPool = CreateFramePool('Frame', nil, nil,
                         self.depleteBar:Hide()
                         self.cooldown:Hide()
                     end
+                    self.shrinkTexture:Hide()
+                    self:SetScript('OnUpdate', nil)
+                elseif self.cooldownStyle == 'Shrink' then
+                    self.depleteBar:Hide()
+                    self.cooldown:SetDrawSwipe(false)
+                    self.cooldown:SetDrawEdge(false)
+                    self.cooldown:SetDrawBling(false)
+                    self:ApplyShrinkDirection()
+                    self.cooldown:SetCooldown(GetTime(), 30)
+                    if self.showCooldownText then
+                        self.cooldown:Show()
+                    else
+                        self.cooldown:Hide()
+                    end
+                    self.shrinkTexture:Show()
+                    self:StartShrinkFromCooldown()
                 else
                     self.depleteBar:Hide()
+                    self.shrinkTexture:Hide()
+                    self:SetScript('OnUpdate', nil)
                     self.cooldown:SetDrawSwipe(true)
                     self.cooldown:SetDrawEdge(false)
                     self.cooldown:SetDrawBling(false)
@@ -274,6 +387,8 @@ Ui.SquareIndicatorPool = CreateFramePool('Frame', nil, nil,
             else
                 self.cooldown:Hide()
                 self.depleteBar:Hide()
+                self.shrinkTexture:Hide()
+                self:SetScript('OnUpdate', nil)
             end
             if not self.previewTimer then
                 self.previewTimer = C_Timer.NewTicker(30, function()
@@ -351,11 +466,30 @@ Ui.HealthColorIndicatorPool = CreateFramePool('Frame', nil, 'BackdropTemplate',
         frame:SetParent()
         frame.coloringFunc = nil
         frame.spell = nil
+        frame.borderAnimDuration = 0
+        frame.borderAnimStartTime = 0
+        frame.borderCooldownDirection = nil
+        frame.borderCooldownStartCorner = nil
+        if frame.cooldown then
+            frame.cooldown:Hide()
+            frame.cooldown:Clear()
+        end
+        if frame.topBorder then frame.topBorder:Hide() end
+        if frame.rightBorder then frame.rightBorder:Hide() end
+        if frame.bottomBorder then frame.bottomBorder:Hide() end
+        if frame.leftBorder then frame.leftBorder:Hide() end
+        frame:SetScript('OnUpdate', nil)
     end, false,
     function(frame)
         frame.spell = nil
         frame.color = nil
         frame.type = 'HealthColor'
+        frame.showCooldown = false
+        frame.borderAnimDuration = 0
+        frame.borderAnimStartTime = 0
+        frame.borderCooldownDirection = 'Clockwise'
+        frame.borderCooldownStartCorner = 'TOPRIGHT'
+        frame.borderThickness = 3
         frame:SetBackdrop({
             edgeFile = "Interface\\Buttons\\WHITE8X8",
             edgeSize = 3,
@@ -365,47 +499,319 @@ Ui.HealthColorIndicatorPool = CreateFramePool('Frame', nil, 'BackdropTemplate',
         })
         frame:SetBackdropColor(0, 0, 0, 0)
         frame:Hide()
-        frame.DefaultCallback = function(self, frameToRecolor, shouldBeColored)
-            if frameToRecolor and frameToRecolor.healthBar then
-                if shouldBeColored then
-                    --frameToRecolor.healthBar.barTexture:SetVertexColor(self.color.r, self.color.g, self.color.b)
-                    self:Show()
-                    self:SetBackdropBorderColor(self.color.r, self.color.g, self.color.b)
+
+        frame.topBorder = frame:CreateTexture(nil, 'ARTWORK')
+        frame.rightBorder = frame:CreateTexture(nil, 'ARTWORK')
+        frame.bottomBorder = frame:CreateTexture(nil, 'ARTWORK')
+        frame.leftBorder = frame:CreateTexture(nil, 'ARTWORK')
+
+        frame.cooldown = CreateFrame('Cooldown', nil, frame, 'CooldownFrameTemplate')
+        frame.cooldown:SetAllPoints()
+        frame.cooldown:SetHideCountdownNumbers(true)
+        frame.cooldown:Hide()
+
+        frame.ApplyBorderThickness = function(self)
+            local thickness = self.borderThickness or 3
+            self:SetBackdrop({
+                edgeFile = "Interface\\Buttons\\WHITE8X8",
+                edgeSize = thickness,
+                bgFile = "Interface\\Buttons\\WHITE8X8",
+                tile = true, tileSize = 16,
+                insets = { left = 2, right = 2, top = 2, bottom = 2 }
+            })
+            self:SetBackdropColor(0, 0, 0, 0)
+        end
+
+        frame.ApplyBorderColor = function(self)
+            if not self.color then
+                return
+            end
+
+            self.topBorder:SetColorTexture(self.color.r, self.color.g, self.color.b, self.color.a)
+            self.rightBorder:SetColorTexture(self.color.r, self.color.g, self.color.b, self.color.a)
+            self.bottomBorder:SetColorTexture(self.color.r, self.color.g, self.color.b, self.color.a)
+            self.leftBorder:SetColorTexture(self.color.r, self.color.g, self.color.b, self.color.a)
+        end
+
+        frame.HideAnimatedBorder = function(self)
+            self.topBorder:Hide()
+            self.rightBorder:Hide()
+            self.bottomBorder:Hide()
+            self.leftBorder:Hide()
+        end
+
+        frame.GetBorderSegments = function(self)
+            local isClockwise = (self.borderCooldownDirection or 'Clockwise') == 'Clockwise'
+            local corner = self.borderCooldownStartCorner or 'TOPRIGHT'
+
+            if isClockwise then
+                if corner == 'TOPLEFT' then
+                    return {
+                        { side = 'left', from = 'top' },
+                        { side = 'bottom', from = 'left' },
+                        { side = 'right', from = 'bottom' },
+                        { side = 'top', from = 'right' },
+                    }
+                elseif corner == 'BOTTOMLEFT' then
+                    return {
+                        { side = 'bottom', from = 'left' },
+                        { side = 'right', from = 'bottom' },
+                        { side = 'top', from = 'right' },
+                        { side = 'left', from = 'top' },
+                    }
+                elseif corner == 'BOTTOMRIGHT' then
+                    return {
+                        { side = 'right', from = 'bottom' },
+                        { side = 'top', from = 'right' },
+                        { side = 'left', from = 'top' },
+                        { side = 'bottom', from = 'left' },
+                    }
+                end
+
+                return {
+                    { side = 'top', from = 'right' },
+                    { side = 'left', from = 'top' },
+                    { side = 'bottom', from = 'left' },
+                    { side = 'right', from = 'bottom' },
+                }
+            end
+
+            if corner == 'TOPLEFT' then
+                return {
+                    { side = 'top', from = 'left' },
+                    { side = 'right', from = 'top' },
+                    { side = 'bottom', from = 'right' },
+                    { side = 'left', from = 'bottom' },
+                }
+            elseif corner == 'BOTTOMLEFT' then
+                return {
+                    { side = 'left', from = 'bottom' },
+                    { side = 'top', from = 'left' },
+                    { side = 'right', from = 'top' },
+                    { side = 'bottom', from = 'right' },
+                }
+            elseif corner == 'BOTTOMRIGHT' then
+                return {
+                    { side = 'bottom', from = 'right' },
+                    { side = 'left', from = 'bottom' },
+                    { side = 'top', from = 'left' },
+                    { side = 'right', from = 'top' },
+                }
+            end
+
+            return {
+                { side = 'right', from = 'top' },
+                { side = 'bottom', from = 'right' },
+                { side = 'left', from = 'bottom' },
+                { side = 'top', from = 'left' },
+            }
+        end
+
+        frame.SetSegmentFill = function(self, side, from, fillLength)
+            local thickness = self.borderThickness or 3
+            local width = self:GetWidth()
+            local height = self:GetHeight()
+            if width <= 0 or height <= 0 then
+                return
+            end
+
+            local texture
+            local maxLength
+            if side == 'top' then
+                texture = self.topBorder
+                maxLength = width
+            elseif side == 'bottom' then
+                texture = self.bottomBorder
+                maxLength = width
+            elseif side == 'left' then
+                texture = self.leftBorder
+                maxLength = height
+            else
+                texture = self.rightBorder
+                maxLength = height
+            end
+
+            if fillLength <= 0 then
+                texture:Hide()
+                return
+            end
+
+            if fillLength > maxLength then
+                fillLength = maxLength
+            end
+
+            texture:ClearAllPoints()
+            if side == 'top' then
+                texture:SetHeight(thickness)
+                texture:SetWidth(fillLength)
+                if from == 'left' then
+                    texture:SetPoint('TOPLEFT', self, 'TOPLEFT', 0, 0)
                 else
-                    self:Hide()
-                    --CompactUnitFrame_UpdateHealthColor(frameToRecolor)
+                    texture:SetPoint('TOPRIGHT', self, 'TOPRIGHT', 0, 0)
+                end
+            elseif side == 'bottom' then
+                texture:SetHeight(thickness)
+                texture:SetWidth(fillLength)
+                if from == 'left' then
+                    texture:SetPoint('BOTTOMLEFT', self, 'BOTTOMLEFT', 0, 0)
+                else
+                    texture:SetPoint('BOTTOMRIGHT', self, 'BOTTOMRIGHT', 0, 0)
+                end
+            elseif side == 'left' then
+                texture:SetWidth(thickness)
+                texture:SetHeight(fillLength)
+                if from == 'top' then
+                    texture:SetPoint('TOPLEFT', self, 'TOPLEFT', 0, 0)
+                else
+                    texture:SetPoint('BOTTOMLEFT', self, 'BOTTOMLEFT', 0, 0)
+                end
+            else
+                texture:SetWidth(thickness)
+                texture:SetHeight(fillLength)
+                if from == 'top' then
+                    texture:SetPoint('TOPRIGHT', self, 'TOPRIGHT', 0, 0)
+                else
+                    texture:SetPoint('BOTTOMRIGHT', self, 'BOTTOMRIGHT', 0, 0)
                 end
             end
+            texture:Show()
         end
-        frame.UpdateIndicator = function(self, unit, auraData)
-            local overlay = self:GetParent()
+
+        frame.DrawAnimatedBorder = function(self, remainingPct)
+            local width = self:GetWidth()
+            local height = self:GetHeight()
+            if width <= 0 or height <= 0 then
+                self:HideAnimatedBorder()
+                return
+            end
+
+            if remainingPct < 0 then remainingPct = 0 end
+            if remainingPct > 1 then remainingPct = 1 end
+
+            local remainingLength = (2 * (width + height)) * remainingPct
+            local segments = self:GetBorderSegments()
+
+            for _, segment in ipairs(segments) do
+                local sideLength = (segment.side == 'top' or segment.side == 'bottom') and width or height
+                local fill = remainingLength
+                if fill > sideLength then
+                    fill = sideLength
+                end
+
+                self:SetSegmentFill(segment.side, segment.from, fill)
+                remainingLength = remainingLength - sideLength
+            end
+        end
+
+        frame.UpdateBorderAnimation = function(self)
+            if self.borderAnimDuration <= 0 then
+                self:HideAnimatedBorder()
+                self:SetScript('OnUpdate', nil)
+                return
+            end
+
+            local elapsed = GetTime() - self.borderAnimStartTime
+            local remaining = self.borderAnimDuration - elapsed
+            if remaining < 0 then
+                remaining = 0
+            end
+
+            self:DrawAnimatedBorder(remaining / self.borderAnimDuration)
+            if remaining <= 0 then
+                self:SetScript('OnUpdate', nil)
+            end
+        end
+
+        frame.StartBorderAnimationFromCooldown = function(self)
+            local startTimeMs, durationMs = self.cooldown:GetCooldownTimes()
+            if not durationMs or durationMs <= 0 then
+                self.borderAnimDuration = 0
+                self.borderAnimStartTime = 0
+                self:HideAnimatedBorder()
+                self:SetScript('OnUpdate', nil)
+                return
+            end
+
+            self.borderAnimDuration = durationMs / 1000
+            self.borderAnimStartTime = startTimeMs / 1000
+            self:UpdateBorderAnimation()
+            self:SetScript('OnUpdate', self.UpdateBorderAnimation)
+        end
+
+        frame.DefaultCallback = function(self, shouldBeColored)
+            if shouldBeColored then
+                self:Show()
+                self:SetBackdropBorderColor(self.color.r, self.color.g, self.color.b)
+            else
+                self:Hide()
+            end
+        end
+
+        frame.UpdateIndicator = function(self, unit, auraData, auraDurations)
             local unitList = Util.GetRelevantList()
             local elements = unitList[unit]
-            if elements then
-                --Util.DumpData(elements)
-                local shouldBeColored = false
-                if self.spell and auraData[self.spell] then
-                    elements.isColored = true
-                    elements.recolor = self.color
-                    shouldBeColored = true
-                else
-                    elements.isColored = false
-                    elements.recolor = nil
+            if not elements then
+                return
+            end
+
+            local shouldBeColored = false
+            local hasAnimatedBorder = false
+            if self.spell and auraData[self.spell] then
+                local aura = auraData[self.spell]
+                local duration = auraDurations and auraDurations[self.spell]
+                if not duration then
+                    duration = C_UnitAuras.GetAuraDuration(unit, aura.auraInstanceID)
                 end
-                local coloringFunc = overlay.coloringFunc
-                if coloringFunc and type(coloringFunc) == 'function' and elements.extraFrames and elements.extraFrames[overlay.extraFrameIndex] then
-                    local unitFrame = elements.extraFrames[overlay.extraFrameIndex].frame
-                    coloringFunc(unitFrame, shouldBeColored, self.color)
+
+                elements.isColored = false
+                elements.recolor = nil
+                shouldBeColored = true
+
+                self:ApplyBorderColor()
+                if duration and self.showCooldown then
+                    hasAnimatedBorder = true
+                    self.cooldown:SetCooldownFromDurationObject(duration)
+                    self.cooldown:Hide()
+                    self:StartBorderAnimationFromCooldown()
                 else
-                    local unitFrame = _G[elements.frame]
-                    self:DefaultCallback(unitFrame, shouldBeColored)
+                    self:SetScript('OnUpdate', nil)
+                    self:HideAnimatedBorder()
+                    self.cooldown:Hide()
+                end
+            else
+                elements.isColored = false
+                elements.recolor = nil
+                self:SetScript('OnUpdate', nil)
+                self:HideAnimatedBorder()
+                self.cooldown:Hide()
+            end
+
+            self:DefaultCallback(shouldBeColored)
+            if shouldBeColored then
+                if hasAnimatedBorder then
+                    self:SetBackdropBorderColor(self.color.r, self.color.g, self.color.b, 0)
+                else
+                    self:SetBackdropBorderColor(self.color.r, self.color.g, self.color.b, self.color.a)
                 end
             end
         end
+
         frame.ShowPreview = function(self)
-            self:SetBackdropBorderColor(self.color.r, self.color.g, self.color.b)
+            self:ApplyBorderColor()
+            if self.showCooldown then
+                self:SetBackdropBorderColor(self.color.r, self.color.g, self.color.b, 0)
+                self.cooldown:SetCooldown(GetTime(), 30)
+                self.cooldown:Hide()
+                self:StartBorderAnimationFromCooldown()
+            else
+                self:SetScript('OnUpdate', nil)
+                self:HideAnimatedBorder()
+                self:SetBackdropBorderColor(self.color.r, self.color.g, self.color.b, self.color.a)
+                self.cooldown:Hide()
+            end
             self:Show()
         end
+
         frame.Release = function(self)
             Ui.HealthColorIndicatorPool:Release(self)
         end

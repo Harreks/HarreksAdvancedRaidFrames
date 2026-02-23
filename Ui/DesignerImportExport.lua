@@ -131,6 +131,9 @@ local function sanitizeImportedIndicator(indicator, spec)
         if type(indicator.depleteDirection) == 'string' and isAllowedDropdownValue('squareDepleteDirection', indicator.depleteDirection) then
             sanitized.depleteDirection = indicator.depleteDirection
         end
+        if type(indicator.shrinkDirection) == 'string' and isAllowedDropdownValue('squareShrinkDirection', indicator.shrinkDirection) then
+            sanitized.shrinkDirection = indicator.shrinkDirection
+        end
     elseif indicatorType == 'bar' then
         sanitized.Color = sanitizeColorTable(indicator.Color, sanitized.Color)
         sanitized.BackgroundColor = sanitizeColorTable(indicator.BackgroundColor, sanitized.BackgroundColor)
@@ -152,6 +155,17 @@ local function sanitizeImportedIndicator(indicator, spec)
         if offset then sanitized.Offset = offset end
     elseif indicatorType == 'healthColor' then
         sanitized.Color = sanitizeColorTable(indicator.Color, sanitized.Color)
+        if type(indicator.showCooldown) == 'boolean' then sanitized.showCooldown = indicator.showCooldown end
+
+        local borderWidth = clampNumber(indicator.borderWidth, 1, 10)
+        if borderWidth then sanitized.borderWidth = borderWidth end
+
+        if type(indicator.borderCooldownDirection) == 'string' and isAllowedDropdownValue('borderCooldownDirection', indicator.borderCooldownDirection) then
+            sanitized.borderCooldownDirection = indicator.borderCooldownDirection
+        end
+        if type(indicator.borderCooldownStartCorner) == 'string' and isAllowedDropdownValue('borderCooldownStartCorner', indicator.borderCooldownStartCorner) then
+            sanitized.borderCooldownStartCorner = indicator.borderCooldownStartCorner
+        end
     end
 
     return sanitized

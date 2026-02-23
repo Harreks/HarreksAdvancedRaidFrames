@@ -90,11 +90,19 @@ Data.indicatorTypes = {
 Data.indicatorTypeSettings = {
     healthColor = {
         defaults = {
-            Color = { r = 0, g = 1, b = 0, a = 1 }
+            Color = { r = 0, g = 1, b = 0, a = 1 },
+            showCooldown = false,
+            borderWidth = 3,
+            borderCooldownDirection = 'Clockwise',
+            borderCooldownStartCorner = 'TOPRIGHT'
         },
         controls = {
             { controlType = 'SpellSelector', setting = 'Spell', row = 1 },
-            { controlType = 'ColorPicker', setting = 'Color', row = 1 }
+            { controlType = 'ColorPicker', setting = 'Color', row = 1 },
+            { controlType = 'Checkbox', setting = 'showCooldown', text = 'Show Cooldown', row = 2 },
+            { controlType = 'Slider', sliderType = 'borderWidth', setting = 'borderWidth', row = 2 },
+            { controlType = 'Dropdown', dropdownType = 'borderCooldownDirection', setting = 'borderCooldownDirection', row = 3 },
+            { controlType = 'Dropdown', dropdownType = 'borderCooldownStartCorner', setting = 'borderCooldownStartCorner', row = 3 }
         }
     },
     icon = {
@@ -131,7 +139,8 @@ Data.indicatorTypeSettings = {
                 showCooldown = false,
                 showCooldownText = true,
                 cooldownStyle = 'Swipe',
-                depleteDirection = 'Right to Left'
+                depleteDirection = 'Right to Left',
+                shrinkDirection = 'CENTER'
         },
         controls = {
             { controlType = 'SpellSelector', setting = 'Spell', row = 1 },
@@ -191,12 +200,27 @@ Data.dropdownOptions = {
     squareCooldownStyle = {
         text = 'Select Cooldown Style',
         default = 'Swipe',
-        options = { 'Swipe', 'Deplete' }
+        options = { 'Swipe', 'Deplete', 'Shrink' }
     },
     squareDepleteDirection = {
         text = 'Select Deplete Direction',
         default = 'Right to Left',
         options = { 'Right to Left', 'Left to Right', 'Top to Bottom', 'Bottom to Top' }
+    },
+    squareShrinkDirection = {
+        text = 'Select Shrink Direction',
+        default = 'CENTER',
+        options = { 'CENTER', 'TOPLEFT', 'TOP', 'TOPRIGHT', 'LEFT', 'RIGHT', 'BOTTOMLEFT', 'BOTTOM', 'BOTTOMRIGHT' }
+    },
+    borderCooldownDirection = {
+        text = 'Select Cooldown Direction',
+        default = 'Clockwise',
+        options = { 'Clockwise', 'Anti-Clockwise' }
+    },
+    borderCooldownStartCorner = {
+        text = 'Select Cooldown Start Corner',
+        default = 'TOPRIGHT',
+        options = { 'TOPLEFT', 'TOPRIGHT', 'BOTTOMLEFT', 'BOTTOMRIGHT' }
     },
 }
 
@@ -248,6 +272,14 @@ Data.sliderPresets = {
         min = 0.5,
         max = 3,
         step = 0.1
+    },
+    borderWidth = {
+        text = 'Border Width',
+        decimals = 0,
+        default = 3,
+        min = 1,
+        max = 10,
+        step = 1
     }
 }
 

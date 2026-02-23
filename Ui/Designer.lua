@@ -242,9 +242,42 @@ local function getDropdownValues(dropdownType)
     end
 
     local function formatDropdownOption(dropdownKey, value)
-        if dropdownKey == 'iconPosition' or dropdownKey == 'barPosition' then
+        if formatAnchorValue(value) ~= value then
             return formatAnchorValue(value)
         end
+
+        if value == 'Swipe' then
+            return L.OPTION_SWIPE or value
+        elseif value == 'Deplete' then
+            return L.OPTION_DEPLETE or value
+        elseif value == 'Shrink' then
+            return L.OPTION_SHRINK or value
+        elseif value == 'Right to Left' then
+            return L.OPTION_RIGHT_TO_LEFT or value
+        elseif value == 'Left to Right' then
+            return L.OPTION_LEFT_TO_RIGHT or value
+        elseif value == 'Top to Bottom' then
+            return L.OPTION_TOP_TO_BOTTOM or value
+        elseif value == 'Bottom to Top' then
+            return L.OPTION_BOTTOM_TO_TOP or value
+        elseif value == 'Horizontal' then
+            return L.OPTION_HORIZONTAL or value
+        elseif value == 'Vertical' then
+            return L.OPTION_VERTICAL or value
+        elseif value == 'Full' then
+            return L.OPTION_FULL or value
+        elseif value == 'Half' then
+            return L.OPTION_HALF or value
+        end
+
+        if dropdownKey == 'borderCooldownDirection' then
+            if value == 'Clockwise' then
+                return L.OPTION_CLOCKWISE or value
+            elseif value == 'Anti-Clockwise' then
+                return L.OPTION_ANTI_CLOCKWISE or value
+            end
+        end
+
         return value
     end
 
@@ -723,10 +756,83 @@ local function buildDesignerEqol(parentCategory)
         end,
         isEnabled = selectedIndicatorExists,
         expandWith = function()
-            return selectedIndicatorTypeIs('square')
+            return selectedIndicatorTypeIn({ 'square', 'healthColor' })
         end
     })
     trackSetting(indicatorShowCooldownSetting)
+
+    local _, indicatorBorderWidthSetting = EQOL:CreateSlider(category, {
+        key = 'indicatorBorderWidth',
+        name = L.LABEL_BORDER_WIDTH,
+        default = 3,
+        min = 1,
+        max = 10,
+        step = 1,
+        formatter = Util.FormatForDisplay,
+        get = function()
+            local indicator = getSelectedIndicator()
+            return indicator and indicator.borderWidth or 3
+        end,
+        set = function(value)
+            local indicator = getSelectedIndicator()
+            if not indicator then return end
+            indicator.borderWidth = value
+            updateAfterDesignerChange(false)
+        end,
+        isEnabled = selectedIndicatorExists,
+        expandWith = function()
+            return selectedIndicatorTypeIs('healthColor')
+        end
+    })
+    trackSetting(indicatorBorderWidthSetting)
+
+    local _, indicatorBorderCooldownDirectionSetting = EQOL:CreateScrollDropdown(category, {
+        key = 'indicatorBorderCooldownDirection',
+        name = L.LABEL_COOLDOWN_DIRECTION,
+        default = 'Clockwise',
+        values = getDropdownValues('borderCooldownDirection'),
+        get = function()
+            local indicator = getSelectedIndicator()
+            return indicator and indicator.borderCooldownDirection or 'Clockwise'
+        end,
+        set = function(value)
+            local indicator = getSelectedIndicator()
+            if not indicator then return end
+            indicator.borderCooldownDirection = value
+            updateAfterDesignerChange(false)
+        end,
+        height = 120,
+        isEnabled = selectedIndicatorExists,
+        expandWith = function()
+            local indicator = getSelectedIndicator()
+            return indicator and indicator.Type == 'healthColor' and indicator.showCooldown
+        end
+    })
+    trackSetting(indicatorBorderCooldownDirectionSetting)
+
+    local _, indicatorBorderCooldownStartCornerSetting = EQOL:CreateScrollDropdown(category, {
+        key = 'indicatorBorderCooldownStartCorner',
+        name = L.LABEL_COOLDOWN_START_CORNER,
+        default = 'TOPRIGHT',
+        values = getDropdownValues('borderCooldownStartCorner'),
+        get = function()
+            local indicator = getSelectedIndicator()
+            return indicator and indicator.borderCooldownStartCorner or 'TOPRIGHT'
+        end,
+        set = function(value)
+            local indicator = getSelectedIndicator()
+            if not indicator then return end
+            indicator.borderCooldownStartCorner = value
+            updateAfterDesignerChange(false)
+        end,
+        height = 140,
+        isEnabled = selectedIndicatorExists,
+        expandWith = function()
+            local indicator = getSelectedIndicator()
+            return indicator and indicator.Type == 'healthColor' and indicator.showCooldown
+        end
+    })
+    trackSetting(indicatorBorderCooldownStartCornerSetting)
 
     local _, indicatorCooldownStyleSetting = EQOL:CreateScrollDropdown(category, {
         key = 'indicatorCooldownStyle',
@@ -778,6 +884,33 @@ local function buildDesignerEqol(parentCategory)
         end
     })
     trackSetting(indicatorDepleteDirectionSetting)
+
+    local _, indicatorShrinkDirectionSetting = EQOL:CreateScrollDropdown(category, {
+        key = 'indicatorShrinkDirection',
+        name = L.LABEL_DEPLETE_DIRECTION,
+        default = 'CENTER',
+        values = getDropdownValues('squareShrinkDirection'),
+        get = function()
+            local indicator = getSelectedIndicator()
+            return indicator and indicator.shrinkDirection or 'CENTER'
+        end,
+        set = function(value)
+            local indicator = getSelectedIndicator()
+            if not indicator then return end
+            indicator.shrinkDirection = value
+            updateAfterDesignerChange(false)
+        end,
+        height = 240,
+        isEnabled = selectedIndicatorExists,
+        expandWith = function()
+            local indicator = getSelectedIndicator()
+            return indicator
+                and indicator.Type == 'square'
+                and indicator.showCooldown
+                and (indicator.cooldownStyle or 'Swipe') == 'Shrink'
+        end
+    })
+    trackSetting(indicatorShrinkDirectionSetting)
 
     local _, indicatorShowCooldownTextSetting = EQOL:CreateCheckbox(category, {
         key = 'indicatorShowCooldownText',

@@ -33,6 +33,9 @@ local indicatorOverlayRenderers = {
             newSquare.background:SetColorTexture(backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a)
         end
         newSquare.texture:SetColorTexture(color.r, color.g, color.b, color.a)
+        if newSquare.shrinkTexture then
+            newSquare.shrinkTexture:SetColorTexture(color.r, color.g, color.b, color.a)
+        end
         newSquare.cooldownSwipeColor = { r = color.r, g = color.g, b = color.b, a = color.a }
         newSquare.showCooldown = indicatorData.showCooldown
         if indicatorData.showCooldownText == nil then
@@ -42,7 +45,11 @@ local indicatorOverlayRenderers = {
         end
         newSquare.cooldownStyle = indicatorData.cooldownStyle or 'Swipe'
         newSquare.depleteDirection = indicatorData.depleteDirection or 'Right to Left'
-        newSquare.texture:SetShown(not newSquare.showCooldown)
+        newSquare.shrinkDirection = indicatorData.shrinkDirection or 'CENTER'
+            newSquare.texture:SetShown(not newSquare.showCooldown)
+            if newSquare.shrinkTexture then
+                newSquare.shrinkTexture:SetShown(newSquare.showCooldown and newSquare.cooldownStyle == 'Shrink')
+            end
         if newSquare.background then
             newSquare.background:SetShown(newSquare.showCooldown)
         end
@@ -51,6 +58,9 @@ local indicatorOverlayRenderers = {
         end
         if newSquare.ApplyDepleteDirection then
             newSquare:ApplyDepleteDirection()
+        end
+        if newSquare.ApplyShrinkDirection then
+            newSquare:ApplyShrinkDirection()
         end
         newSquare.cooldown:SetScale(indicatorData.textSize)
         newSquare.cooldown:SetHideCountdownNumbers(not newSquare.showCooldownText)
@@ -61,7 +71,7 @@ local indicatorOverlayRenderers = {
         if newSquare.cooldown.SetSwipeColor then
             newSquare.cooldown:SetSwipeColor(newSquare.cooldownSwipeColor.r, newSquare.cooldownSwipeColor.g, newSquare.cooldownSwipeColor.b, newSquare.cooldownSwipeColor.a)
         end
-        newSquare.cooldown:SetShown(indicatorData.showCooldown and newSquare.cooldownStyle ~= 'Deplete')
+        newSquare.cooldown:SetShown(indicatorData.showCooldown and newSquare.cooldownStyle ~= 'Deplete' and (newSquare.showCooldownText or newSquare.cooldownStyle ~= 'Shrink'))
         if newSquare.depleteBar then
             newSquare.depleteBar:SetShown(indicatorData.showCooldown and newSquare.cooldownStyle == 'Deplete')
         end
@@ -99,6 +109,13 @@ local indicatorOverlayRenderers = {
         local newHealthRecolor = Ui.HealthColorIndicatorPool:Acquire()
         newHealthRecolor.spell = indicatorData.Spell
         newHealthRecolor.color = indicatorData.Color
+        newHealthRecolor.showCooldown = indicatorData.showCooldown == true
+        newHealthRecolor.borderThickness = indicatorData.borderWidth or 3
+        newHealthRecolor.borderCooldownDirection = indicatorData.borderCooldownDirection or 'Clockwise'
+        newHealthRecolor.borderCooldownStartCorner = indicatorData.borderCooldownStartCorner or 'TOPRIGHT'
+        if newHealthRecolor.ApplyBorderThickness then
+            newHealthRecolor:ApplyBorderThickness()
+        end
         newHealthRecolor:SetParent(overlay)
         newHealthRecolor:SetAllPoints()
         return newHealthRecolor

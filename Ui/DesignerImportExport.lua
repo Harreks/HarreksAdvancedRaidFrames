@@ -96,6 +96,10 @@ local function sanitizeImportedIndicator(indicator, spec)
     local sanitized = Util.GetDefaultSettingsForIndicator(indicatorType)
     sanitized.Spell = spell
 
+    if type(indicator.LayerPriority) == 'string' and isAllowedDropdownValue('indicatorLayer', indicator.LayerPriority) then
+        sanitized.LayerPriority = indicator.LayerPriority
+    end
+
     if indicatorType == 'icon' or indicatorType == 'square' then
         if type(indicator.Position) == 'string' and isAllowedDropdownValue('iconPosition', indicator.Position) then
             sanitized.Position = indicator.Position
@@ -131,12 +135,10 @@ local function sanitizeImportedIndicator(indicator, spec)
         if type(indicator.depleteDirection) == 'string' and isAllowedDropdownValue('squareDepleteDirection', indicator.depleteDirection) then
             sanitized.depleteDirection = indicator.depleteDirection
         end
-        if type(indicator.shrinkDirection) == 'string' and isAllowedDropdownValue('squareShrinkDirection', indicator.shrinkDirection) then
-            sanitized.shrinkDirection = indicator.shrinkDirection
-        end
     elseif indicatorType == 'bar' then
         sanitized.Color = sanitizeColorTable(indicator.Color, sanitized.Color)
         sanitized.BackgroundColor = sanitizeColorTable(indicator.BackgroundColor, sanitized.BackgroundColor)
+        if type(indicator.showSpark) == 'boolean' then sanitized.showSpark = indicator.showSpark end
 
         if type(indicator.Position) == 'string' and isAllowedDropdownValue('barPosition', indicator.Position) then
             sanitized.Position = indicator.Position
@@ -157,18 +159,18 @@ local function sanitizeImportedIndicator(indicator, spec)
         sanitized.Color = sanitizeColorTable(indicator.Color, sanitized.Color)
         if type(indicator.showCooldown) == 'boolean' then sanitized.showCooldown = indicator.showCooldown end
 
-        local borderWidth = clampNumber(indicator.borderWidth, 1, 10)
-        if borderWidth then sanitized.borderWidth = borderWidth end
-
-        if type(indicator.borderPlacement) == 'string' and isAllowedDropdownValue('borderPlacement', indicator.borderPlacement) then
-            sanitized.borderPlacement = indicator.borderPlacement
-        end
-
         if type(indicator.borderCooldownDirection) == 'string' and isAllowedDropdownValue('borderCooldownDirection', indicator.borderCooldownDirection) then
             sanitized.borderCooldownDirection = indicator.borderCooldownDirection
         end
         if type(indicator.borderCooldownStartCorner) == 'string' and isAllowedDropdownValue('borderCooldownStartCorner', indicator.borderCooldownStartCorner) then
             sanitized.borderCooldownStartCorner = indicator.borderCooldownStartCorner
+        end
+
+        local borderWidth = clampNumber(indicator.borderWidth, 1, 10)
+        if borderWidth then sanitized.borderWidth = borderWidth end
+
+        if type(indicator.borderPlacement) == 'string' and isAllowedDropdownValue('borderPlacement', indicator.borderPlacement) then
+            sanitized.borderPlacement = indicator.borderPlacement
         end
     end
 

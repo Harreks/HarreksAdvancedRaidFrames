@@ -3,6 +3,28 @@ local Data = NS.Data
 local Ui = NS.Ui
 local Util = NS.Util
 
+local layerPriorityOffsets = {
+    Low = 0,
+    Normal = 2,
+    High = 4,
+    Top = 6,
+}
+
+local function ApplyIndicatorLayerPriority(element, overlay, indicatorData)
+    if not element then
+        return
+    end
+
+    local priority = (indicatorData and indicatorData.LayerPriority) or 'Normal'
+    local offset = layerPriorityOffsets[priority] or layerPriorityOffsets.Normal
+    element.layerPriorityOffset = offset
+
+    if overlay and overlay.GetFrameLevel and element.SetFrameLevel then
+        local baseLevel = overlay:GetFrameLevel() or 0
+        element:SetFrameLevel(baseLevel + offset)
+    end
+end
+
 local indicatorOverlayRenderers = {
     icon = function(overlay, indicatorData)
         local newIcon = Ui.IconIndicatorPool:Acquire()
@@ -18,11 +40,13 @@ local indicatorOverlayRenderers = {
         newIcon.cooldown:SetDrawSwipe(showTexture)
         newIcon.cooldown:SetDrawEdge(showTexture)
         newIcon.cooldown:SetDrawBling(showTexture)
+        ApplyIndicatorLayerPriority(newIcon, overlay, indicatorData)
         return newIcon
     end,
     square = function(overlay, indicatorData)
         local newSquare = Ui.SquareIndicatorPool:Acquire()
         newSquare.spell = indicatorData.Spell
+        local showCooldown = indicatorData.showCooldown == true
         local showText = indicatorData.showText ~= false
         local color = indicatorData.Color
         local backgroundColor = indicatorData.BackgroundColor or { r = 0, g = 0, b = 0, a = 0.8 }
@@ -33,11 +57,8 @@ local indicatorOverlayRenderers = {
             newSquare.background:SetColorTexture(backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a)
         end
         newSquare.texture:SetColorTexture(color.r, color.g, color.b, color.a)
-        if newSquare.shrinkTexture then
-            newSquare.shrinkTexture:SetColorTexture(color.r, color.g, color.b, color.a)
-        end
         newSquare.cooldownSwipeColor = { r = color.r, g = color.g, b = color.b, a = color.a }
-        newSquare.showCooldown = indicatorData.showCooldown
+        newSquare.showCooldown = showCooldown
         if indicatorData.showCooldownText == nil then
             newSquare.showCooldownText = showText
         else
@@ -45,11 +66,7 @@ local indicatorOverlayRenderers = {
         end
         newSquare.cooldownStyle = indicatorData.cooldownStyle or 'Swipe'
         newSquare.depleteDirection = indicatorData.depleteDirection or 'Right to Left'
-        newSquare.shrinkDirection = indicatorData.shrinkDirection or 'CENTER'
-            newSquare.texture:SetShown(not newSquare.showCooldown)
-            if newSquare.shrinkTexture then
-                newSquare.shrinkTexture:SetShown(newSquare.showCooldown and newSquare.cooldownStyle == 'Shrink')
-            end
+        newSquare.texture:SetShown(not newSquare.showCooldown)
         if newSquare.background then
             newSquare.background:SetShown(newSquare.showCooldown)
         end
@@ -58,9 +75,6 @@ local indicatorOverlayRenderers = {
         end
         if newSquare.ApplyDepleteDirection then
             newSquare:ApplyDepleteDirection()
-        end
-        if newSquare.ApplyShrinkDirection then
-            newSquare:ApplyShrinkDirection()
         end
         newSquare.cooldown:SetScale(indicatorData.textSize)
         newSquare.cooldown:SetHideCountdownNumbers(not newSquare.showCooldownText)
@@ -71,10 +85,11 @@ local indicatorOverlayRenderers = {
         if newSquare.cooldown.SetSwipeColor then
             newSquare.cooldown:SetSwipeColor(newSquare.cooldownSwipeColor.r, newSquare.cooldownSwipeColor.g, newSquare.cooldownSwipeColor.b, newSquare.cooldownSwipeColor.a)
         end
-        newSquare.cooldown:SetShown(indicatorData.showCooldown and newSquare.cooldownStyle ~= 'Deplete' and (newSquare.showCooldownText or newSquare.cooldownStyle ~= 'Shrink'))
+        newSquare.cooldown:SetShown(showCooldown and newSquare.cooldownStyle ~= 'Deplete')
         if newSquare.depleteBar then
-            newSquare.depleteBar:SetShown(indicatorData.showCooldown and newSquare.cooldownStyle == 'Deplete')
+            newSquare.depleteBar:SetShown(showCooldown and newSquare.cooldownStyle == 'Deplete')
         end
+        ApplyIndicatorLayerPriority(newSquare, overlay, indicatorData)
         return newSquare
     end,
     bar = function(overlay, indicatorData)
@@ -103,6 +118,8 @@ local indicatorOverlayRenderers = {
             end
         end
         newBar:SetReverseFill(anchorData.sizing.Reverse == true)
+        newBar.showSpark = indicatorData.showSpark == true
+        ApplyIndicatorLayerPriority(newBar, overlay, indicatorData)
         return newBar
     end,
     healthColor = function(overlay, indicatorData)
@@ -110,15 +127,16 @@ local indicatorOverlayRenderers = {
         newHealthRecolor.spell = indicatorData.Spell
         newHealthRecolor.color = indicatorData.Color
         newHealthRecolor.showCooldown = indicatorData.showCooldown == true
-        newHealthRecolor.borderThickness = indicatorData.borderWidth or 3
-        newHealthRecolor.borderPlacement = indicatorData.borderPlacement or 'Inset'
         newHealthRecolor.borderCooldownDirection = indicatorData.borderCooldownDirection or 'Clockwise'
         newHealthRecolor.borderCooldownStartCorner = indicatorData.borderCooldownStartCorner or 'TOPRIGHT'
+        newHealthRecolor.borderThickness = indicatorData.borderWidth or 3
+        newHealthRecolor.borderPlacement = indicatorData.borderPlacement or 'Inset'
         if newHealthRecolor.ApplyBorderThickness then
             newHealthRecolor:ApplyBorderThickness()
         end
         newHealthRecolor:SetParent(overlay)
         newHealthRecolor:SetAllPoints()
+        ApplyIndicatorLayerPriority(newHealthRecolor, overlay, indicatorData)
         return newHealthRecolor
     end
 }

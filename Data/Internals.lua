@@ -142,24 +142,24 @@ Data.indicatorTypeSettings = {
     healthColor = {
         defaults = {
             Color = { r = 0, g = 1, b = 0, a = 1 },
+            LayerPriority = 'Normal',
             showCooldown = false,
-            borderWidth = 3,
-            borderPlacement = 'Inset',
             borderCooldownDirection = 'Clockwise',
-            borderCooldownStartCorner = 'TOPRIGHT'
+            borderCooldownStartCorner = 'TOPRIGHT',
+            borderWidth = 3,
+            borderPlacement = 'Inset'
         },
         controls = {
             { controlType = 'SpellSelector', setting = 'Spell', row = 1 },
             { controlType = 'ColorPicker', setting = 'Color', row = 1 },
             { controlType = 'Checkbox', setting = 'showCooldown', text = 'Show Cooldown', row = 2 },
             { controlType = 'Slider', sliderType = 'borderWidth', setting = 'borderWidth', row = 2 },
-            { controlType = 'Dropdown', dropdownType = 'borderPlacement', setting = 'borderPlacement', row = 3 },
-            { controlType = 'Dropdown', dropdownType = 'borderCooldownDirection', setting = 'borderCooldownDirection', row = 3 },
-            { controlType = 'Dropdown', dropdownType = 'borderCooldownStartCorner', setting = 'borderCooldownStartCorner', row = 3 }
+            { controlType = 'Dropdown', dropdownType = 'borderPlacement', setting = 'borderPlacement', row = 3 }
         }
     },
     icon = {
         defaults = {
+            LayerPriority = 'Normal',
             Position = 'CENTER',
             Size = 25,
             xOffset = 0,
@@ -183,6 +183,7 @@ Data.indicatorTypeSettings = {
         defaults = {
             Color = { r = 0, g = 1, b = 0, a = 1 },
             BackgroundColor = { r = 0, g = 0, b = 0, a = 0.8 },
+            LayerPriority = 'Normal',
             Position = 'CENTER',
             Size = 25,
             xOffset = 0,
@@ -192,8 +193,7 @@ Data.indicatorTypeSettings = {
                 showCooldown = false,
                 showCooldownText = true,
                 cooldownStyle = 'Swipe',
-                depleteDirection = 'Right to Left',
-                shrinkDirection = 'CENTER'
+                depleteDirection = 'Right to Left'
         },
         controls = {
             { controlType = 'SpellSelector', setting = 'Spell', row = 1 },
@@ -211,6 +211,8 @@ Data.indicatorTypeSettings = {
         defaults = {
             Color = { r = 0, g = 1, b = 0, a = 1 },
             BackgroundColor = { r = 0, g = 0, b = 0, a = 0.8 },
+            LayerPriority = 'Normal',
+            showSpark = false,
             Position = 'TOPRIGHT',
             Scale = 'Full',
             Orientation = 'Horizontal',
@@ -230,6 +232,11 @@ Data.indicatorTypeSettings = {
 }
 
 Data.dropdownOptions = {
+    indicatorLayer = {
+        text = 'Select Layer Priority',
+        default = 'Normal',
+        options = { 'Low', 'Normal', 'High', 'Top' }
+    },
     iconPosition = {
         text = 'Select Icon Position',
         default = 'CENTER',
@@ -253,17 +260,12 @@ Data.dropdownOptions = {
     squareCooldownStyle = {
         text = 'Select Cooldown Style',
         default = 'Swipe',
-        options = { 'Swipe', 'Deplete', 'Shrink' }
+        options = { 'Swipe', 'Deplete' }
     },
     squareDepleteDirection = {
         text = 'Select Deplete Direction',
         default = 'Right to Left',
         options = { 'Right to Left', 'Left to Right', 'Top to Bottom', 'Bottom to Top' }
-    },
-    squareShrinkDirection = {
-        text = 'Select Shrink Direction',
-        default = 'CENTER',
-        options = { 'CENTER', 'TOPLEFT', 'TOP', 'TOPRIGHT', 'LEFT', 'RIGHT', 'BOTTOMLEFT', 'BOTTOM', 'BOTTOMRIGHT' }
     },
     borderCooldownDirection = {
         text = 'Select Cooldown Direction',

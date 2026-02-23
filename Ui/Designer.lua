@@ -289,16 +289,15 @@ local function getDropdownValues(dropdownType)
     end
 
     local function formatDropdownOption(dropdownKey, value)
-        if formatAnchorValue(value) ~= value then
-            return formatAnchorValue(value)
+        local anchorValue = formatAnchorValue(value)
+        if anchorValue ~= value then
+            return anchorValue
         end
 
         if value == 'Swipe' then
             return L.OPTION_SWIPE or value
         elseif value == 'Deplete' then
             return L.OPTION_DEPLETE or value
-        elseif value == 'Shrink' then
-            return L.OPTION_SHRINK or value
         elseif value == 'Right to Left' then
             return L.OPTION_RIGHT_TO_LEFT or value
         elseif value == 'Left to Right' then
@@ -319,6 +318,14 @@ local function getDropdownValues(dropdownType)
             return L.OPTION_INSET or value
         elseif value == 'Outset' then
             return L.OPTION_OUTSET or value
+        elseif value == 'Low' then
+            return L.OPTION_LAYER_LOW or value
+        elseif value == 'Normal' then
+            return L.OPTION_LAYER_NORMAL or value
+        elseif value == 'High' then
+            return L.OPTION_LAYER_HIGH or value
+        elseif value == 'Top' then
+            return L.OPTION_LAYER_TOP or value
         end
 
         if dropdownKey == 'borderCooldownDirection' then
@@ -820,6 +827,50 @@ local function buildDesignerEqol(parentCategory)
     })
     trackSetting(indicatorShowCooldownSetting)
 
+    local _, indicatorShowSparkSetting = EQOL:CreateCheckbox(category, {
+        key = 'indicatorShowSpark',
+        name = L.LABEL_SHOW_SPARK,
+        default = false,
+        get = function()
+            local indicator = getSelectedIndicator()
+            return indicator and indicator.showSpark or false
+        end,
+        set = function(value)
+            local indicator = getSelectedIndicator()
+            if not indicator then return end
+            indicator.showSpark = value
+            updateAfterDesignerChange(false)
+        end,
+        isEnabled = selectedIndicatorExists,
+        expandWith = function()
+            return selectedIndicatorTypeIs('bar')
+        end
+    })
+    trackSetting(indicatorShowSparkSetting)
+
+    local _, indicatorLayerPrioritySetting = EQOL:CreateScrollDropdown(category, {
+        key = 'indicatorLayerPriority',
+        name = L.LABEL_LAYER_PRIORITY,
+        default = 'Normal',
+        values = getDropdownValues('indicatorLayer'),
+        get = function()
+            local indicator = getSelectedIndicator()
+            return indicator and indicator.LayerPriority or 'Normal'
+        end,
+        set = function(value)
+            local indicator = getSelectedIndicator()
+            if not indicator then return end
+            indicator.LayerPriority = value
+            updateAfterDesignerChange(false)
+        end,
+        height = 120,
+        isEnabled = selectedIndicatorExists,
+        expandWith = function()
+            return selectedIndicatorExists()
+        end
+    })
+    trackSetting(indicatorLayerPrioritySetting)
+
     local _, indicatorBorderWidthSetting = EQOL:CreateSlider(category, {
         key = 'indicatorBorderWidth',
         name = L.LABEL_BORDER_WIDTH,
@@ -967,33 +1018,6 @@ local function buildDesignerEqol(parentCategory)
         end
     })
     trackSetting(indicatorDepleteDirectionSetting)
-
-    local _, indicatorShrinkDirectionSetting = EQOL:CreateScrollDropdown(category, {
-        key = 'indicatorShrinkDirection',
-        name = L.LABEL_DEPLETE_DIRECTION,
-        default = 'CENTER',
-        values = getDropdownValues('squareShrinkDirection'),
-        get = function()
-            local indicator = getSelectedIndicator()
-            return indicator and indicator.shrinkDirection or 'CENTER'
-        end,
-        set = function(value)
-            local indicator = getSelectedIndicator()
-            if not indicator then return end
-            indicator.shrinkDirection = value
-            updateAfterDesignerChange(false)
-        end,
-        height = 240,
-        isEnabled = selectedIndicatorExists,
-        expandWith = function()
-            local indicator = getSelectedIndicator()
-            return indicator
-                and indicator.Type == 'square'
-                and indicator.showCooldown
-                and (indicator.cooldownStyle or 'Swipe') == 'Shrink'
-        end
-    })
-    trackSetting(indicatorShrinkDirectionSetting)
 
     local _, indicatorShowCooldownTextSetting = EQOL:CreateCheckbox(category, {
         key = 'indicatorShowCooldownText',

@@ -11,6 +11,44 @@ local function printDesignerMessage(message)
     print('|cnNORMAL_FONT_COLOR:AdvancedRaidFrames|r: ' .. message)
 end
 
+local function getSpellIcon(spellKey)
+    if not spellKey then
+        return nil
+    end
+
+    if Data.textures and Data.textures[spellKey] then
+        return Data.textures[spellKey]
+    end
+
+    local spellId = Data.spellIds and Data.spellIds[spellKey]
+    if not spellId then
+        return nil
+    end
+
+    if C_Spell and C_Spell.GetSpellTexture then
+        local iconID = C_Spell.GetSpellTexture(spellId)
+        if iconID then
+            return iconID
+        end
+    elseif GetSpellTexture then
+        local iconID = GetSpellTexture(spellId)
+        if iconID then
+            return iconID
+        end
+    end
+
+    return nil
+end
+
+local function buildIconLabel(iconFileId, text)
+    local label = tostring(text or '')
+    if not iconFileId then
+        return label
+    end
+
+    return string.format('|T%d:16:16:0:0:64:64:4:60:4:60|t  %s', iconFileId, label)
+end
+
 local function getEqolSettingsMode()
     return (LibEQOL and LibEQOL.SettingsMode) or LibStub('LibEQOLSettingsMode-1.0')
 end
@@ -79,6 +117,29 @@ local function applyImportedIndicatorsForSpec(spec, importText, setSelectedIndic
     return true
 end
 
+local function confirmDesignerDelete(onConfirm)
+    if not StaticPopupDialogs['HARF_CONFIRM_DELETE_INDICATOR'] then
+        StaticPopupDialogs['HARF_CONFIRM_DELETE_INDICATOR'] = {
+            text = L.DESIGNER_DELETE_CONFIRM_TEXT,
+            button1 = ACCEPT,
+            button2 = CANCEL,
+            OnAccept = function(_, data)
+                if data and data.onConfirm then
+                    data.onConfirm()
+                end
+            end,
+            timeout = 0,
+            whileDead = true,
+            hideOnEscape = true,
+            preferredIndex = 3
+        }
+    end
+
+    StaticPopup_Show('HARF_CONFIRM_DELETE_INDICATOR', nil, nil, {
+        onConfirm = onConfirm
+    })
+end
+
 local function getDuplicateIndexForIndicator(indicators, targetIndex, indicator)
     if not (indicators and indicator and targetIndex) then
         return nil
@@ -102,6 +163,30 @@ end
 
 local getLocalizedSpellLabel
 
+local function getEchoVariantDisplayLabel(spellKey)
+    if type(spellKey) ~= 'string' or spellKey == 'Echo' or not spellKey:find('^Echo') then
+        return nil
+    end
+
+    local baseSpellKey = spellKey:gsub('^Echo', '', 1)
+    if baseSpellKey == '' then
+        return nil
+    end
+
+    local baseSpellLabel = getLocalizedSpellLabel(baseSpellKey)
+    if not baseSpellLabel or baseSpellLabel == '' then
+        return nil
+    end
+
+    local echoedFormat = L.LABEL_ECHOED_SPELL_FMT
+    if type(echoedFormat) == 'string' and echoedFormat:find('%s', 1, true) then
+        return string.format(echoedFormat, baseSpellLabel)
+    end
+
+    local echoedPrefix = L.LABEL_ECHOED_PREFIX or 'Echoed'
+    return echoedPrefix .. ' ' .. baseSpellLabel
+end
+
 local function buildIndicatorLabel(index, indicator)
     if not indicator then
         return L.INDICATOR_EMPTY
@@ -109,7 +194,7 @@ local function buildIndicatorLabel(index, indicator)
 
     local spec = ensureEditingSpec()
     local indicators = ensureSpecIndicators(spec)
-    local spell = getLocalizedSpellLabel(indicator.Spell)
+    local spell = getLocalizedSpellLabel(indicator.Spell, true)
 
     local typeName = (indicator.Type and Data.indicatorTypes[indicator.Type] and Data.indicatorTypes[indicator.Type].display) or L.INDICATOR_GENERIC
     local label = spell .. ' ' .. typeName
@@ -120,9 +205,16 @@ local function buildIndicatorLabel(index, indicator)
     return label
 end
 
-getLocalizedSpellLabel = function(spellKey)
+getLocalizedSpellLabel = function(spellKey, preferEchoVariantLabel)
     if not spellKey then
         return L.DESIGNER_UNKNOWN
+    end
+
+    if preferEchoVariantLabel then
+        local echoedLabel = getEchoVariantDisplayLabel(spellKey)
+        if echoedLabel then
+            return echoedLabel
+        end
     end
 
     if Data.spellIds and Data.spellIds[spellKey] then
@@ -258,10 +350,15 @@ local function getSpellOptionsForCurrentSpec()
     local options = {}
     if spec and Data.specInfo[spec] and Data.specInfo[spec].auras then
         for spell, _ in pairs(Data.specInfo[spec].auras) do
-            table.insert(options, { value = spell, text = getLocalizedSpellLabel(spell) })
+            local localizedSpell = getLocalizedSpellLabel(spell, true)
+            table.insert(options, {
+                value = spell,
+                text = buildIconLabel(getSpellIcon(spell), localizedSpell),
+                sortText = localizedSpell
+            })
         end
         table.sort(options, function(a, b)
-            return compareLocalizedText(a.text, b.text)
+            return compareLocalizedText(a.sortText or a.text, b.sortText or b.text)
         end)
     end
     return options
@@ -354,14 +451,19 @@ local function getSelectedIndicatorOptions()
     local indicators = ensureSpecIndicators(spec)
     local options = {}
     for index, indicator in ipairs(indicators) do
-        table.insert(options, { value = index, text = buildIndicatorLabel(index, indicator) })
+        local plainLabel = buildIndicatorLabel(index, indicator)
+        table.insert(options, {
+            value = index,
+            text = buildIconLabel(getSpellIcon(indicator and indicator.Spell), plainLabel),
+            sortText = plainLabel
+        })
     end
 
     table.sort(options, function(a, b)
-        if tostring(a.text or '') == tostring(b.text or '') then
+        if tostring(a.sortText or a.text or '') == tostring(b.sortText or b.text or '') then
             return (a.value or 0) < (b.value or 0)
         end
-        return compareLocalizedText(a.text, b.text)
+        return compareLocalizedText(a.sortText or a.text, b.sortText or b.text)
     end)
 
     return options
@@ -511,13 +613,39 @@ local function buildDesignerEqol(parentCategory)
         updateAfterDesignerChange(true)
     end
 
+    local function syncDesignerSpecToCurrent()
+        local currentSpec = Data.playerSpec
+        if not (currentSpec and Data.specInfo[currentSpec]) then
+            currentSpec = ensureEditingSpec()
+        end
+
+        if not currentSpec then
+            return
+        end
+
+        Options.editingSpec = currentSpec
+        local indicators = ensureSpecIndicators(currentSpec)
+        if #indicators > 0 then
+            setSelectedIndicatorIndex(1)
+        else
+            setSelectedIndicatorIndex(nil)
+        end
+    end
+
     Ui.InitializeDesignerPreview({
         ensureEditingSpec = ensureEditingSpec,
         getSelectedIndicatorIndex = getSelectedIndicatorIndex,
         setSelectedIndicatorIndex = setSelectedIndicatorIndex
     })
 
-    ensureEditingSpec()
+    syncDesignerSpecToCurrent()
+
+    if SettingsPanel and not Ui._designerSpecSyncHooked then
+        SettingsPanel:HookScript('OnShow', function()
+            syncDesignerSpecToCurrent()
+        end)
+        Ui._designerSpecSyncHooked = true
+    end
 
     EQOL:CreateScrollDropdown(category, {
         key = 'editingSpec',
@@ -578,25 +706,29 @@ local function buildDesignerEqol(parentCategory)
         end
     })
 
-    EQOL:CreateButton(category, {
-        key = 'duplicateSelectedIndicator',
-        text = L.DESIGNER_DUPLICATE_INDICATOR,
-        click = function()
-            local indicator, index, _, indicators = getSelectedIndicator()
-            if not indicator then return end
-
-            local duplicatedIndicator = deepCopyValue(indicator)
-            table.insert(indicators, index + 1, duplicatedIndicator)
-            setSelectedIndicatorIndex(index + 1)
-        end,
-        isEnabled = selectedIndicatorExists,
-        expandWith = currentSpecHasIndicators
-    })
-
     EQOL:CreateHeader(category, {
         name = L.DESIGNER_EDIT_INDICATOR,
         expandWith = currentSpecHasIndicators
     })
+
+    local appearanceSection = EQOL:CreateExpandableSection(category, {
+        key = 'indicatorAppearanceSection',
+        name = L.DESIGNER_APPEARANCE_SECTION,
+        expanded = true,
+        expandWith = selectedIndicatorExists
+    })
+
+    local function isAppearanceSectionExpanded()
+        if appearanceSection and type(appearanceSection.IsExpanded) == 'function' then
+            return appearanceSection:IsExpanded() ~= false
+        end
+
+        if appearanceSection and appearanceSection.data and appearanceSection.data.expanded ~= nil then
+            return appearanceSection.data.expanded ~= false
+        end
+
+        return true
+    end
 
     local _, indicatorSpellSetting = EQOL:CreateScrollDropdown(category, {
         key = 'indicatorSpell',
@@ -616,7 +748,9 @@ local function buildDesignerEqol(parentCategory)
         end,
         height = 260,
         isEnabled = selectedIndicatorExists,
-        expandWith = selectedIndicatorExists
+        expandWith = function()
+            return isAppearanceSectionExpanded() and selectedIndicatorExists()
+        end
     })
     trackSetting(indicatorSpellSetting)
 
@@ -653,7 +787,7 @@ local function buildDesignerEqol(parentCategory)
         height = 220,
         isEnabled = selectedIndicatorExists,
         expandWith = function()
-            return selectedIndicatorTypeIn({ 'icon', 'square', 'bar' })
+            return isAppearanceSectionExpanded() and selectedIndicatorTypeIn({ 'icon', 'square', 'bar' })
         end
     })
     trackSetting(indicatorPositionSetting)
@@ -678,7 +812,7 @@ local function buildDesignerEqol(parentCategory)
         end,
         isEnabled = selectedIndicatorExists,
         expandWith = function()
-            return selectedIndicatorTypeIn({ 'icon', 'square', 'bar' })
+            return isAppearanceSectionExpanded() and selectedIndicatorTypeIn({ 'icon', 'square', 'bar' })
         end
     })
     trackSetting(indicatorSizeSetting)
@@ -703,7 +837,7 @@ local function buildDesignerEqol(parentCategory)
         end,
         isEnabled = selectedIndicatorExists,
         expandWith = function()
-            return selectedIndicatorTypeIn({ 'icon', 'square' })
+            return isAppearanceSectionExpanded() and selectedIndicatorTypeIn({ 'icon', 'square' })
         end
     })
     trackSetting(indicatorXOffsetSetting)
@@ -728,7 +862,7 @@ local function buildDesignerEqol(parentCategory)
         end,
         isEnabled = selectedIndicatorExists,
         expandWith = function()
-            return selectedIndicatorTypeIn({ 'icon', 'square' })
+            return isAppearanceSectionExpanded() and selectedIndicatorTypeIn({ 'icon', 'square' })
         end
     })
     trackSetting(indicatorYOffsetSetting)
@@ -753,34 +887,10 @@ local function buildDesignerEqol(parentCategory)
         end,
         isEnabled = selectedIndicatorExists,
         expandWith = function()
-            return selectedIndicatorTypeIs('bar')
+            return isAppearanceSectionExpanded() and selectedIndicatorTypeIs('bar')
         end
     })
     trackSetting(indicatorOffsetSetting)
-
-    local _, indicatorShowTextSetting = EQOL:CreateCheckbox(category, {
-        key = 'indicatorShowText',
-        name = L.LABEL_SHOW_TEXT,
-        default = true,
-        get = function()
-            local indicator = getSelectedIndicator()
-            if not indicator then
-                return true
-            end
-            return indicator.showText ~= false
-        end,
-        set = function(value)
-            local indicator = getSelectedIndicator()
-            if not indicator then return end
-            indicator.showText = value
-            updateAfterDesignerChange(false)
-        end,
-        isEnabled = selectedIndicatorExists,
-        expandWith = function()
-            return selectedIndicatorTypeIs('icon')
-        end
-    })
-    trackSetting(indicatorShowTextSetting)
 
     local _, indicatorShowTextureSetting = EQOL:CreateCheckbox(category, {
         key = 'indicatorShowTexture',
@@ -801,31 +911,10 @@ local function buildDesignerEqol(parentCategory)
         end,
         isEnabled = selectedIndicatorExists,
         expandWith = function()
-            return selectedIndicatorTypeIs('icon')
+            return isAppearanceSectionExpanded() and selectedIndicatorTypeIs('icon')
         end
     })
     trackSetting(indicatorShowTextureSetting)
-
-    local _, indicatorShowCooldownSetting = EQOL:CreateCheckbox(category, {
-        key = 'indicatorShowCooldown',
-        name = L.LABEL_SHOW_COOLDOWN,
-        default = false,
-        get = function()
-            local indicator = getSelectedIndicator()
-            return indicator and indicator.showCooldown or false
-        end,
-        set = function(value)
-            local indicator = getSelectedIndicator()
-            if not indicator then return end
-            indicator.showCooldown = value
-            updateAfterDesignerChange(false)
-        end,
-        isEnabled = selectedIndicatorExists,
-        expandWith = function()
-            return selectedIndicatorTypeIn({ 'square', 'healthColor' })
-        end
-    })
-    trackSetting(indicatorShowCooldownSetting)
 
     local _, indicatorShowSparkSetting = EQOL:CreateCheckbox(category, {
         key = 'indicatorShowSpark',
@@ -843,7 +932,7 @@ local function buildDesignerEqol(parentCategory)
         end,
         isEnabled = selectedIndicatorExists,
         expandWith = function()
-            return selectedIndicatorTypeIs('bar')
+            return isAppearanceSectionExpanded() and selectedIndicatorTypeIs('bar')
         end
     })
     trackSetting(indicatorShowSparkSetting)
@@ -866,7 +955,7 @@ local function buildDesignerEqol(parentCategory)
         height = 120,
         isEnabled = selectedIndicatorExists,
         expandWith = function()
-            return selectedIndicatorExists()
+            return isAppearanceSectionExpanded() and selectedIndicatorExists()
         end
     })
     trackSetting(indicatorLayerPrioritySetting)
@@ -891,7 +980,7 @@ local function buildDesignerEqol(parentCategory)
         end,
         isEnabled = selectedIndicatorExists,
         expandWith = function()
-            return selectedIndicatorTypeIs('healthColor')
+            return isAppearanceSectionExpanded() and selectedIndicatorTypeIs('healthColor')
         end
     })
     trackSetting(indicatorBorderWidthSetting)
@@ -915,172 +1004,10 @@ local function buildDesignerEqol(parentCategory)
         height = 120,
         isEnabled = selectedIndicatorExists,
         expandWith = function()
-            return selectedIndicatorTypeIs('healthColor')
+            return isAppearanceSectionExpanded() and selectedIndicatorTypeIs('healthColor')
         end
     })
     trackSetting(indicatorBorderPlacementSetting)
-
-    local _, indicatorBorderCooldownDirectionSetting = EQOL:CreateScrollDropdown(category, {
-        key = 'indicatorBorderCooldownDirection',
-        name = L.LABEL_COOLDOWN_DIRECTION,
-        default = 'Clockwise',
-        values = getDropdownValues('borderCooldownDirection'),
-        get = function()
-            local indicator = getSelectedIndicator()
-            return indicator and indicator.borderCooldownDirection or 'Clockwise'
-        end,
-        set = function(value)
-            local indicator = getSelectedIndicator()
-            if not indicator then return end
-            indicator.borderCooldownDirection = value
-            updateAfterDesignerChange(false)
-        end,
-        height = 120,
-        isEnabled = selectedIndicatorExists,
-        expandWith = function()
-            local indicator = getSelectedIndicator()
-            return indicator and indicator.Type == 'healthColor' and indicator.showCooldown
-        end
-    })
-    trackSetting(indicatorBorderCooldownDirectionSetting)
-
-    local _, indicatorBorderCooldownStartCornerSetting = EQOL:CreateScrollDropdown(category, {
-        key = 'indicatorBorderCooldownStartCorner',
-        name = L.LABEL_COOLDOWN_START_CORNER,
-        default = 'TOPRIGHT',
-        values = getDropdownValues('borderCooldownStartCorner'),
-        get = function()
-            local indicator = getSelectedIndicator()
-            return indicator and indicator.borderCooldownStartCorner or 'TOPRIGHT'
-        end,
-        set = function(value)
-            local indicator = getSelectedIndicator()
-            if not indicator then return end
-            indicator.borderCooldownStartCorner = value
-            updateAfterDesignerChange(false)
-        end,
-        height = 140,
-        isEnabled = selectedIndicatorExists,
-        expandWith = function()
-            local indicator = getSelectedIndicator()
-            return indicator and indicator.Type == 'healthColor' and indicator.showCooldown
-        end
-    })
-    trackSetting(indicatorBorderCooldownStartCornerSetting)
-
-    local _, indicatorCooldownStyleSetting = EQOL:CreateScrollDropdown(category, {
-        key = 'indicatorCooldownStyle',
-        name = L.LABEL_COOLDOWN_STYLE,
-        default = 'Swipe',
-        values = getDropdownValues('squareCooldownStyle'),
-        get = function()
-            local indicator = getSelectedIndicator()
-            return indicator and indicator.cooldownStyle or 'Swipe'
-        end,
-        set = function(value)
-            local indicator = getSelectedIndicator()
-            if not indicator then return end
-            indicator.cooldownStyle = value
-            updateAfterDesignerChange(false)
-        end,
-        height = 120,
-        isEnabled = selectedIndicatorExists,
-        expandWith = function()
-            local indicator = getSelectedIndicator()
-            return indicator and indicator.Type == 'square' and indicator.showCooldown
-        end
-    })
-    trackSetting(indicatorCooldownStyleSetting)
-
-    local _, indicatorDepleteDirectionSetting = EQOL:CreateScrollDropdown(category, {
-        key = 'indicatorDepleteDirection',
-        name = L.LABEL_DEPLETE_DIRECTION,
-        default = 'Right to Left',
-        values = getDropdownValues('squareDepleteDirection'),
-        get = function()
-            local indicator = getSelectedIndicator()
-            return indicator and indicator.depleteDirection or 'Right to Left'
-        end,
-        set = function(value)
-            local indicator = getSelectedIndicator()
-            if not indicator then return end
-            indicator.depleteDirection = value
-            updateAfterDesignerChange(false)
-        end,
-        height = 160,
-        isEnabled = selectedIndicatorExists,
-        expandWith = function()
-            local indicator = getSelectedIndicator()
-            return indicator
-                and indicator.Type == 'square'
-                and indicator.showCooldown
-                and (indicator.cooldownStyle or 'Swipe') == 'Deplete'
-        end
-    })
-    trackSetting(indicatorDepleteDirectionSetting)
-
-    local _, indicatorShowCooldownTextSetting = EQOL:CreateCheckbox(category, {
-        key = 'indicatorShowCooldownText',
-        name = L.LABEL_SHOW_COOLDOWN_TEXT,
-        default = true,
-        get = function()
-            local indicator = getSelectedIndicator()
-            if not indicator then
-                return true
-            end
-            return indicator.showCooldownText ~= false
-        end,
-        set = function(value)
-            local indicator = getSelectedIndicator()
-            if not indicator then return end
-            indicator.showCooldownText = value
-            updateAfterDesignerChange(false)
-        end,
-        isEnabled = selectedIndicatorExists,
-        expandWith = function()
-            local indicator = getSelectedIndicator()
-            return indicator and indicator.Type == 'square' and indicator.showCooldown
-        end
-    })
-    trackSetting(indicatorShowCooldownTextSetting)
-
-    local _, indicatorTextSizeSetting = EQOL:CreateSlider(category, {
-        key = 'indicatorTextSize',
-        name = L.LABEL_TEXT_SCALE,
-        default = 1,
-        min = 0.5,
-        max = 3,
-        step = 0.1,
-        formatter = Util.FormatForDisplay,
-        get = function()
-            local indicator = getSelectedIndicator()
-            return indicator and indicator.textSize or 1
-        end,
-        set = function(value)
-            local indicator = getSelectedIndicator()
-            if not indicator then return end
-            indicator.textSize = value
-            updateAfterDesignerChange(false)
-        end,
-        isEnabled = selectedIndicatorExists,
-        expandWith = function()
-            local indicator = getSelectedIndicator()
-            if not indicator then
-                return false
-            end
-
-            if indicator.Type == 'icon' then
-                return indicator.showText ~= false
-            end
-
-            if indicator.Type == 'square' then
-                return indicator.showCooldown and (indicator.showCooldownText ~= false)
-            end
-
-            return false
-        end
-    })
-    trackSetting(indicatorTextSizeSetting)
 
     local _, barScaleSetting = EQOL:CreateScrollDropdown(category, {
         key = 'barScale',
@@ -1100,7 +1027,7 @@ local function buildDesignerEqol(parentCategory)
         height = 140,
         isEnabled = selectedIndicatorExists,
         expandWith = function()
-            return selectedIndicatorTypeIs('bar')
+            return isAppearanceSectionExpanded() and selectedIndicatorTypeIs('bar')
         end
     })
     trackSetting(barScaleSetting)
@@ -1123,7 +1050,7 @@ local function buildDesignerEqol(parentCategory)
         height = 140,
         isEnabled = selectedIndicatorExists,
         expandWith = function()
-            return selectedIndicatorTypeIs('bar')
+            return isAppearanceSectionExpanded() and selectedIndicatorTypeIs('bar')
         end
     })
     trackSetting(barOrientationSetting)
@@ -1150,7 +1077,7 @@ local function buildDesignerEqol(parentCategory)
         hasOpacity = true,
         isEnabled = selectedIndicatorExists,
         expandWith = function()
-            return selectedIndicatorTypeIn({ 'square', 'bar', 'healthColor' })
+            return isAppearanceSectionExpanded() and selectedIndicatorTypeIn({ 'square', 'bar', 'healthColor' })
         end
     })
 
@@ -1181,6 +1108,10 @@ local function buildDesignerEqol(parentCategory)
                 return false
             end
 
+            if not isAppearanceSectionExpanded() then
+                return false
+            end
+
             if indicator.Type == 'bar' then
                 return true
             end
@@ -1189,23 +1120,272 @@ local function buildDesignerEqol(parentCategory)
         end
     })
 
+    local cooldownSection = EQOL:CreateExpandableSection(category, {
+        key = 'indicatorCooldownSection',
+        name = L.DESIGNER_COOLDOWN_SECTION,
+        expanded = true,
+        expandWith = function()
+            return selectedIndicatorTypeIn({ 'square', 'healthColor', 'icon' })
+        end
+    })
+
+    local function isCooldownSectionExpanded()
+        if cooldownSection and type(cooldownSection.IsExpanded) == 'function' then
+            return cooldownSection:IsExpanded() ~= false
+        end
+
+        if cooldownSection and cooldownSection.data and cooldownSection.data.expanded ~= nil then
+            return cooldownSection.data.expanded ~= false
+        end
+
+        return true
+    end
+
+    local _, indicatorShowCooldownSetting = EQOL:CreateCheckbox(category, {
+        key = 'indicatorShowCooldown',
+        name = L.LABEL_SHOW_COOLDOWN,
+        default = false,
+        get = function()
+            local indicator = getSelectedIndicator()
+            return indicator and indicator.showCooldown or false
+        end,
+        set = function(value)
+            local indicator = getSelectedIndicator()
+            if not indicator then return end
+            indicator.showCooldown = value
+            updateAfterDesignerChange(false)
+        end,
+        isEnabled = selectedIndicatorExists,
+        expandWith = function()
+            return isCooldownSectionExpanded() and selectedIndicatorTypeIn({ 'square', 'healthColor' })
+        end
+    })
+    trackSetting(indicatorShowCooldownSetting)
+
+    local _, indicatorBorderCooldownDirectionSetting = EQOL:CreateScrollDropdown(category, {
+        key = 'indicatorBorderCooldownDirection',
+        name = L.LABEL_COOLDOWN_DIRECTION,
+        default = 'Clockwise',
+        values = getDropdownValues('borderCooldownDirection'),
+        get = function()
+            local indicator = getSelectedIndicator()
+            return indicator and indicator.borderCooldownDirection or 'Clockwise'
+        end,
+        set = function(value)
+            local indicator = getSelectedIndicator()
+            if not indicator then return end
+            indicator.borderCooldownDirection = value
+            updateAfterDesignerChange(false)
+        end,
+        height = 120,
+        isEnabled = selectedIndicatorExists,
+        expandWith = function()
+            local indicator = getSelectedIndicator()
+            return isCooldownSectionExpanded() and indicator and indicator.Type == 'healthColor' and indicator.showCooldown
+        end
+    })
+    trackSetting(indicatorBorderCooldownDirectionSetting)
+
+    local _, indicatorBorderCooldownStartCornerSetting = EQOL:CreateScrollDropdown(category, {
+        key = 'indicatorBorderCooldownStartCorner',
+        name = L.LABEL_COOLDOWN_START_CORNER,
+        default = 'TOPRIGHT',
+        values = getDropdownValues('borderCooldownStartCorner'),
+        get = function()
+            local indicator = getSelectedIndicator()
+            return indicator and indicator.borderCooldownStartCorner or 'TOPRIGHT'
+        end,
+        set = function(value)
+            local indicator = getSelectedIndicator()
+            if not indicator then return end
+            indicator.borderCooldownStartCorner = value
+            updateAfterDesignerChange(false)
+        end,
+        height = 140,
+        isEnabled = selectedIndicatorExists,
+        expandWith = function()
+            local indicator = getSelectedIndicator()
+            return isCooldownSectionExpanded() and indicator and indicator.Type == 'healthColor' and indicator.showCooldown
+        end
+    })
+    trackSetting(indicatorBorderCooldownStartCornerSetting)
+
+    local _, indicatorCooldownStyleSetting = EQOL:CreateScrollDropdown(category, {
+        key = 'indicatorCooldownStyle',
+        name = L.LABEL_COOLDOWN_STYLE,
+        default = 'Swipe',
+        values = getDropdownValues('squareCooldownStyle'),
+        get = function()
+            local indicator = getSelectedIndicator()
+            return indicator and indicator.cooldownStyle or 'Swipe'
+        end,
+        set = function(value)
+            local indicator = getSelectedIndicator()
+            if not indicator then return end
+            indicator.cooldownStyle = value
+            updateAfterDesignerChange(false)
+        end,
+        height = 120,
+        isEnabled = selectedIndicatorExists,
+        expandWith = function()
+            local indicator = getSelectedIndicator()
+            return isCooldownSectionExpanded() and indicator and indicator.Type == 'square' and indicator.showCooldown
+        end
+    })
+    trackSetting(indicatorCooldownStyleSetting)
+
+    local _, indicatorDepleteDirectionSetting = EQOL:CreateScrollDropdown(category, {
+        key = 'indicatorDepleteDirection',
+        name = L.LABEL_DEPLETE_DIRECTION,
+        default = 'Right to Left',
+        values = getDropdownValues('squareDepleteDirection'),
+        get = function()
+            local indicator = getSelectedIndicator()
+            return indicator and indicator.depleteDirection or 'Right to Left'
+        end,
+        set = function(value)
+            local indicator = getSelectedIndicator()
+            if not indicator then return end
+            indicator.depleteDirection = value
+            updateAfterDesignerChange(false)
+        end,
+        height = 160,
+        isEnabled = selectedIndicatorExists,
+        expandWith = function()
+            local indicator = getSelectedIndicator()
+            return isCooldownSectionExpanded() and indicator
+                and indicator.Type == 'square'
+                and indicator.showCooldown
+                and (indicator.cooldownStyle or 'Swipe') == 'Deplete'
+        end
+    })
+    trackSetting(indicatorDepleteDirectionSetting)
+
+    local _, indicatorShowCooldownTextSetting = EQOL:CreateCheckbox(category, {
+        key = 'indicatorShowCooldownText',
+        name = L.LABEL_SHOW_COOLDOWN_TEXT,
+        default = true,
+        get = function()
+            local indicator = getSelectedIndicator()
+            if not indicator then
+                return true
+            end
+            return indicator.showCooldownText ~= false
+        end,
+        set = function(value)
+            local indicator = getSelectedIndicator()
+            if not indicator then return end
+            indicator.showCooldownText = value
+            updateAfterDesignerChange(false)
+        end,
+        isEnabled = selectedIndicatorExists,
+        expandWith = function()
+            local indicator = getSelectedIndicator()
+            return isCooldownSectionExpanded() and indicator and indicator.Type == 'square' and indicator.showCooldown
+        end
+    })
+    trackSetting(indicatorShowCooldownTextSetting)
+
+    local _, indicatorShowTextSetting = EQOL:CreateCheckbox(category, {
+        key = 'indicatorShowText',
+        name = L.LABEL_SHOW_COOLDOWN_TEXT,
+        default = true,
+        get = function()
+            local indicator = getSelectedIndicator()
+            if not indicator then
+                return true
+            end
+
+            if indicator.showCooldownText == nil then
+                return indicator.showText ~= false
+            end
+
+            return indicator.showCooldownText ~= false
+        end,
+        set = function(value)
+            local indicator = getSelectedIndicator()
+            if not indicator then return end
+            indicator.showCooldownText = value
+            indicator.showText = value
+            updateAfterDesignerChange(false)
+        end,
+        isEnabled = selectedIndicatorExists,
+        expandWith = function()
+            return isCooldownSectionExpanded() and selectedIndicatorTypeIs('icon')
+        end
+    })
+    trackSetting(indicatorShowTextSetting)
+
+    local _, indicatorTextSizeSetting = EQOL:CreateSlider(category, {
+        key = 'indicatorTextSize',
+        name = L.LABEL_TEXT_SCALE,
+        default = 1,
+        min = 0.5,
+        max = 3,
+        step = 0.1,
+        formatter = Util.FormatForDisplay,
+        get = function()
+            local indicator = getSelectedIndicator()
+            return indicator and indicator.textSize or 1
+        end,
+        set = function(value)
+            local indicator = getSelectedIndicator()
+            if not indicator then return end
+            indicator.textSize = value
+            updateAfterDesignerChange(false)
+        end,
+        isEnabled = selectedIndicatorExists,
+        expandWith = function()
+            local indicator = getSelectedIndicator()
+
+            if indicator and indicator.Type == 'icon' then
+                return isAppearanceSectionExpanded()
+                    and (indicator.showCooldownText ~= false)
+            end
+
+            return isCooldownSectionExpanded()
+                and indicator
+                and indicator.Type == 'square'
+                and indicator.showCooldown
+                and (indicator.showCooldownText ~= false)
+        end
+    })
+    trackSetting(indicatorTextSizeSetting)
+
+    EQOL:CreateButton(category, {
+        key = 'duplicateSelectedIndicator',
+        text = L.DESIGNER_DUPLICATE_INDICATOR,
+        click = function()
+            local indicator, index, _, indicators = getSelectedIndicator()
+            if not indicator then return end
+
+            local duplicatedIndicator = deepCopyValue(indicator)
+            table.insert(indicators, index + 1, duplicatedIndicator)
+            setSelectedIndicatorIndex(index + 1)
+        end,
+        isEnabled = selectedIndicatorExists,
+        expandWith = currentSpecHasIndicators
+    })
+
     EQOL:CreateButton(category, {
         key = 'deleteSelectedIndicator',
         text = L.DESIGNER_DELETE_INDICATOR,
         click = function()
-            local indicator, index, spec, indicators = getSelectedIndicator()
+            local indicator, index, _, indicators = getSelectedIndicator()
             if not indicator then return end
 
-            table.remove(indicators, index)
-            local nextIndex = 1
-            if #indicators > 0 then
-                if index > #indicators then
-                    nextIndex = #indicators
-                else
-                    nextIndex = index
+            confirmDesignerDelete(function()
+                table.remove(indicators, index)
+                local nextIndex = 1
+                if #indicators > 0 then
+                    if index > #indicators then
+                        nextIndex = #indicators
+                    else
+                        nextIndex = index
+                    end
                 end
-            end
-            setSelectedIndicatorIndex(nextIndex)
+                setSelectedIndicatorIndex(nextIndex)
+            end)
         end,
         isEnabled = selectedIndicatorExists,
         expandWith = currentSpecHasIndicators

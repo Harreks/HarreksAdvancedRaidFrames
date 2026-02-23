@@ -28,7 +28,12 @@ end
 local indicatorOverlayRenderers = {
     icon = function(overlay, indicatorData)
         local newIcon = Ui.IconIndicatorPool:Acquire()
-        local showText = indicatorData.showText ~= false
+        local showText
+        if indicatorData.showCooldownText == nil then
+            showText = indicatorData.showText ~= false
+        else
+            showText = indicatorData.showCooldownText ~= false
+        end
         local showTexture = indicatorData.showTexture ~= false
         newIcon.spell = indicatorData.Spell
         newIcon:SetParent(overlay)

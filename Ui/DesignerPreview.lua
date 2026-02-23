@@ -50,6 +50,25 @@ local function applySelectedPreviewGlow(widget, getSelectedIndicatorIndex)
     widget.HighlightedPreviewElement = selectedElement
 end
 
+local function applyPreviewIndicatorFade(widget, getSelectedIndicatorIndex)
+    if not (widget and widget.Overlay and widget.Overlay.elements) then
+        return
+    end
+
+    local selectedIndex = getSelectedIndicatorIndex and getSelectedIndicatorIndex()
+    local shouldFadeOthers = Ui.designerPreviewFadeOtherIndicators ~= false
+
+    for index, element in ipairs(widget.Overlay.elements) do
+        if element and element.SetAlpha then
+            local alpha = 1
+            if shouldFadeOthers and selectedIndex and index ~= selectedIndex then
+                alpha = 0.3
+            end
+            element:SetAlpha(alpha)
+        end
+    end
+end
+
 local function bindPreviewSelectionHandlers(widget, onSelect)
     if not (widget and widget.Overlay and widget.Overlay.elements and onSelect) then
         return
@@ -119,6 +138,10 @@ function Ui.InitializeDesignerPreview(config)
     local getSelectedIndicatorIndex = config and config.getSelectedIndicatorIndex
     local setSelectedIndicatorIndex = config and config.setSelectedIndicatorIndex
 
+    if Ui.designerPreviewFadeOtherIndicators == nil then
+        Ui.designerPreviewFadeOtherIndicators = true
+    end
+
     local widget = Ui.DesignerPreviewWidget
     if not widget then
         widget = CreateFrame('Frame', nil, UIParent, 'InsetFrameTemplate3')
@@ -155,6 +178,22 @@ function Ui.InitializeDesignerPreview(config)
         disclaimer:SetScale(0.7)
         disclaimer:SetText(L.DESIGNER_PREVIEW_DISCLAIMER)
         widget.Disclaimer = disclaimer
+
+        local fadeOthersCheckbox = CreateFrame('CheckButton', nil, widget, 'UICheckButtonTemplate')
+        fadeOthersCheckbox:SetPoint('TOPLEFT', disclaimer, 'BOTTOMLEFT', -8, -8)
+        fadeOthersCheckbox:SetChecked(Ui.designerPreviewFadeOtherIndicators ~= false)
+
+        local fadeOthersLabel = widget:CreateFontString(nil, 'OVERLAY', 'GameFontHighlightSmall')
+        fadeOthersLabel:SetPoint('LEFT', fadeOthersCheckbox, 'RIGHT', 1, 1)
+        fadeOthersLabel:SetText(L.DESIGNER_PREVIEW_FADE_OTHER_INDICATORS)
+
+        fadeOthersCheckbox:SetScript('OnClick', function(self)
+            Ui.designerPreviewFadeOtherIndicators = self:GetChecked() and true or false
+            applyPreviewIndicatorFade(widget, getSelectedIndicatorIndex)
+        end)
+
+        widget.FadeOthersCheckbox = fadeOthersCheckbox
+        widget.FadeOthersLabel = fadeOthersLabel
 
         local name = exampleFrame:CreateFontString(nil, 'OVERLAY', 'GameFontNormal')
         name:SetPoint('TOP', exampleFrame, 'TOP', 0, -5)
@@ -243,6 +282,10 @@ function Ui.InitializeDesignerPreview(config)
             currentWidget.SpecLabel:SetText(string.format(L.DESIGNER_CURRENT_SPEC_FMT, L.DESIGNER_UNKNOWN))
         end
 
+        if currentWidget.FadeOthersCheckbox then
+            currentWidget.FadeOthersCheckbox:SetChecked(Ui.designerPreviewFadeOtherIndicators ~= false)
+        end
+
         if currentWidget.Overlay then
             stopSelectedPreviewGlow(currentWidget)
             currentWidget.Overlay:Delete()
@@ -258,6 +301,7 @@ function Ui.InitializeDesignerPreview(config)
             currentWidget.Overlay = overlay
             bindPreviewSelectionHandlers(currentWidget, setSelectedIndicatorIndex)
             applySelectedPreviewGlow(currentWidget, getSelectedIndicatorIndex)
+            applyPreviewIndicatorFade(currentWidget, getSelectedIndicatorIndex)
         end
 
         Ui._designerPreviewRefreshing = nil

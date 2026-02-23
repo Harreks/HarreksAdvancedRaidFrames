@@ -119,6 +119,7 @@ local function sanitizeImportedIndicator(indicator, spec)
     end
 
     if indicatorType == 'icon' then
+        if type(indicator.showCooldownText) == 'boolean' then sanitized.showCooldownText = indicator.showCooldownText end
         if type(indicator.showText) == 'boolean' then sanitized.showText = indicator.showText end
         if type(indicator.showTexture) == 'boolean' then sanitized.showTexture = indicator.showTexture end
     elseif indicatorType == 'square' then

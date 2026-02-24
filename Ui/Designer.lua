@@ -1374,6 +1374,9 @@ local function buildDesignerEqol(parentCategory)
             if not indicator then return end
             indicator.showCooldownText = value
             indicator.showText = value
+            if indicator.Type == 'icon' and value == false then
+                indicator.showTexture = true
+            end
             updateAfterDesignerChange(false)
         end,
         isEnabled = selectedIndicatorExists,

@@ -2,12 +2,272 @@ local _, NS = ...
 local Data = NS.Data
 local Ui = NS.Ui
 local L = NS.L
+local Options = HARFDB.options
 local LibStub = _G.LibStub
 local LCG = LibStub and LibStub('LibCustomGlow-1.0', true)
+local LGF = LibStub and LibStub('LibGetFrame-1.0', true)
 local DesignerState = Ui.DesignerState
+local IsSecretValue = issecretvalue
 
 local PREVIEW_FLOAT_WIDTH = 360
 local PREVIEW_FLOAT_HEIGHT = 320
+local PREVIEW_DEFAULT_HEALTH_COLOR = { r = 0.10, g = 0.95, b = 0.10, a = 1 }
+local PREVIEW_EXTERNAL_DEFAULT_COLOR = { r = 1, g = 1, b = 1, a = 1 }
+local EXTERNAL_FRAME_IGNORE_PATTERNS = {
+    '^CompactRaid',
+    '^CompactParty'
+}
+local updatePreviewHealthColor
+
+local function getCustomPreviewBarColor()
+    if type(Options.designerPreviewCustomBarColor) ~= 'table' then
+        Options.designerPreviewCustomBarColor = {
+            r = PREVIEW_EXTERNAL_DEFAULT_COLOR.r,
+            g = PREVIEW_EXTERNAL_DEFAULT_COLOR.g,
+            b = PREVIEW_EXTERNAL_DEFAULT_COLOR.b,
+            a = PREVIEW_EXTERNAL_DEFAULT_COLOR.a
+        }
+    end
+
+    local color = Options.designerPreviewCustomBarColor
+    if type(color.r) ~= 'number' then color.r = PREVIEW_EXTERNAL_DEFAULT_COLOR.r end
+    if type(color.g) ~= 'number' then color.g = PREVIEW_EXTERNAL_DEFAULT_COLOR.g end
+    if type(color.b) ~= 'number' then color.b = PREVIEW_EXTERNAL_DEFAULT_COLOR.b end
+    if type(color.a) ~= 'number' then color.a = PREVIEW_EXTERNAL_DEFAULT_COLOR.a end
+    return color
+end
+
+local function setCustomPreviewBarColor(r, g, b, a)
+    local color = getCustomPreviewBarColor()
+    color.r = r
+    color.g = g
+    color.b = b
+    color.a = a or PREVIEW_EXTERNAL_DEFAULT_COLOR.a
+end
+
+local function refreshCustomColorSwatch(widget)
+    if not (widget and widget.CustomPreviewColorSwatch) then
+        return
+    end
+
+    local color = getCustomPreviewBarColor()
+    widget.CustomPreviewColorSwatch:SetColorTexture(color.r, color.g, color.b, color.a)
+end
+
+local function openCustomPreviewColorPicker(widget)
+    if not (ColorPickerFrame and ColorPickerFrame.SetupColorPickerAndShow) then
+        return
+    end
+
+    local color = getCustomPreviewBarColor()
+
+    local function apply(r, g, b, a)
+        setCustomPreviewBarColor(r, g, b, a)
+        refreshCustomColorSwatch(widget)
+        updatePreviewHealthColor(widget, false)
+    end
+
+    ColorPickerFrame:SetupColorPickerAndShow({
+        r = color.r,
+        g = color.g,
+        b = color.b,
+        opacity = color.a,
+        hasOpacity = true,
+        swatchFunc = function()
+            local r, g, b = ColorPickerFrame:GetColorRGB()
+            local a = ColorPickerFrame.GetColorAlpha and ColorPickerFrame:GetColorAlpha() or color.a
+            apply(r, g, b, a)
+        end,
+        opacityFunc = function()
+            local r, g, b = ColorPickerFrame:GetColorRGB()
+            local a = ColorPickerFrame.GetColorAlpha and ColorPickerFrame:GetColorAlpha() or color.a
+            apply(r, g, b, a)
+        end,
+        cancelFunc = function()
+            local r, g, b, a = ColorPickerFrame:GetPreviousValues()
+            apply(r or color.r, g or color.g, b or color.b, a or color.a)
+        end,
+    })
+end
+
+local function isFrameShown(frame)
+    if not (frame and frame.IsShown and frame:IsShown()) then
+        return false
+    end
+
+    if frame.GetAlpha then
+        local alpha = frame:GetAlpha()
+        if alpha ~= nil and (not IsSecretValue or not IsSecretValue(alpha)) then
+            return alpha > 0
+        end
+    end
+
+    return true
+end
+
+local function getTrackedUnitsForGroupContext()
+    local units = {}
+    if IsInRaid() then
+        for i = 1, 40 do
+            units[#units + 1] = 'raid' .. i
+        end
+    else
+        units[#units + 1] = 'player'
+        for i = 1, 4 do
+            units[#units + 1] = 'party' .. i
+        end
+    end
+    return units
+end
+
+local function sampleDefaultFrameHealthColor()
+    local frameLists = {
+        Data.frameList and Data.frameList.party,
+        Data.frameList and Data.frameList.raid
+    }
+
+    for _, frameList in ipairs(frameLists) do
+        if frameList then
+            for _, frameName in ipairs(frameList) do
+                local frame = _G[frameName]
+                if isFrameShown(frame) and frame.healthBar and frame.healthBar.GetStatusBarColor then
+                    local r, g, b, a = frame.healthBar:GetStatusBarColor()
+                    if r and g and b then
+                        return r, g, b, a or 1
+                    end
+                end
+            end
+        end
+    end
+
+    return nil
+end
+
+local function isUsingBlizzardDefaultFrames()
+    local trackedUnits = getTrackedUnitsForGroupContext()
+
+    if DandersFrames_IsReady and DandersFrames_IsReady() and DandersFrames_GetFrameForUnit then
+        for _, unit in ipairs(trackedUnits) do
+            if UnitExists(unit) then
+                local dandersFrame = DandersFrames_GetFrameForUnit(unit)
+                if dandersFrame and (isFrameShown(dandersFrame) or dandersFrame.unit) then
+                    return false
+                end
+            end
+        end
+    end
+
+    if LGF and LGF.GetUnitFrame then
+        for _, unit in ipairs(trackedUnits) do
+            if UnitExists(unit) then
+                local externalFrame = LGF.GetUnitFrame(unit, { ignoreFrames = EXTERNAL_FRAME_IGNORE_PATTERNS })
+                if isFrameShown(externalFrame) then
+                    return false
+                end
+            end
+        end
+    end
+
+    local hasVisibleDefaultFrame = false
+    local frameList = IsInRaid() and Data.frameList and Data.frameList.raid or Data.frameList and Data.frameList.party
+
+    if frameList then
+        for _, frameName in ipairs(frameList) do
+            local frame = _G[frameName]
+            if isFrameShown(frame) and frame.unit and UnitExists(frame.unit) then
+                hasVisibleDefaultFrame = true
+                break
+            end
+        end
+    end
+
+    if not hasVisibleDefaultFrame then
+        return false
+    end
+
+    return true
+end
+
+updatePreviewHealthColor = function(widget, usingDefaultFrames)
+    if not (widget and widget.ExampleHealthTexture) then
+        return
+    end
+
+    local r, g, b, a
+    if usingDefaultFrames then
+        r, g, b, a = sampleDefaultFrameHealthColor()
+    else
+        local customColor = getCustomPreviewBarColor()
+        r, g, b, a = customColor.r, customColor.g, customColor.b, customColor.a
+    end
+
+    if not (r and g and b) then
+        r = PREVIEW_DEFAULT_HEALTH_COLOR.r
+        g = PREVIEW_DEFAULT_HEALTH_COLOR.g
+        b = PREVIEW_DEFAULT_HEALTH_COLOR.b
+        a = PREVIEW_DEFAULT_HEALTH_COLOR.a
+    end
+
+    widget.ExampleHealthTexture:SetVertexColor(r, g, b, a or 1)
+end
+
+local function updateDefaultFramesNotice(widget, usingDefaultFrames)
+    if not (widget and widget.DefaultFramesNotice and widget.DefaultFramesButton and widget.CustomPreviewColorLabel and widget.CustomPreviewColorButton) then
+        return
+    end
+
+    if usingDefaultFrames and Ui.DefaultFramesCategoryID then
+        widget.DefaultFramesNotice:SetText(L.DESIGNER_PREVIEW_DEFAULT_FRAMES_NOTICE)
+        widget.DefaultFramesNotice:Show()
+        widget.DefaultFramesButton:SetText(L.DESIGNER_PREVIEW_DEFAULT_FRAMES_BUTTON)
+        widget.DefaultFramesButton:Show()
+        widget.CustomPreviewColorLabel:Hide()
+        widget.CustomPreviewColorButton:Hide()
+    else
+        widget.DefaultFramesNotice:Hide()
+        widget.DefaultFramesButton:Hide()
+        widget.CustomPreviewColorLabel:SetText(L.DESIGNER_PREVIEW_CUSTOM_BAR_COLOR)
+        widget.CustomPreviewColorLabel:Show()
+        widget.CustomPreviewColorButton:Show()
+        refreshCustomColorSwatch(widget)
+    end
+end
+
+local function getDesiredPreviewHeight(widget)
+    if not (widget and widget.IsShown and widget:IsShown() and widget.GetTop and widget.GetBottom) then
+        return PREVIEW_FLOAT_HEIGHT
+    end
+
+    local lowestBottom = nil
+    local candidates = {
+        widget.DefaultFramesButton,
+        widget.CustomPreviewColorButton,
+        widget.DefaultFramesNotice,
+        widget.FadeOthersCheckbox,
+        widget.Disclaimer,
+    }
+
+    for _, frame in ipairs(candidates) do
+        if frame and frame.IsShown and frame:IsShown() and frame.GetBottom then
+            local bottom = frame:GetBottom()
+            if bottom and (not lowestBottom or bottom < lowestBottom) then
+                lowestBottom = bottom
+            end
+        end
+    end
+
+    local top = widget:GetTop()
+    if not (top and lowestBottom) then
+        return PREVIEW_FLOAT_HEIGHT
+    end
+
+    local desiredHeight = math.ceil((top - lowestBottom) + 22)
+    if desiredHeight < PREVIEW_FLOAT_HEIGHT then
+        desiredHeight = PREVIEW_FLOAT_HEIGHT
+    end
+
+    return desiredHeight
+end
 
 local function stopSelectedPreviewGlow(widget)
     if not (widget and widget.HighlightedPreviewElement and LCG) then
@@ -167,9 +427,18 @@ function Ui.InitializeDesignerPreview(config)
         exampleFrame:SetSize(165, 65)
         exampleFrame:SetScale(1.5)
         exampleFrame:SetPoint('TOP', widget, 'TOP', 0, -85)
-        exampleFrame.bg = exampleFrame:CreateTexture(nil, 'BACKGROUND')
-        exampleFrame.bg:SetAllPoints(exampleFrame)
-        exampleFrame.bg:SetTexture('Interface\\RaidFrame\\Raid-Bar-Hp-Fill')
+
+        local healthTexture = exampleFrame:CreateTexture(nil, 'BACKGROUND')
+        healthTexture:SetAllPoints(exampleFrame)
+        healthTexture:SetTexture('Interface\\RaidFrame\\Raid-Bar-Hp-Fill')
+        healthTexture:SetVertexColor(
+            PREVIEW_DEFAULT_HEALTH_COLOR.r,
+            PREVIEW_DEFAULT_HEALTH_COLOR.g,
+            PREVIEW_DEFAULT_HEALTH_COLOR.b,
+            PREVIEW_DEFAULT_HEALTH_COLOR.a
+        )
+        widget.ExampleHealthTexture = healthTexture
+
         widget.ExampleFrame = exampleFrame
 
         local disclaimer = exampleFrame:CreateFontString(nil, 'OVERLAY', 'GameFontNormal')
@@ -194,6 +463,75 @@ function Ui.InitializeDesignerPreview(config)
 
         widget.FadeOthersCheckbox = fadeOthersCheckbox
         widget.FadeOthersLabel = fadeOthersLabel
+
+        local defaultFramesNotice = widget:CreateFontString(nil, 'OVERLAY', 'GameTooltipTextSmall')
+        defaultFramesNotice:SetPoint('TOPLEFT', fadeOthersCheckbox, 'BOTTOMLEFT', 8, -6)
+        defaultFramesNotice:SetPoint('RIGHT', widget, 'RIGHT', -14, 0)
+        defaultFramesNotice:SetJustifyH('LEFT')
+        defaultFramesNotice:SetWordWrap(true)
+        defaultFramesNotice:Hide()
+        widget.DefaultFramesNotice = defaultFramesNotice
+
+        local defaultFramesButton = CreateFrame('Button', nil, widget, 'UIPanelButtonTemplate')
+        defaultFramesButton:SetSize(205, 22)
+        defaultFramesButton:SetPoint('TOPLEFT', defaultFramesNotice, 'BOTTOMLEFT', -2, -6)
+        defaultFramesButton:SetScript('OnClick', function()
+            if Settings and Settings.OpenToCategory and Ui.DefaultFramesCategoryID then
+                Settings.OpenToCategory(Ui.DefaultFramesCategoryID)
+            end
+        end)
+        defaultFramesButton:SetScript('OnEnter', function(self)
+            if not L.DESIGNER_PREVIEW_DEFAULT_FRAMES_BUTTON_TOOLTIP then
+                return
+            end
+            GameTooltip:SetOwner(self, 'ANCHOR_RIGHT')
+            GameTooltip:SetText(L.DESIGNER_PREVIEW_DEFAULT_FRAMES_BUTTON_TOOLTIP, nil, nil, nil, nil, true)
+            GameTooltip:Show()
+        end)
+        defaultFramesButton:SetScript('OnLeave', function()
+            GameTooltip:Hide()
+        end)
+        defaultFramesButton:Hide()
+        widget.DefaultFramesButton = defaultFramesButton
+
+        local customPreviewColorLabel = widget:CreateFontString(nil, 'OVERLAY', 'GameFontHighlightSmall')
+        customPreviewColorLabel:SetPoint('TOPLEFT', fadeOthersCheckbox, 'BOTTOMLEFT', 8, -10)
+        customPreviewColorLabel:SetText(L.DESIGNER_PREVIEW_CUSTOM_BAR_COLOR)
+        customPreviewColorLabel:Hide()
+        widget.CustomPreviewColorLabel = customPreviewColorLabel
+
+        local customPreviewColorButton = CreateFrame('Button', nil, widget, 'UIPanelButtonTemplate')
+        customPreviewColorButton:SetSize(92, 22)
+        customPreviewColorButton:SetPoint('LEFT', customPreviewColorLabel, 'RIGHT', 8, 0)
+        customPreviewColorButton:SetText(L.LABEL_COLOR)
+        customPreviewColorButton:SetScript('OnClick', function()
+            openCustomPreviewColorPicker(widget)
+        end)
+        customPreviewColorButton:SetScript('OnEnter', function(self)
+            if not L.DESIGNER_PREVIEW_CUSTOM_BAR_COLOR_TOOLTIP then
+                return
+            end
+            GameTooltip:SetOwner(self, 'ANCHOR_RIGHT')
+            GameTooltip:SetText(L.DESIGNER_PREVIEW_CUSTOM_BAR_COLOR_TOOLTIP, nil, nil, nil, nil, true)
+            GameTooltip:Show()
+        end)
+        customPreviewColorButton:SetScript('OnLeave', function()
+            GameTooltip:Hide()
+        end)
+
+        local swatchBorder = customPreviewColorButton:CreateTexture(nil, 'ARTWORK')
+        swatchBorder:SetSize(12, 12)
+        swatchBorder:SetPoint('RIGHT', customPreviewColorButton, 'RIGHT', -8, 0)
+        swatchBorder:SetColorTexture(0.15, 0.15, 0.15, 1)
+
+        local swatch = customPreviewColorButton:CreateTexture(nil, 'OVERLAY')
+        swatch:SetSize(10, 10)
+        swatch:SetPoint('CENTER', swatchBorder, 'CENTER')
+        customPreviewColorButton.Swatch = swatch
+        widget.CustomPreviewColorSwatch = swatch
+
+        customPreviewColorButton:Hide()
+        widget.CustomPreviewColorButton = customPreviewColorButton
 
         local name = exampleFrame:CreateFontString(nil, 'OVERLAY', 'GameFontNormal')
         name:SetPoint('TOP', exampleFrame, 'TOP', 0, -5)
@@ -237,7 +575,8 @@ function Ui.InitializeDesignerPreview(config)
         local uiTop = UIParent:GetTop() or UIParent:GetHeight() or 0
         local uiBottom = UIParent:GetBottom() or 0
         local availableHeight = math.max(180, (uiTop - uiBottom) - 40)
-        local clampedHeight = math.min(PREVIEW_FLOAT_HEIGHT, availableHeight)
+        local targetHeight = currentWidget.DesiredHeight or PREVIEW_FLOAT_HEIGHT
+        local clampedHeight = math.min(targetHeight, availableHeight)
         currentWidget:SetSize(PREVIEW_FLOAT_WIDTH, clampedHeight)
 
         local panelRight = SettingsPanel:GetRight() or 0
@@ -284,6 +623,18 @@ function Ui.InitializeDesignerPreview(config)
 
         if currentWidget.FadeOthersCheckbox then
             currentWidget.FadeOthersCheckbox:SetChecked(Ui.designerPreviewFadeOtherIndicators ~= false)
+        end
+
+        local usingDefaultFrames = isUsingBlizzardDefaultFrames()
+        updatePreviewHealthColor(currentWidget, usingDefaultFrames)
+        updateDefaultFramesNotice(currentWidget, usingDefaultFrames)
+
+        local desiredHeight = getDesiredPreviewHeight(currentWidget)
+        if currentWidget.DesiredHeight ~= desiredHeight then
+            currentWidget.DesiredHeight = desiredHeight
+            if Ui.UpdateDesignerPreviewPlacement then
+                Ui.UpdateDesignerPreviewPlacement()
+            end
         end
 
         if currentWidget.Overlay then

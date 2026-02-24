@@ -271,6 +271,7 @@ function Ui.CreateOptionsPanel(optionsTable)
 
     local defaultFramesSubcategory, defaultFramesLayout = Settings.RegisterVerticalLayoutSubcategory(category, L.MENU_CATEGORY_DEFAULT_FRAMES)
     Settings.RegisterAddOnCategory(defaultFramesSubcategory)
+    Ui.DefaultFramesCategoryID = defaultFramesSubcategory.ID
 
     optionsIntroPanel:HookScript('OnShow', function() Options.lastOpenedCategory = category.ID end)
     for _, data in ipairs(optionsTable) do

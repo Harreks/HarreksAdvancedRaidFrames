@@ -3,9 +3,46 @@ local Data = NS.Data
 local Ui = NS.Ui
 local Util = NS.Util
 local Core = NS.Core
-local API = NS.API
 local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
+
+local pairs = pairs
+local ipairs = ipairs
+local tonumber = tonumber
+local table_insert = table.insert
+local type = type
+
+local IsAuraFilteredOutByInstanceID = C_UnitAuras.IsAuraFilteredOutByInstanceID
+
+local auraSignatureLookupBySpec = {}
+
+local function MakeAuraSignature(pointCount, passesRaid, passesRic, passesExt, passesDisp)
+    return pointCount .. ':'
+        .. (passesRaid and '1' or '0') .. ':'
+        .. (passesRic and '1' or '0') .. ':'
+        .. (passesExt and '1' or '0') .. ':'
+        .. (passesDisp and '1' or '0')
+end
+
+local function GetAuraSignatureLookup(spec)
+    if auraSignatureLookupBySpec[spec] then
+        return auraSignatureLookupBySpec[spec]
+    end
+
+    local lookup = {}
+    local specData = Data.specInfo[spec]
+    if specData and specData.auras then
+        for auraName, auraData in pairs(specData.auras) do
+            local signature = MakeAuraSignature(auraData.points, auraData.raid, auraData.ric, auraData.ext, auraData.disp)
+            if not lookup[signature] then
+                lookup[signature] = auraName
+            end
+        end
+    end
+
+    auraSignatureLookupBySpec[spec] = lookup
+    return lookup
+end
 
 --Function to format decimals out for display
 function Util.FormatForDisplay(number)
@@ -57,27 +94,27 @@ function Util.AreTimestampsEqual(time1, time2, delay)
 end
 
 function Util.GetSpotlightNames()
+    local spotlight = Options.spotlight or {}
+    local selectedNames = spotlight.names or {}
+    local spotlightNameList = {}
+    for name, _ in pairs(selectedNames) do
+        table_insert(spotlightNameList, { text = name })
+    end
+
     if IsInRaid() then
-        local frames = Util.GetRelevantList()
-        local raidNameList = {}
-        if Options.spotlight.names then
-            for name, _ in pairs(Options.spotlight.names) do
-                table.insert(raidNameList, { text = name })
-            end
-        end
-        for frameString, _ in pairs(frames) do
-            if _G[frameString] then
-                local frame = _G[frameString]
-                local unitName = UnitName(frame.unit)
-                if not UnitIsUnit(frame.unit, 'player') and not Options.spotlight.names[unitName] then
-                    table.insert(raidNameList, { text = unitName })
+        local groupSize = GetNumGroupMembers() or 0
+        for i = 1, groupSize do
+            local unit = 'raid' .. i
+            if UnitExists(unit) and not UnitIsUnit(unit, 'player') then
+                local unitName = UnitName(unit)
+                if unitName and unitName ~= '' and not selectedNames[unitName] then
+                    table_insert(spotlightNameList, { text = unitName })
                 end
             end
         end
-        return raidNameList
-    else
-        return Options.spotlight.names
     end
+
+    return spotlightNameList
 end
 
 --Use the spotlight name list to map out where each frame is supposed to go
@@ -87,77 +124,76 @@ function Util.MapSpotlightAnchors()
     wipe(Data.spotlightAnchors.defaults)
     local units = Options.spotlight.names
     local frames = Data.frameList.raid --Spotlight only works in raid
-    for frameString, _ in pairs(frames) do
-        if _G[frameString] and _G[frameString].unit then
-            local currentFrame = _G[frameString]
+    local seenUnits = {}
+    for _, frameString in ipairs(frames) do
+        local currentFrame = _G[frameString]
+        if currentFrame and currentFrame.unit then
             local unit = currentFrame.unit
-            if unit ~= 'player' then --The player can't be spotlight
+            if unit ~= 'player' and not seenUnits[unit] then --The player can't be spotlight
+                seenUnits[unit] = true
                 local unitName = UnitName(unit)
-                local frameIndex = frameString:gsub('CompactRaidFrame', '') --We grab the number of this frame to keep them in order
-                --If the unit is in our name list we save it in the spotlights, otherwise we save it on defaults
-                if units[unitName] then
-                    Data.spotlightAnchors.spotlights[frameIndex] = frameString
+                if unitName and units[unitName] then
+                    table_insert(Data.spotlightAnchors.spotlights, frameString)
                 else
-                    Data.spotlightAnchors.defaults[frameIndex] = frameString
+                    table_insert(Data.spotlightAnchors.defaults, frameString)
                 end
             end
         end
-    end
-    --We are gonna sort our frames to know what goes anchored to what
-    --The goal here is to have two ordered lists of what order the frames must follow for ReanchorSpotlights() to work with
-    for type, list in pairs(Data.spotlightAnchors) do
-        local framesIndexes = {}
-        for index in pairs(list) do
-            table.insert(framesIndexes, tonumber(index)) --Insert the frame number into a new list
-        end
-        table.sort(framesIndexes) --Sort the numbers
-        local orderedFrameList = {}
-        local order = 1
-        --Now we use the ordered indices to list the frames in the order they're supposed to go
-        for _, index in ipairs(framesIndexes) do
-            orderedFrameList[order] = list[tostring(index)]
-            order = order + 1
-        end
-        --Save the sorted data in our spotlight anchors list
-        Data.spotlightAnchors[type] = orderedFrameList
     end
 end
 
 --Use the mapped spotlight anchors to attach the frames where they are supposed to go
 function Util.ReanchorSpotlights()
+    local spotlightFrame = Ui.GetSpotlightFrame()
+    if not spotlightFrame then
+        return
+    end
+
     for index, frameString in ipairs(Data.spotlightAnchors.spotlights) do
         local frame = _G[frameString]
-        frame:ClearAllPoints()
-        --The first frame goes attached directly to the spotlight anchor
-        if index == 1 then
-            frame:SetPoint('TOP', 'AdvancedRaidFramesSpotlight', 'TOP')
-        --Other frames go attached to the previous one in the list
-        else
-            local previousFrame = _G[Data.spotlightAnchors.spotlights[index - 1]]
-            local childPoint, parentPoint
-            if Options.spotlight.grow == 'right' then
-                childPoint, parentPoint = 'LEFT', 'RIGHT'
+        if frame then
+            frame:ClearAllPoints()
+            --The first frame goes attached directly to the spotlight anchor
+            if index == 1 then
+                frame:SetPoint('TOP', spotlightFrame, 'TOP')
+            --Other frames go attached to the previous one in the list
             else
-                childPoint, parentPoint = 'TOP', 'BOTTOM'
+                local previousFrame = _G[Data.spotlightAnchors.spotlights[index - 1]]
+                if previousFrame then
+                    local childPoint, parentPoint
+                    if Options.spotlight.grow == 'right' then
+                        childPoint, parentPoint = 'LEFT', 'RIGHT'
+                    else
+                        childPoint, parentPoint = 'TOP', 'BOTTOM'
+                    end
+                    frame:SetPoint(childPoint, previousFrame, parentPoint)
+                else
+                    frame:SetPoint('TOP', spotlightFrame, 'TOP')
+                end
             end
-            frame:SetPoint(childPoint, previousFrame, parentPoint)
         end
     end
     --Similar logic for the frames that remain in the default position
     --This currently has a bug if the user has 'separate tanks' turned on, because the tanks' targets and targetoftarget also use frames but of different size
     for index, frameString in ipairs(Data.spotlightAnchors.defaults) do
         local frame = _G[frameString]
-        frame:ClearAllPoints()
-        if index == 1 then
-            frame:SetPoint('TOPLEFT', 'CompactRaidFrameContainer', 'TOPLEFT')
-        else
-            --This 5 is a magic number that assumes people have 5 frames before breaking into a new row (needs updating)
-            if (index - 1) % 5 == 0 then
-                local previousFrame = _G[Data.spotlightAnchors.defaults[index - 5]]
-                frame:SetPoint('TOP', previousFrame, 'BOTTOM')
+        if frame then
+            frame:ClearAllPoints()
+            if index == 1 then
+                frame:SetPoint('TOPLEFT', 'CompactRaidFrameContainer', 'TOPLEFT')
             else
-                local previousFrame = _G[Data.spotlightAnchors.defaults[index - 1]]
-                frame:SetPoint('LEFT', previousFrame, 'RIGHT')
+                --This 5 is a magic number that assumes people have 5 frames before breaking into a new row (needs updating)
+                if (index - 1) % 5 == 0 then
+                    local previousFrame = _G[Data.spotlightAnchors.defaults[index - 5]]
+                    if previousFrame then
+                        frame:SetPoint('TOP', previousFrame, 'BOTTOM')
+                    end
+                else
+                    local previousFrame = _G[Data.spotlightAnchors.defaults[index - 1]]
+                    if previousFrame then
+                        frame:SetPoint('LEFT', previousFrame, 'RIGHT')
+                    end
+                end
             end
         end
     end
@@ -179,6 +215,9 @@ function Util.MapOutUnits()
             elements.name = nil
             wipe(elements.buffs)
             wipe(elements.debuffs)
+            if elements.auras then wipe(elements.auras) end
+            if elements.auraInstanceMap then wipe(elements.auraInstanceMap) end
+            if elements.auraDurations then wipe(elements.auraDurations) end
             if elements.indicatorOverlay then
                 elements.indicatorOverlay:Delete()
                 elements.indicatorOverlay = nil
@@ -255,30 +294,28 @@ end
 
 --it says "is from player" but really we are checking it is not a trash buff
 function Util.IsAuraFromPlayer(unit, auraId)
-    local passesRic = not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, auraId, 'PLAYER|HELPFUL|RAID_IN_COMBAT')
-    local passesRaid = not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, auraId, 'PLAYER|HELPFUL|RAID')
+    local passesRic = not IsAuraFilteredOutByInstanceID(unit, auraId, 'PLAYER|HELPFUL|RAID_IN_COMBAT')
+    local passesRaid = not IsAuraFilteredOutByInstanceID(unit, auraId, 'PLAYER|HELPFUL|RAID')
     return passesRic or passesRaid
 end
 
 --We sus out the buff, match the info we can get from it
 function Util.MatchAuraInfo(unit, aura)
-    local passesRaid = not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|RAID')
-    local passesRic = not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|RAID_IN_COMBAT')
-    local passesExt = not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|EXTERNAL_DEFENSIVE')
-    local passesDisp = not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|RAID_PLAYER_DISPELLABLE')
+    local passesRaid = not IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|RAID')
+    local passesRic = not IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|RAID_IN_COMBAT')
+
+    if not (passesRaid or passesRic) then
+        return nil
+    end
+
+    local passesExt = not IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|EXTERNAL_DEFENSIVE')
+    local passesDisp = not IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|RAID_PLAYER_DISPELLABLE')
     local pointCount = #aura.points
 
-    local auraList = Data.specInfo[Data.playerSpec].auras
-    for buff, buffData in pairs(auraList) do
-        local matchesPoints = buffData.points == pointCount
-        local matchesRaid = buffData.raid == passesRaid
-        local matchesRic = buffData.ric == passesRic
-        local matchesExt = buffData.ext == passesExt
-        local matchesDisp = buffData.disp == passesDisp
-        if matchesPoints and matchesRaid and matchesRic and matchesExt and matchesDisp then
-            return buff
-        end
-    end
+    local spec = Data.playerSpec
+    local lookup = spec and GetAuraSignatureLookup(spec)
+    local signature = MakeAuraSignature(pointCount, passesRaid, passesRic, passesExt, passesDisp)
+    return lookup and lookup[signature] or nil
 end
 
 function Util.MapEngineFunctions()
@@ -286,4 +323,8 @@ function Util.MapEngineFunctions()
     for spec, _ in pairs(Data.specInfo) do
         functionMap[spec] = Core['Parse' .. spec .. 'Buffs']
     end
+end
+
+function Util.IsSupportedSpec(spec)
+    return spec and Data.specInfo[spec] and Data.engineFunctions[spec]
 end

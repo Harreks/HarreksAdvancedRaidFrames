@@ -3,8 +3,7 @@ local Data = NS.Data
 local Ui = NS.Ui
 local Util = NS.Util
 local Core = NS.Core
-local API = NS.API
-local SavedIndicators = HARFDB.savedIndicators
+local L = NS.L
 local Options = HARFDB.options
 
 function Ui.GenerateMinimapIcon(categoryId)
@@ -23,53 +22,127 @@ function Ui.GetOptionsIntroPanel()
         local optionsIntroPanel = CreateFrame('Frame')
         Ui.OptionsIntroPanel = optionsIntroPanel
 
-        local title = optionsIntroPanel:CreateFontString(nil, 'ARTWORK', 'GameFontNormal')
-        title:SetScale(1.5)
-        title:SetPoint('TOP', optionsIntroPanel, 'TOP', 0, -10)
-        title:SetText('Advanced Raid Frames v' .. NS.Version)
+        local scrollFrame = CreateFrame('ScrollFrame', nil, optionsIntroPanel, 'UIPanelScrollFrameTemplate')
+        scrollFrame:SetPoint('TOPLEFT', optionsIntroPanel, 'TOPLEFT', 0, -8)
+        scrollFrame:SetPoint('BOTTOMRIGHT', optionsIntroPanel, 'BOTTOMRIGHT', -28, 8)
+        optionsIntroPanel.scrollFrame = scrollFrame
 
-        local logo = optionsIntroPanel:CreateTexture(nil, "ARTWORK")
+        local content = CreateFrame('Frame', nil, scrollFrame)
+        content:SetPoint('TOPLEFT', scrollFrame, 'TOPLEFT')
+        content:SetPoint('TOPRIGHT', scrollFrame, 'TOPRIGHT')
+        content:SetHeight(760)
+        scrollFrame:SetScrollChild(content)
+        optionsIntroPanel.scrollContent = content
+
+        scrollFrame:SetScript('OnSizeChanged', function(self, width)
+            content:SetWidth(width)
+        end)
+
+        local title = content:CreateFontString(nil, 'ARTWORK', 'GameFontNormal')
+        title:SetScale(1.5)
+        title:SetPoint('TOP', content, 'TOP', 0, -10)
+        title:SetText(string.format(L.MENU_INTRO_TITLE_FMT, NS.Version))
+
+        local logo = content:CreateTexture(nil, "ARTWORK")
         logo:SetTexture('Interface/Addons/HarreksAdvancedRaidFrames/Assets/harrek-logo.png')
         logo:SetSize(100, 100)
         logo:SetPoint('TOP', title, 'TOP', 0, -30)
         optionsIntroPanel.logo = logo
 
-        local fontString = optionsIntroPanel:CreateFontString(nil, 'ARTWORK', 'GameFontNormal')
+        local fontString = content:CreateFontString(nil, 'ARTWORK', 'GameFontNormal')
         fontString:SetPoint('TOP', logo, 'BOTTOM', 0, -10)
-        fontString:SetWidth(400)
-        fontString:SetScale(1.3)
-        local text = 'Advanced Raid Frames is my attempt at giving healers the tools they need to properly play the game, ' ..
-        'while this is not a perfect solution i am working very hard trying to make it the best it can possibly be so we can all enjoy the game like we are used to.\n\n' ..
-        'The method used can be a bit finnicky in some situations but improvements are constantly being made. If you find any bug or have any questions please contact me so we ' ..
-        'can talk about it, i am excited to hear what you think.\n\n-Harrek'
+        fontString:SetPoint('LEFT', content, 'LEFT', 24, 0)
+        fontString:SetPoint('RIGHT', content, 'RIGHT', -24, 0)
+        fontString:SetJustifyH('CENTER')
+        fontString:SetScale(1.15)
+        fontString:SetWordWrap(true)
+        local text = L.MENU_INTRO_BODY
         fontString:SetText(text)
-        optionsIntroPanel.text = text
+        optionsIntroPanel.text = fontString
 
         optionsIntroPanel.buttons = {}
-        local patreonButton = CreateFrame("Button", nil, optionsIntroPanel, "UIPanelButtonTemplate")
+        local patreonButton = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
         patreonButton:SetSize(120, 30)
-        patreonButton:SetText('Patreon')
-        patreonButton:SetPoint('CENTER', optionsIntroPanel, 'BOTTOM', 0, 100)
+        patreonButton:SetText(L.MENU_BUTTON_PATREON)
+        patreonButton:SetPoint('TOP', fontString, 'BOTTOM', 0, -20)
         patreonButton:SetScript("OnClick", function()
-            Util.DisplayPopupTextbox('Harrek\'s Patreon', 'https://www.patreon.com/cw/harrek')
+            Util.DisplayPopupTextbox(L.MENU_POPUP_PATREON_TITLE, 'https://www.patreon.com/cw/harrek')
         end)
         optionsIntroPanel.buttons.Patreon = patreonButton
 
-        local discordButton = CreateFrame("Button", nil, optionsIntroPanel, "UIPanelButtonTemplate")
+        local discordButton = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
         discordButton:SetSize(120, 30)
-        discordButton:SetText('Discord')
+        discordButton:SetText(L.MENU_BUTTON_DISCORD)
         discordButton:SetPoint('RIGHT', patreonButton, 'LEFT', -50, 0)
         discordButton:SetScript("OnClick", function()
-            Util.DisplayPopupTextbox('Spiritbloom.Pro Discord', 'https://discord.gg/MMjNrUTxQe')
+            Util.DisplayPopupTextbox(L.MENU_POPUP_DISCORD_TITLE, 'https://discord.gg/MMjNrUTxQe')
         end)
 
-        local kofiButton = CreateFrame("Button", nil, optionsIntroPanel, "UIPanelButtonTemplate")
+        local kofiButton = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
         kofiButton:SetSize(120, 30)
-        kofiButton:SetText('Ko-fi')
+        kofiButton:SetText(L.MENU_BUTTON_KOFI)
         kofiButton:SetPoint('LEFT', patreonButton, 'RIGHT', 50, 0)
         kofiButton:SetScript("OnClick", function()
-            Util.DisplayPopupTextbox('Buy me a Coffee', 'https://ko-fi.com/harrek')
+            Util.DisplayPopupTextbox(L.MENU_POPUP_KOFI_TITLE, 'https://ko-fi.com/harrek')
         end)
+
+        local utilitiesHeader = content:CreateFontString(nil, 'ARTWORK', 'GameFontNormal')
+        utilitiesHeader:SetScale(1.25)
+        utilitiesHeader:SetPoint('TOP', patreonButton, 'BOTTOM', 0, -25)
+        utilitiesHeader:SetText(L.MENU_UTILITIES_HEADER)
+
+        local utilitiesText = content:CreateFontString(nil, 'ARTWORK', 'GameTooltipText')
+        utilitiesText:SetPoint('TOP', utilitiesHeader, 'BOTTOM', 0, -8)
+        utilitiesText:SetPoint('LEFT', content, 'LEFT', 24, 0)
+        utilitiesText:SetPoint('RIGHT', content, 'RIGHT', -24, 0)
+        utilitiesText:SetJustifyH('CENTER')
+        utilitiesText:SetWordWrap(true)
+        utilitiesText:SetText(L.MENU_UTILITIES_DESC)
+
+        local profileToggleButton = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
+        profileToggleButton:SetSize(160, 28)
+        profileToggleButton:SetText(L.MENU_BUTTON_TOGGLE_PROFILING)
+        profileToggleButton:SetPoint('TOP', utilitiesText, 'BOTTOM', 0, -10)
+        profileToggleButton:SetScript("OnClick", function()
+            if type(Core.ToggleProfiling) == 'function' then
+                Core.ToggleProfiling()
+            end
+        end)
+
+        local printProfileButton = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
+        printProfileButton:SetSize(160, 28)
+        printProfileButton:SetText(L.MENU_BUTTON_PRINT_PROFILING)
+        printProfileButton:SetPoint('LEFT', profileToggleButton, 'RIGHT', 20, 0)
+        printProfileButton:SetScript("OnClick", function()
+            if type(Core.PrintProfilingStats) == 'function' then
+                Core.PrintProfilingStats()
+            end
+        end)
+
+        local resetProfileButton = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
+        resetProfileButton:SetSize(160, 28)
+        resetProfileButton:SetText(L.MENU_BUTTON_RESET_PROFILING)
+        resetProfileButton:SetPoint('RIGHT', profileToggleButton, 'LEFT', -20, 0)
+        resetProfileButton:SetScript("OnClick", function()
+            if type(Core.ResetProfilingStats) == 'function' then
+                Core.ResetProfilingStats()
+            end
+        end)
+
+        local resetDbButton = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
+        resetDbButton:SetSize(160, 28)
+        resetDbButton:SetText(L.MENU_BUTTON_RESET_DATA)
+        resetDbButton:SetPoint('TOP', profileToggleButton, 'BOTTOM', 0, -10)
+        resetDbButton:SetScript("OnClick", function()
+            if type(Core.ConfirmResetDatabase) == 'function' then
+                Core.ConfirmResetDatabase()
+            end
+        end)
+
+        optionsIntroPanel.buttons.ProfileToggle = profileToggleButton
+        optionsIntroPanel.buttons.PrintProfile = printProfileButton
+        optionsIntroPanel.buttons.ResetProfile = resetProfileButton
+        optionsIntroPanel.buttons.ResetDatabase = resetDbButton
 
     end
     return Ui.OptionsIntroPanel
@@ -114,10 +187,23 @@ function Ui.CreateOptionsElement(data, parent)
         Data.initializerList[data.key] = initializer
         return
     elseif data.type == "button" then
+        local buttonClick = data.func
+        if type(buttonClick) == 'string' then
+            local functionName = buttonClick
+            buttonClick = function()
+                local resolvedFunc = Core[functionName]
+                if type(resolvedFunc) == 'function' then
+                    resolvedFunc()
+                end
+            end
+        end
+
         local buttonData = {
             name = data.text,
             buttonText = data.content,
-            buttonClick = data.func,
+            buttonClick = buttonClick,
+            OnButtonClick = buttonClick,
+            click = buttonClick,
             tooltip = data.tooltip,
             newTagID = nil,
             gameDataFunc = nil
@@ -180,22 +266,21 @@ end
 
 function Ui.CreateOptionsPanel(optionsTable)
     local optionsIntroPanel = Ui.GetOptionsIntroPanel()
-    local category = Settings.RegisterCanvasLayoutCategory(optionsIntroPanel, "Advanced Raid Frames");
+    local category = Settings.RegisterCanvasLayoutCategory(optionsIntroPanel, L.MENU_CATEGORY_ADDON)
     Settings.RegisterAddOnCategory(category)
 
-    local defaultFramesSubcategory, defaultFramesLayout = Settings.RegisterVerticalLayoutSubcategory(category, 'Default Frames')
+    local defaultFramesSubcategory, defaultFramesLayout = Settings.RegisterVerticalLayoutSubcategory(category, L.MENU_CATEGORY_DEFAULT_FRAMES)
     Settings.RegisterAddOnCategory(defaultFramesSubcategory)
+
     optionsIntroPanel:HookScript('OnShow', function() Options.lastOpenedCategory = category.ID end)
     for _, data in ipairs(optionsTable) do
         Ui.CreateOptionsElement(data, { category = defaultFramesSubcategory, layout = defaultFramesLayout })
     end
 
-    local designer = Ui.GetDesignerFrame()
-    local designerSubCategory = Settings.RegisterCanvasLayoutSubcategory(category, designer, 'Designer')
-    Settings.RegisterAddOnCategory(designerSubCategory)
+    Ui.CreateDesignerCategory(category)
 
     local addonsPanel = Ui.GetOptionsAddonsPanel()
-    local addonsSubcategory = Settings.RegisterCanvasLayoutSubcategory(category, addonsPanel, 'Other Frames')
+    local addonsSubcategory = Settings.RegisterCanvasLayoutSubcategory(category, addonsPanel, L.MENU_CATEGORY_OTHER_FRAMES)
     Settings.RegisterAddOnCategory(addonsSubcategory)
 
     SLASH_HARREKSADVANCEDRAIDFRAMES1 = "/harf"

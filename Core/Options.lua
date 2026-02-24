@@ -7,12 +7,122 @@ local API = NS.API
 local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
+local function Print(message)
+    print('|cnNORMAL_FONT_COLOR:AdvancedRaidFrames|r: ' .. message)
+end
+
+local function ResetAddonDataAndReload()
+    if not HARFDB then
+        return
+    end
+
+    HARFDB.options = HARFDB.options or {}
+    HARFDB.savedIndicators = HARFDB.savedIndicators or {}
+
+    wipe(HARFDB.options)
+    wipe(HARFDB.savedIndicators)
+    HARFDB.debugProfile = { enabled = false, stats = {} }
+    HARFDB.version = NS.Version
+
+    Print('Addon data reset. Reloading UI...')
+    ReloadUI()
+end
+
+StaticPopupDialogs['HARF_CONFIRM_RESET_DB'] = {
+    text = 'Reset Advanced Raid Frames data? This will clear options and saved indicators.',
+    button1 = ACCEPT,
+    button2 = CANCEL,
+    OnAccept = function()
+        ResetAddonDataAndReload()
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+}
+
 function Core.ToggleMinimapIcon(value, _, _)
     local LibDBIcon = LibStub('LibDBIcon-1.0')
     if value then
         LibDBIcon:Show('HARF')
     else
         LibDBIcon:Hide('HARF')
+    end
+end
+
+function Core.ToggleProfiling()
+    local currentlyEnabled = Util.IsProfileEnabled()
+    Util.SetProfileEnabled(not currentlyEnabled)
+    if currentlyEnabled then
+        Print('Profiling disabled.')
+    else
+        Print('Profiling enabled.')
+    end
+end
+
+function Core.PrintProfilingStats()
+    if not Util.IsProfileEnabled() then
+        Print('Profiling is disabled. Enable it first to collect fresh metrics.')
+    end
+    Util.PrintProfileStats()
+end
+
+function Core.ResetProfilingStats()
+    Util.ResetProfileStats()
+    Print('Profiling stats reset.')
+end
+
+function Core.ConfirmResetDatabase()
+    if InCombatLockdown() then
+        Print('Cannot reset data in combat.')
+        return
+    end
+    StaticPopup_Show('HARF_CONFIRM_RESET_DB')
+end
+
+function Core.OpenSpotlightEditMode()
+    if InCombatLockdown() then
+        Print('Cannot open Edit Mode in combat.')
+        return
+    end
+
+    if C_AddOns and C_AddOns.LoadAddOn and C_AddOns.IsAddOnLoaded and not C_AddOns.IsAddOnLoaded('Blizzard_EditMode') then
+        C_AddOns.LoadAddOn('Blizzard_EditMode')
+    end
+
+    local spotlightFrame = Ui.GetSpotlightFrame and Ui.GetSpotlightFrame()
+    local LEM = (LibEQOL and LibEQOL.EditMode) or LibStub('LibEQOLEditMode-1.0', true)
+
+    if EditModeManagerFrame and not EditModeManagerFrame:IsShown() then
+        EditModeManagerFrame:Show()
+    end
+
+    local function TrySelectSpotlight()
+        if not (LEM and spotlightFrame and LEM.selectionRegistry) then
+            return
+        end
+
+        local selection = LEM.selectionRegistry[spotlightFrame]
+        if not selection then
+            return
+        end
+
+        if EditModeManagerFrame and EditModeManagerFrame.ClearSelectedSystem then
+            EditModeManagerFrame:ClearSelectedSystem()
+        end
+
+        selection.parent:SetMovable(true)
+        selection:ShowSelected(true)
+        selection.isSelected = true
+
+        if LEM.internal and LEM.internal.dialog and LEM.internal.dialog.Update then
+            LEM.internal.dialog:Update(selection)
+        end
+    end
+
+    TrySelectSpotlight()
+    if C_Timer and C_Timer.After then
+        C_Timer.After(0, TrySelectSpotlight)
     end
 end
 

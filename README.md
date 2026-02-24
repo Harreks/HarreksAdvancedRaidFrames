@@ -97,3 +97,17 @@ Advanced Raid Frames works with default and addon frames to improve functionalit
 - BeaconOfTheSavior
 
 - Holy Bulwark and Sacred Weapon can get mixed up when the spells are casted several times back to back.
+
+## Debug Profiling and Validation
+
+- Enable lightweight profiling in-game with `/run AdvancedRaidFramesAPI.SetProfilingEnabled(true)`
+- Reset collected metrics with `/run AdvancedRaidFramesAPI.ResetProfilingStats()`
+- Print current metrics with `/run AdvancedRaidFramesAPI.PrintProfilingStats()`
+- Disable profiling with `/run AdvancedRaidFramesAPI.SetProfilingEnabled(false)`
+
+### Suggested validation flow for inference changes
+
+- Validate direct success path first (single cast -> expected tracked aura on target frame)
+- Validate ambiguity path (spell queueing / travel-time overlap / repeated casts)
+- Validate both party and raid unit-frame contexts
+- Validate with and without external frame integrations enabled

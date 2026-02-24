@@ -97,6 +97,9 @@ if Grid2 then
     local PrevLoadOptions = Grid2.LoadOptions
     function Grid2:LoadOptions()
         PrevLoadOptions(self)
+        if not Grid2Options then
+            return
+        end
         for _, category in ipairs(pluginData) do
             Grid2Options:RegisterStatusCategory(category.name, category.dataTable)
             for _, status in ipairs(category.statuses) do

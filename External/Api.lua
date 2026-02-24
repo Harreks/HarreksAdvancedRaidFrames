@@ -59,6 +59,22 @@ function API.GetUnitAura(unit, aura)
     end
 end
 
+function API.SetProfilingEnabled(value)
+    Util.SetProfileEnabled(value)
+end
+
+function API.ResetProfilingStats()
+    Util.ResetProfileStats()
+end
+
+function API.GetProfilingStats()
+    return Util.GetProfileStats()
+end
+
+function API.PrintProfilingStats()
+    Util.PrintProfileStats()
+end
+
 --Registers a frame to a unit so the indicator overlay is also created on top of that frame
 --the units are 'player', 'party#1-4', and 'raid#1-40'
 --coloringFunc will be called when the frame is supposed to be recolored, not passing a function will call frame.healthBar:SetStatusBarColor() instead
@@ -81,10 +97,15 @@ end
 --You pass the same unit you gave to registering and the index you got back to remove it
 function API.UnregisterFrameForUnit(unit, index)
     local unitList = string.find(unit, 'raid') and Data.unitList.raid or Data.unitList.party
-    local extraFrames = unitList[unit].extraFrames
+    local unitElements = unitList and unitList[unit]
+    local extraFrames = unitElements and unitElements.extraFrames
     if extraFrames and #extraFrames > 0 then
-        if extraFrames[index].indicatorOverlay then
-            extraFrames[index].indicatorOverlay:Delete()
+        local target = extraFrames[index]
+        if not target then
+            return false
+        end
+        if target.indicatorOverlay then
+            target.indicatorOverlay:Delete()
         end
         table.remove(extraFrames, index)
         return true

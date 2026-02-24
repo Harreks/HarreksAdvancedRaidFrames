@@ -7,6 +7,22 @@ local API = NS.API
 local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
+local CLASS_ID_BY_TOKEN = {
+    WARRIOR = 1,
+    PALADIN = 2,
+    HUNTER = 3,
+    ROGUE = 4,
+    PRIEST = 5,
+    DEATHKNIGHT = 6,
+    SHAMAN = 7,
+    MAGE = 8,
+    WARLOCK = 9,
+    MONK = 10,
+    DRUID = 11,
+    DEMONHUNTER = 12,
+    EVOKER = 13,
+}
+
 Data.specInfo = {
     PreservationEvoker = {
         display = 'Preservation Evoker',
@@ -205,3 +221,43 @@ Data.specMap = {
     EVOKER_3 = 'AugmentationEvoker',
     MONK_2 = 'MistweaverMonk'
 }
+
+local function BuildSpecApiMapping()
+    for mapKey, specKey in pairs(Data.specMap) do
+        local classToken, specIndex = string.match(mapKey, '^(%u+)_(%d+)$')
+        local specData = Data.specInfo[specKey]
+
+        if classToken and specIndex and specData then
+            specData.specIndex = tonumber(specIndex)
+            specData.classID = CLASS_ID_BY_TOKEN[classToken] or CLASS_ID_BY_TOKEN[specData.class]
+        end
+    end
+end
+
+BuildSpecApiMapping()
+
+function Data.GetLocalizedSpecDisplay(specKey)
+    local specData = specKey and Data.specInfo and Data.specInfo[specKey]
+    if not specData then
+        return specKey
+    end
+
+    if GetSpecializationInfoForClassID and specData.classID and specData.specIndex then
+        local specID, name = GetSpecializationInfoForClassID(specData.classID, specData.specIndex)
+        if specID and not specData.specID then
+            specData.specID = specID
+        end
+        if name and name ~= '' then
+            return name
+        end
+    end
+
+    if GetSpecializationNameForSpecID and specData.specID then
+        local localizedName = GetSpecializationNameForSpecID(specData.specID)
+        if localizedName and localizedName ~= '' then
+            return localizedName
+        end
+    end
+
+    return specData.display or specKey
+end

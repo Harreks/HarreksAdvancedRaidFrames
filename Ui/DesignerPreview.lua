@@ -277,7 +277,7 @@ function Ui.InitializeDesignerPreview(config)
         local spec = ensureEditingSpec and ensureEditingSpec()
         local specData = spec and Data.specInfo[spec]
         if specData and currentWidget.SpecLabel then
-            currentWidget.SpecLabel:SetText(string.format(L.DESIGNER_CURRENT_SPEC_FMT, specData.display))
+            currentWidget.SpecLabel:SetText(string.format(L.DESIGNER_CURRENT_SPEC_FMT, Data.GetLocalizedSpecDisplay(spec)))
         elseif currentWidget.SpecLabel then
             currentWidget.SpecLabel:SetText(string.format(L.DESIGNER_CURRENT_SPEC_FMT, L.DESIGNER_UNKNOWN))
         end

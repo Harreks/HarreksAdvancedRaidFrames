@@ -110,3 +110,40 @@ L.SPOTLIGHT_SETTINGS_DESC = 'Mit Spotlight kannst du gezielt Schlachtzugsmitglie
 L.SPOTLIGHT_SETTINGS_BUTTON_TITLE = 'Spotlight-Anker bearbeiten'
 L.SPOTLIGHT_SETTINGS_BUTTON = 'Spotlight im Edit-Modus öffnen'
 L.SPOTLIGHT_SETTINGS_BUTTON_TOOLTIP = 'Öffnet den Edit-Modus und springt zum Spotlight-Anker, damit du ihn verschieben kannst. Nutze die Spielerliste, um gezielt Raid-Mitglieder auszuwählen (nützlich für Augmentation-Evoker-Buffs wie Prescience). Die Liste füllt sich nur im Raid. Spotlight funktioniert nur mit den Blizzard-Standard-Raidframes.'
+
+L.MENU_INTRO_TITLE_FMT = 'Advanced Raid Frames v%s'
+L.MENU_INTRO_BODY = [[Advanced Raid Frames ist mein Versuch, Heilern die Werkzeuge zu geben, die sie brauchen, um das Spiel bestmöglich zu spielen. Auch wenn es noch keine perfekte Lösung ist, arbeite ich sehr hart daran, es so gut wie möglich zu machen, damit wir das Spiel so genießen können, wie wir es gewohnt sind.
+
+Die verwendete Methode kann in manchen Situationen etwas heikel sein, aber es werden laufend Verbesserungen vorgenommen. Wenn du einen Fehler findest oder Fragen hast, melde dich bitte bei mir – ich freue mich auf dein Feedback.
+
+-Harrek]]
+
+L.MENU_BUTTON_PATREON = 'Patreon'
+L.MENU_BUTTON_DISCORD = 'Discord'
+L.MENU_BUTTON_KOFI = 'Ko-fi'
+
+L.MENU_POPUP_PATREON_TITLE = 'Harreks Patreon'
+L.MENU_POPUP_DISCORD_TITLE = 'Spiritbloom.Pro Discord'
+L.MENU_POPUP_KOFI_TITLE = 'Spendier mir einen Kaffee'
+
+L.OPTION_CLICK_THROUGH_AURAS = 'Aura-Symbole durchklickbar'
+L.OPTION_CLICK_THROUGH_AURAS_TOOLTIP = 'Deaktiviert die Mausinteraktion mit den Aura-Symbolen im Frame, sodass du mit der Maus darüberfahren und hindurchklicken kannst.'
+L.OPTION_BUFF_ICONS = 'Buff-Symbole'
+L.OPTION_BUFF_ICONS_TOOLTIP = 'Ändert die maximale Anzahl von Buff-Symbolen auf den Standard-Frames.'
+L.OPTION_DEBUFF_ICONS = 'Debuff-Symbole'
+L.OPTION_DEBUFF_ICONS_TOOLTIP = 'Ändert die maximale Anzahl von Debuff-Symbolen auf den Standard-Frames.'
+L.OPTION_FRAME_TRANSPARENCY = 'Frame-Transparenz'
+L.OPTION_FRAME_TRANSPARENCY_TOOLTIP = 'Wenn die Frame-Transparenz deaktiviert ist, bleibt der Frame auch außerhalb der Reichweite vollständig sichtbar.'
+L.OPTION_NAME_SIZE = 'Namensgröße'
+L.OPTION_NAME_SIZE_TOOLTIP = 'Ändert die Größe der Einheiten-Namen.'
+L.OPTION_CLASS_COLORED_NAMES = 'Klassenfarbene Namen'
+L.OPTION_CLASS_COLORED_NAMES_TOOLTIP = 'Ersetzt den Einheiten-Namen durch eine klassenfarbene Version.'
+L.OPTION_MISC_HEADER = 'Versch.'
+L.OPTION_SHOW_MINIMAP_ICON = 'Minikarten-Symbol anzeigen'
+L.OPTION_SHOW_MINIMAP_ICON_TOOLTIP = 'Zeigt oder versteckt das Minikarten-Symbol des Addons.'
+
+L.INDICATOR_TYPE_ICON = 'Symbol'
+L.INDICATOR_TYPE_SQUARE = 'Quadrat'
+L.INDICATOR_TYPE_BAR = 'Leiste'
+L.INDICATOR_TYPE_BORDER = 'Rahmen'
+

@@ -110,3 +110,42 @@ L.SPOTLIGHT_SETTINGS_DESC = '聚焦可让你明确选择需要优先的团队成
 L.SPOTLIGHT_SETTINGS_BUTTON_TITLE = '编辑聚焦锚点'
 L.SPOTLIGHT_SETTINGS_BUTTON = '在编辑模式中打开聚焦'
 L.SPOTLIGHT_SETTINGS_BUTTON_TOOLTIP = '打开编辑模式并跳转到聚焦锚点以便移动。可通过玩家列表选择特定团队成员（适用于增辉唤魔师的先见等增益追踪），且该列表仅在团队中填充。聚焦仅适用于暴雪默认团队框体。'
+
+L.MENU_INTRO_TITLE_FMT = 'Advanced Raid Frames v%s'
+L.MENU_INTRO_BODY = [[Advanced Raid Frames 是我为治疗玩家打造的一次尝试，希望提供大家真正需要的工具来更好地进行游戏。虽然它还不是完美方案，但我一直在努力把它做到最好，让大家都能像以往一样享受游戏。
+
+目前使用的方法在某些场景下可能会有些微妙，但我会持续改进。如果你发现任何问题或有任何疑问，欢迎联系我一起讨论，我很期待听到你的反馈。
+
+-Harrek]]
+
+L.MENU_BUTTON_PATREON = 'Patreon'
+L.MENU_BUTTON_DISCORD = 'Discord'
+L.MENU_BUTTON_KOFI = 'Ko-fi'
+
+L.MENU_POPUP_PATREON_TITLE = 'Harrek 的 Patreon'
+L.MENU_POPUP_DISCORD_TITLE = 'Spiritbloom.Pro Discord'
+L.MENU_POPUP_KOFI_TITLE = '请我喝杯咖啡'
+
+L.OPTION_CLICK_THROUGH_AURAS = '光环图标可穿透点击'
+L.OPTION_CLICK_THROUGH_AURAS_TOOLTIP = '禁用框体上光环图标的鼠标交互，使你可以直接穿透图标进行鼠标悬停和点击。'
+L.OPTION_BUFF_ICONS = '增益图标'
+L.OPTION_BUFF_ICONS_TOOLTIP = '调整默认框体上增益图标的最大数量。'
+L.OPTION_DEBUFF_ICONS = '减益图标'
+L.OPTION_DEBUFF_ICONS_TOOLTIP = '调整默认框体上减益图标的最大数量。'
+L.OPTION_FRAME_TRANSPARENCY = '框体透明度'
+L.OPTION_FRAME_TRANSPARENCY_TOOLTIP = '关闭框体透明度后，即使目标超出范围，框体也会保持完全不透明。'
+L.OPTION_NAME_SIZE = '名字大小'
+L.OPTION_NAME_SIZE_TOOLTIP = '调整单位名字的显示大小。'
+L.OPTION_CLASS_COLORED_NAMES = '职业颜色名字'
+L.OPTION_CLASS_COLORED_NAMES_TOOLTIP = '将单位名字替换为按职业着色的名字。'
+L.OPTION_MISC_HEADER = '杂项'
+L.OPTION_SHOW_MINIMAP_ICON = '显示小地图图标'
+L.OPTION_SHOW_MINIMAP_ICON_TOOLTIP = '显示或隐藏该插件的小地图图标。'
+
+L.INDICATOR_TYPE_ICON = '图标'
+L.INDICATOR_TYPE_SQUARE = '方块'
+L.INDICATOR_TYPE_BAR = '条形'
+L.INDICATOR_TYPE_BORDER = '边框'
+
+
+

@@ -110,3 +110,42 @@ L.SPOTLIGHT_SETTINGS_DESC = '스포트라이트는 우선순위를 둘 공격대
 L.SPOTLIGHT_SETTINGS_BUTTON_TITLE = '스포트라이트 앵커 편집'
 L.SPOTLIGHT_SETTINGS_BUTTON = '편집 모드에서 스포트라이트 열기'
 L.SPOTLIGHT_SETTINGS_BUTTON_TOOLTIP = '편집 모드를 열고 스포트라이트 앵커로 바로 이동해 위치를 조정합니다. 플레이어 목록에서 특정 공격대원을 선택할 수 있으며(증강 기원사의 예지 같은 지원 버프에 유용), 목록은 공격대 상태에서만 채워집니다. 스포트라이트는 블리자드 기본 공격대 프레임에서만 동작합니다.'
+
+L.MENU_INTRO_TITLE_FMT = 'Advanced Raid Frames v%s'
+L.MENU_INTRO_BODY = [[Advanced Raid Frames는 힐러가 게임을 제대로 플레이하는 데 필요한 도구를 제공하려는 제 시도입니다. 완벽한 해결책은 아니지만, 모두가 익숙한 방식으로 게임을 즐길 수 있도록 가능한 한 최고의 상태로 만들기 위해 열심히 작업하고 있습니다.
+
+사용하는 방식은 일부 상황에서 다소 까다로울 수 있지만, 개선은 계속 진행되고 있습니다. 버그를 발견했거나 궁금한 점이 있다면 언제든지 연락해 주세요. 여러분의 의견을 듣고 싶습니다.
+
+-Harrek]]
+
+L.MENU_BUTTON_PATREON = 'Patreon'
+L.MENU_BUTTON_DISCORD = 'Discord'
+L.MENU_BUTTON_KOFI = 'Ko-fi'
+
+L.MENU_POPUP_PATREON_TITLE = 'Harrek의 Patreon'
+L.MENU_POPUP_DISCORD_TITLE = 'Spiritbloom.Pro Discord'
+L.MENU_POPUP_KOFI_TITLE = '커피 한 잔 사주기'
+
+L.OPTION_CLICK_THROUGH_AURAS = '오라 아이콘 클릭 관통'
+L.OPTION_CLICK_THROUGH_AURAS_TOOLTIP = '프레임의 오라 아이콘에 대한 마우스 상호작용을 비활성화하여, 마우스오버 및 클릭이 아이콘을 통과하도록 합니다.'
+L.OPTION_BUFF_ICONS = '버프 아이콘'
+L.OPTION_BUFF_ICONS_TOOLTIP = '기본 프레임에 표시되는 버프 아이콘의 최대 개수를 변경합니다.'
+L.OPTION_DEBUFF_ICONS = '디버프 아이콘'
+L.OPTION_DEBUFF_ICONS_TOOLTIP = '기본 프레임에 표시되는 디버프 아이콘의 최대 개수를 변경합니다.'
+L.OPTION_FRAME_TRANSPARENCY = '프레임 투명도'
+L.OPTION_FRAME_TRANSPARENCY_TOOLTIP = '프레임 투명도를 끄면 사거리 밖에서도 프레임이 완전히 불투명하게 유지됩니다.'
+L.OPTION_NAME_SIZE = '이름 크기'
+L.OPTION_NAME_SIZE_TOOLTIP = '유닛 이름의 크기를 변경합니다.'
+L.OPTION_CLASS_COLORED_NAMES = '직업 색상 이름'
+L.OPTION_CLASS_COLORED_NAMES_TOOLTIP = '유닛 이름을 직업 색상으로 표시된 이름으로 대체합니다.'
+L.OPTION_MISC_HEADER = '기타'
+L.OPTION_SHOW_MINIMAP_ICON = '미니맵 아이콘 표시'
+L.OPTION_SHOW_MINIMAP_ICON_TOOLTIP = '애드온의 미니맵 아이콘을 표시하거나 숨깁니다.'
+
+L.INDICATOR_TYPE_ICON = '아이콘'
+L.INDICATOR_TYPE_SQUARE = '사각형'
+L.INDICATOR_TYPE_BAR = '바'
+L.INDICATOR_TYPE_BORDER = '테두리'
+
+
+

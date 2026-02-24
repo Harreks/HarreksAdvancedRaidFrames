@@ -110,3 +110,41 @@ L.SPOTLIGHT_SETTINGS_DESC = 'Spotlight helps you pick exact raid members to prio
 L.SPOTLIGHT_SETTINGS_BUTTON_TITLE = 'Edit Spotlight Anchor'
 L.SPOTLIGHT_SETTINGS_BUTTON = 'Open Spotlight in Edit Mode'
 L.SPOTLIGHT_SETTINGS_BUTTON_TOOLTIP = 'Open Edit Mode and jump to the Spotlight anchor to move it. Use Player List to choose specific raid members (useful for Aug Evoker buffs like Prescience). Spotlight works with Blizzard default raid frames only.'
+
+L.MENU_INTRO_TITLE_FMT = 'Advanced Raid Frames v%s'
+L.MENU_INTRO_BODY = [[Advanced Raid Frames is my attempt at giving healers the tools they need to properly play the game, while this is not a perfect solution i am working very hard trying to make it the best it can possibly be so we can all enjoy the game like we are used to.
+
+The method used can be a bit finnicky in some situations but improvements are constantly being made. If you find any bug or have any questions please contact me so we can talk about it, i am excited to hear what you think.
+
+-Harrek]]
+
+L.MENU_BUTTON_PATREON = 'Patreon'
+L.MENU_BUTTON_DISCORD = 'Discord'
+L.MENU_BUTTON_KOFI = 'Ko-fi'
+
+L.MENU_POPUP_PATREON_TITLE = 'Harrek\'s Patreon'
+L.MENU_POPUP_DISCORD_TITLE = 'Spiritbloom.Pro Discord'
+L.MENU_POPUP_KOFI_TITLE = 'Buy me a Coffee'
+
+L.OPTION_CLICK_THROUGH_AURAS = 'Click Through Aura Icons'
+L.OPTION_CLICK_THROUGH_AURAS_TOOLTIP = 'Disables mouse interaction on the aura icons on the frame, letting you mouseover and click through them.'
+L.OPTION_BUFF_ICONS = 'Buff Icons'
+L.OPTION_BUFF_ICONS_TOOLTIP = 'Changes the maximum amount of buff icons on the default frames.'
+L.OPTION_DEBUFF_ICONS = 'Debuff Icons'
+L.OPTION_DEBUFF_ICONS_TOOLTIP = 'Changes the maximum amount of debuff icons on the default frames.'
+L.OPTION_FRAME_TRANSPARENCY = 'Frame Transparency'
+L.OPTION_FRAME_TRANSPARENCY_TOOLTIP = 'Disabling frame transparency keeps the frame fully solid even when out of range.'
+L.OPTION_NAME_SIZE = 'Name Size'
+L.OPTION_NAME_SIZE_TOOLTIP = 'Changes the size of the unit names.'
+L.OPTION_CLASS_COLORED_NAMES = 'Class Colored Names'
+L.OPTION_CLASS_COLORED_NAMES_TOOLTIP = 'Replaces the unit name for class-colored ones.'
+L.OPTION_MISC_HEADER = 'Misc.'
+L.OPTION_SHOW_MINIMAP_ICON = 'Show Minimap Icon'
+L.OPTION_SHOW_MINIMAP_ICON_TOOLTIP = 'Shows or hides the minimap icon for the addon.'
+
+L.INDICATOR_TYPE_ICON = 'Icon'
+L.INDICATOR_TYPE_SQUARE = 'Square'
+L.INDICATOR_TYPE_BAR = 'Bar'
+L.INDICATOR_TYPE_BORDER = 'Border'
+
+

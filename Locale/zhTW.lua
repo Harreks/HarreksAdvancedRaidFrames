@@ -110,3 +110,40 @@ L.SPOTLIGHT_SETTINGS_DESC = '聚焦可讓你明確選擇要優先的團隊成員
 L.SPOTLIGHT_SETTINGS_BUTTON_TITLE = '編輯聚焦錨點'
 L.SPOTLIGHT_SETTINGS_BUTTON = '在編輯模式開啟聚焦'
 L.SPOTLIGHT_SETTINGS_BUTTON_TOOLTIP = '開啟編輯模式並跳到聚焦錨點以便移動。你可透過玩家清單選擇特定團隊成員（適用於增輝喚能師的預知等增益追蹤），且清單僅會在團隊中填入。聚焦僅適用於暴雪預設團隊框架。'
+
+L.MENU_INTRO_TITLE_FMT = 'Advanced Raid Frames v%s'
+L.MENU_INTRO_BODY = [[Advanced Raid Frames 是我為治療玩家打造的一次嘗試，希望提供大家真正需要的工具來更好地進行遊戲。雖然它還不是完美方案，但我一直努力把它做到最好，讓大家都能像以往一樣享受遊戲。
+
+目前使用的方法在某些情況下可能會有些微妙，但我會持續改進。如果你發現任何問題或有任何疑問，歡迎聯繫我一起討論，我很期待聽到你的回饋。
+
+-Harrek]]
+
+L.MENU_BUTTON_PATREON = 'Patreon'
+L.MENU_BUTTON_DISCORD = 'Discord'
+L.MENU_BUTTON_KOFI = 'Ko-fi'
+
+L.MENU_POPUP_PATREON_TITLE = 'Harrek 的 Patreon'
+L.MENU_POPUP_DISCORD_TITLE = 'Spiritbloom.Pro Discord'
+L.MENU_POPUP_KOFI_TITLE = '請我喝杯咖啡'
+
+L.OPTION_CLICK_THROUGH_AURAS = '光環圖示可穿透點擊'
+L.OPTION_CLICK_THROUGH_AURAS_TOOLTIP = '停用框架上光環圖示的滑鼠互動，讓你可直接穿透圖示進行滑鼠指向與點擊。'
+L.OPTION_BUFF_ICONS = '增益圖示'
+L.OPTION_BUFF_ICONS_TOOLTIP = '調整預設框架上增益圖示的最大數量。'
+L.OPTION_DEBUFF_ICONS = '減益圖示'
+L.OPTION_DEBUFF_ICONS_TOOLTIP = '調整預設框架上減益圖示的最大數量。'
+L.OPTION_FRAME_TRANSPARENCY = '框架透明度'
+L.OPTION_FRAME_TRANSPARENCY_TOOLTIP = '關閉框架透明度後，即使目標超出範圍，框架也會維持完全不透明。'
+L.OPTION_NAME_SIZE = '名稱大小'
+L.OPTION_NAME_SIZE_TOOLTIP = '調整單位名稱的顯示大小。'
+L.OPTION_CLASS_COLORED_NAMES = '職業顏色名稱'
+L.OPTION_CLASS_COLORED_NAMES_TOOLTIP = '將單位名稱替換為依職業上色的名稱。'
+L.OPTION_MISC_HEADER = '其他'
+L.OPTION_SHOW_MINIMAP_ICON = '顯示小地圖圖示'
+L.OPTION_SHOW_MINIMAP_ICON_TOOLTIP = '顯示或隱藏此插件的小地圖圖示。'
+
+L.INDICATOR_TYPE_ICON = '圖示'
+L.INDICATOR_TYPE_SQUARE = '方塊'
+L.INDICATOR_TYPE_BAR = '長條'
+L.INDICATOR_TYPE_BORDER = '邊框'
+

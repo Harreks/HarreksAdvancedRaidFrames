@@ -110,3 +110,41 @@ L.SPOTLIGHT_SETTINGS_DESC = 'Spotlight vous aide à choisir des membres précis 
 L.SPOTLIGHT_SETTINGS_BUTTON_TITLE = 'Modifier l’ancre Spotlight'
 L.SPOTLIGHT_SETTINGS_BUTTON = 'Ouvrir Spotlight en mode Édition'
 L.SPOTLIGHT_SETTINGS_BUTTON_TOOLTIP = 'Ouvre le mode Édition et va directement à l’ancre Spotlight pour la déplacer. Utilisez la liste des joueurs pour choisir des membres précis du raid (utile pour des buffs d’Évocateur Augmentation comme Prescience). La liste se remplit uniquement en raid. Spotlight fonctionne uniquement avec les cadres de raid par défaut de Blizzard.'
+
+L.MENU_INTRO_TITLE_FMT = 'Advanced Raid Frames v%s'
+L.MENU_INTRO_BODY = [[Advanced Raid Frames est ma tentative de donner aux soigneurs les outils dont ils ont besoin pour jouer correctement. Même si ce n’est pas une solution parfaite, je travaille très dur pour la rendre aussi bonne que possible afin que nous puissions tous profiter du jeu comme nous en avons l’habitude.
+
+La méthode utilisée peut être un peu délicate dans certaines situations, mais des améliorations sont apportées en continu. Si vous trouvez un bug ou si vous avez des questions, contactez-moi pour qu’on en parle ; j’ai hâte d’avoir votre avis.
+
+-Harrek]]
+
+L.MENU_BUTTON_PATREON = 'Patreon'
+L.MENU_BUTTON_DISCORD = 'Discord'
+L.MENU_BUTTON_KOFI = 'Ko-fi'
+
+L.MENU_POPUP_PATREON_TITLE = 'Patreon de Harrek'
+L.MENU_POPUP_DISCORD_TITLE = 'Spiritbloom.Pro Discord'
+L.MENU_POPUP_KOFI_TITLE = 'Offrez-moi un café'
+
+L.OPTION_CLICK_THROUGH_AURAS = 'Icônes d’aura traversables au clic'
+L.OPTION_CLICK_THROUGH_AURAS_TOOLTIP = 'Désactive l’interaction de la souris sur les icônes d’aura du cadre, ce qui permet de survoler et cliquer à travers.'
+L.OPTION_BUFF_ICONS = 'Icônes de buffs'
+L.OPTION_BUFF_ICONS_TOOLTIP = 'Modifie le nombre maximal d’icônes de buffs sur les cadres par défaut.'
+L.OPTION_DEBUFF_ICONS = 'Icônes de débuffs'
+L.OPTION_DEBUFF_ICONS_TOOLTIP = 'Modifie le nombre maximal d’icônes de débuffs sur les cadres par défaut.'
+L.OPTION_FRAME_TRANSPARENCY = 'Transparence du cadre'
+L.OPTION_FRAME_TRANSPARENCY_TOOLTIP = 'Désactiver la transparence du cadre le maintient entièrement opaque même hors de portée.'
+L.OPTION_NAME_SIZE = 'Taille du nom'
+L.OPTION_NAME_SIZE_TOOLTIP = 'Modifie la taille des noms des unités.'
+L.OPTION_CLASS_COLORED_NAMES = 'Noms colorés par classe'
+L.OPTION_CLASS_COLORED_NAMES_TOOLTIP = 'Remplace le nom de l’unité par une version colorée selon la classe.'
+L.OPTION_MISC_HEADER = 'Divers'
+L.OPTION_SHOW_MINIMAP_ICON = 'Afficher l’icône de minicarte'
+L.OPTION_SHOW_MINIMAP_ICON_TOOLTIP = 'Affiche ou masque l’icône de minicarte de l’addon.'
+
+L.INDICATOR_TYPE_ICON = 'Icône'
+L.INDICATOR_TYPE_SQUARE = 'Carré'
+L.INDICATOR_TYPE_BAR = 'Barre'
+L.INDICATOR_TYPE_BORDER = 'Bordure'
+
+

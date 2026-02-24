@@ -109,3 +109,42 @@ L.SPOTLIGHT_SETTINGS_DESC = 'Spotlight te ayuda a elegir miembros específicos d
 L.SPOTLIGHT_SETTINGS_BUTTON_TITLE = 'Editar ancla de Spotlight'
 L.SPOTLIGHT_SETTINGS_BUTTON = 'Abrir Spotlight en modo Edición'
 L.SPOTLIGHT_SETTINGS_BUTTON_TOOLTIP = 'Abre el modo Edición y ve directo al ancla de Spotlight para moverla. Usa la lista de jugadores para elegir miembros específicos de la banda (útil para buffs de Evocador Aumento como Presciencia). La lista solo se llena cuando estás en banda. Spotlight solo funciona con los marcos de banda predeterminados de Blizzard.'
+
+L.MENU_INTRO_TITLE_FMT = 'Advanced Raid Frames v%s'
+L.MENU_INTRO_BODY = [[Advanced Raid Frames es mi intento de dar a los sanadores las herramientas que necesitan para jugar correctamente. Aunque no sea una solución perfecta, estoy trabajando muy duro para convertirla en la mejor posible para que todos podamos disfrutar del juego como estamos acostumbrados.
+
+El método usado puede ser algo delicado en algunas situaciones, pero se siguen haciendo mejoras constantemente. Si encuentras algún error o tienes preguntas, contáctame para que podamos hablarlo; me dará gusto saber qué te parece.
+
+-Harrek]]
+
+L.MENU_BUTTON_PATREON = 'Patreon'
+L.MENU_BUTTON_DISCORD = 'Discord'
+L.MENU_BUTTON_KOFI = 'Ko-fi'
+
+L.MENU_POPUP_PATREON_TITLE = 'Patreon de Harrek'
+L.MENU_POPUP_DISCORD_TITLE = 'Spiritbloom.Pro Discord'
+L.MENU_POPUP_KOFI_TITLE = 'Invítame un café'
+
+L.OPTION_CLICK_THROUGH_AURAS = 'Permitir clic a través de iconos de auras'
+L.OPTION_CLICK_THROUGH_AURAS_TOOLTIP = 'Desactiva la interacción del mouse sobre los iconos de auras del marco, permitiendo pasar el cursor y hacer clic a través de ellos.'
+L.OPTION_BUFF_ICONS = 'Iconos de beneficios'
+L.OPTION_BUFF_ICONS_TOOLTIP = 'Cambia la cantidad máxima de iconos de beneficios en los marcos predeterminados.'
+L.OPTION_DEBUFF_ICONS = 'Iconos de perjuicios'
+L.OPTION_DEBUFF_ICONS_TOOLTIP = 'Cambia la cantidad máxima de iconos de perjuicios en los marcos predeterminados.'
+L.OPTION_FRAME_TRANSPARENCY = 'Transparencia del marco'
+L.OPTION_FRAME_TRANSPARENCY_TOOLTIP = 'Al desactivar la transparencia del marco, este permanece completamente opaco incluso fuera de alcance.'
+L.OPTION_NAME_SIZE = 'Tamaño del nombre'
+L.OPTION_NAME_SIZE_TOOLTIP = 'Cambia el tamaño de los nombres de las unidades.'
+L.OPTION_CLASS_COLORED_NAMES = 'Nombres coloreados por clase'
+L.OPTION_CLASS_COLORED_NAMES_TOOLTIP = 'Reemplaza el nombre de la unidad por una versión coloreada según su clase.'
+L.OPTION_MISC_HEADER = 'Varios'
+L.OPTION_SHOW_MINIMAP_ICON = 'Mostrar icono en minimapa'
+L.OPTION_SHOW_MINIMAP_ICON_TOOLTIP = 'Muestra u oculta el icono del addon en el minimapa.'
+
+L.INDICATOR_TYPE_ICON = 'Icono'
+L.INDICATOR_TYPE_SQUARE = 'Cuadrado'
+L.INDICATOR_TYPE_BAR = 'Barra'
+L.INDICATOR_TYPE_BORDER = 'Borde'
+
+
+

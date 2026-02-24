@@ -65,8 +65,8 @@ L.OPTION_SWIPE = 'Scorrimento'
 L.OPTION_DEPLETE = 'Esaurimento'
 L.OPTION_RIGHT_TO_LEFT = 'Da destra a sinistra'
 L.OPTION_LEFT_TO_RIGHT = 'Da sinistra a destra'
-L.OPTION_TOP_TO_BOTTOM = 'Dall'alto al basso'
-L.OPTION_BOTTOM_TO_TOP = 'Dal basso all'alto'
+L.OPTION_TOP_TO_BOTTOM = 'Dall\'alto al basso'
+L.OPTION_BOTTOM_TO_TOP = 'Dal basso all\'alto'
 L.OPTION_HORIZONTAL = 'Orizzontale'
 L.OPTION_VERTICAL = 'Verticale'
 L.OPTION_FULL = 'Completo'
@@ -98,12 +98,48 @@ L.MENU_CATEGORY_DEFAULT_FRAMES = 'Frame predefiniti'
 L.MENU_CATEGORY_DESIGNER = 'Designer'
 L.MENU_CATEGORY_OTHER_FRAMES = 'Altri frame'
 
+L.MENU_INTRO_TITLE_FMT = 'Advanced Raid Frames v%s'
+L.MENU_INTRO_BODY = [[Advanced Raid Frames è il mio tentativo di offrire ai guaritori gli strumenti necessari per giocare al meglio. Anche se non è una soluzione perfetta, sto lavorando duramente per renderla la migliore possibile così da poterci godere il gioco come siamo abituati.
+
+Il metodo usato può essere un po’ delicato in alcune situazioni, ma i miglioramenti sono continui. Se trovi bug o hai domande, contattami pure: sarò felice di sapere cosa ne pensi.
+
+-Harrek]]
+
+L.MENU_BUTTON_PATREON = 'Patreon'
+L.MENU_BUTTON_DISCORD = 'Discord'
+L.MENU_BUTTON_KOFI = 'Ko-fi'
+
+L.MENU_POPUP_PATREON_TITLE = 'Patreon di Harrek'
+L.MENU_POPUP_DISCORD_TITLE = 'Discord di Spiritbloom.Pro'
+L.MENU_POPUP_KOFI_TITLE = 'Offrimi un caffè'
+
 L.MENU_UTILITIES_HEADER = 'Utilità'
 L.MENU_UTILITIES_DESC = 'Usa questi strumenti per profilare l’elaborazione delle aure, controllare le metriche di runtime in chat e reimpostare i dati dell’addon durante i test. Il reset richiede conferma e ricarica l’interfaccia.'
 L.MENU_BUTTON_TOGGLE_PROFILING = 'Attiva/Disattiva profiling'
 L.MENU_BUTTON_PRINT_PROFILING = 'Mostra statistiche profiling'
 L.MENU_BUTTON_RESET_PROFILING = 'Reimposta statistiche profiling'
 L.MENU_BUTTON_RESET_DATA = 'Reimposta dati addon'
+
+L.OPTION_CLICK_THROUGH_AURAS = 'Icone aure cliccabili attraverso'
+L.OPTION_CLICK_THROUGH_AURAS_TOOLTIP = 'Disattiva l’interazione del mouse sulle icone aura del frame, permettendo mouseover e click attraverso di esse.'
+L.OPTION_BUFF_ICONS = 'Icone buff'
+L.OPTION_BUFF_ICONS_TOOLTIP = 'Modifica il numero massimo di icone buff nei frame predefiniti.'
+L.OPTION_DEBUFF_ICONS = 'Icone debuff'
+L.OPTION_DEBUFF_ICONS_TOOLTIP = 'Modifica il numero massimo di icone debuff nei frame predefiniti.'
+L.OPTION_FRAME_TRANSPARENCY = 'Trasparenza frame'
+L.OPTION_FRAME_TRANSPARENCY_TOOLTIP = 'Disattivando la trasparenza, il frame resta completamente opaco anche quando il bersaglio è fuori portata.'
+L.OPTION_NAME_SIZE = 'Dimensione nome'
+L.OPTION_NAME_SIZE_TOOLTIP = 'Modifica la dimensione dei nomi delle unità.'
+L.OPTION_CLASS_COLORED_NAMES = 'Nomi colorati per classe'
+L.OPTION_CLASS_COLORED_NAMES_TOOLTIP = 'Sostituisce il nome dell’unità con una versione colorata in base alla classe.'
+L.OPTION_MISC_HEADER = 'Varie'
+L.OPTION_SHOW_MINIMAP_ICON = 'Mostra icona minimappa'
+L.OPTION_SHOW_MINIMAP_ICON_TOOLTIP = 'Mostra o nasconde l’icona minimappa dell’addon.'
+
+L.INDICATOR_TYPE_ICON = 'Icona'
+L.INDICATOR_TYPE_SQUARE = 'Quadrato'
+L.INDICATOR_TYPE_BAR = 'Barra'
+L.INDICATOR_TYPE_BORDER = 'Bordo'
 
 L.SPOTLIGHT_SETTINGS_HEADER = 'Frame in evidenza'
 L.SPOTLIGHT_SETTINGS_DESC = 'Frame in evidenza ti aiuta a scegliere membri specifici del raid da prioritizzare, soprattutto per i buff di supporto dell’Evocatore Potenziamento come Prescienza.'

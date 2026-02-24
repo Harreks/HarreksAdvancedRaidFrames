@@ -110,3 +110,42 @@ L.SPOTLIGHT_SETTINGS_DESC = 'O Spotlight ajuda você a escolher membros específ
 L.SPOTLIGHT_SETTINGS_BUTTON_TITLE = 'Editar âncora do Spotlight'
 L.SPOTLIGHT_SETTINGS_BUTTON = 'Abrir Spotlight no Modo de Edição'
 L.SPOTLIGHT_SETTINGS_BUTTON_TOOLTIP = 'Abre o Modo de Edição e vai direto para a âncora do Spotlight para movê-la. Use a lista de jogadores para escolher membros específicos da raide (útil para buffs do Evocador de Augmentação, como Presciência). A lista só é preenchida em raide. O Spotlight funciona apenas com os frames de raide padrão da Blizzard.'
+
+L.MENU_INTRO_TITLE_FMT = 'Advanced Raid Frames v%s'
+L.MENU_INTRO_BODY = [[Advanced Raid Frames é a minha tentativa de dar aos curadores as ferramentas de que precisam para jogar corretamente. Embora não seja uma solução perfeita, estou trabalhando muito para torná-la a melhor possível, para que todos possamos aproveitar o jogo como estamos acostumados.
+
+O método usado pode ser um pouco instável em algumas situações, mas melhorias estão sendo feitas constantemente. Se você encontrar algum bug ou tiver dúvidas, entre em contato para conversarmos; estou animado para saber o que você acha.
+
+-Harrek]]
+
+L.MENU_BUTTON_PATREON = 'Patreon'
+L.MENU_BUTTON_DISCORD = 'Discord'
+L.MENU_BUTTON_KOFI = 'Ko-fi'
+
+L.MENU_POPUP_PATREON_TITLE = 'Patreon do Harrek'
+L.MENU_POPUP_DISCORD_TITLE = 'Spiritbloom.Pro Discord'
+L.MENU_POPUP_KOFI_TITLE = 'Me pague um café'
+
+L.OPTION_CLICK_THROUGH_AURAS = 'Permitir clique através dos ícones de aura'
+L.OPTION_CLICK_THROUGH_AURAS_TOOLTIP = 'Desativa a interação do mouse nos ícones de aura do quadro, permitindo passar o mouse e clicar através deles.'
+L.OPTION_BUFF_ICONS = 'Ícones de buff'
+L.OPTION_BUFF_ICONS_TOOLTIP = 'Altera a quantidade máxima de ícones de buff nos quadros padrão.'
+L.OPTION_DEBUFF_ICONS = 'Ícones de debuff'
+L.OPTION_DEBUFF_ICONS_TOOLTIP = 'Altera a quantidade máxima de ícones de debuff nos quadros padrão.'
+L.OPTION_FRAME_TRANSPARENCY = 'Transparência do quadro'
+L.OPTION_FRAME_TRANSPARENCY_TOOLTIP = 'Desativar a transparência do quadro mantém o quadro totalmente opaco mesmo fora de alcance.'
+L.OPTION_NAME_SIZE = 'Tamanho do nome'
+L.OPTION_NAME_SIZE_TOOLTIP = 'Altera o tamanho dos nomes das unidades.'
+L.OPTION_CLASS_COLORED_NAMES = 'Nomes coloridos por classe'
+L.OPTION_CLASS_COLORED_NAMES_TOOLTIP = 'Substitui o nome da unidade por uma versão colorida de acordo com a classe.'
+L.OPTION_MISC_HEADER = 'Diversos'
+L.OPTION_SHOW_MINIMAP_ICON = 'Mostrar ícone no minimapa'
+L.OPTION_SHOW_MINIMAP_ICON_TOOLTIP = 'Mostra ou oculta o ícone do addon no minimapa.'
+
+L.INDICATOR_TYPE_ICON = 'Ícone'
+L.INDICATOR_TYPE_SQUARE = 'Quadrado'
+L.INDICATOR_TYPE_BAR = 'Barra'
+L.INDICATOR_TYPE_BORDER = 'Borda'
+
+
+

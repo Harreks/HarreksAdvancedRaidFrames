@@ -54,6 +54,54 @@ local function getEqolSettingsMode()
     return (LibEQOL and LibEQOL.SettingsMode) or LibStub('LibEQOLSettingsMode-1.0')
 end
 
+local designerDropdownSteppersHooked = false
+local function hideDesignerDropdownSteppers(dropdownControl)
+    if not dropdownControl then
+        return
+    end
+
+    local setting = dropdownControl.GetSetting and dropdownControl:GetSetting()
+    local variable = setting and setting.GetVariable and setting:GetVariable()
+    if type(variable) ~= 'string' or not variable:find('^harfDesigner_') then
+        return
+    end
+
+    local control = dropdownControl.Control
+    if control and control.SetSteppersShown then
+        control:SetSteppersShown(false)
+    end
+
+    local function hideButtons(frame)
+        if not frame then
+            return
+        end
+
+        if frame.DecrementButton then
+            frame.DecrementButton:Hide()
+        end
+
+        if frame.IncrementButton then
+            frame.IncrementButton:Hide()
+        end
+    end
+
+    hideButtons(dropdownControl)
+    hideButtons(control)
+end
+
+local function ensureDesignerDropdownSteppersHidden()
+    if designerDropdownSteppersHooked then
+        return
+    end
+
+    if not (LibEQOL_ScrollDropdownMixin and hooksecurefunc) then
+        return
+    end
+
+    hooksecurefunc(LibEQOL_ScrollDropdownMixin, 'Init', hideDesignerDropdownSteppers)
+    designerDropdownSteppersHooked = true
+end
+
 local function refreshSettingsDisplay()
     if SettingsInbound and SettingsInbound.RepairDisplay then
         SettingsInbound.RepairDisplay()
@@ -624,6 +672,7 @@ local function buildDesignerEqol(parentCategory)
 
     local EQOL = getEqolSettingsMode()
     EQOL:SetVariablePrefix('harfDesigner_')
+    ensureDesignerDropdownSteppersHidden()
 
     local category = EQOL:CreateCategory(parentCategory, L.MENU_CATEGORY_DESIGNER, false)
     Ui.DesignerEqolCategory = category
@@ -693,8 +742,8 @@ local function buildDesignerEqol(parentCategory)
         default = ensureEditingSpec(),
         optionfunc = function()
             local options = {}
-            for spec, data in pairs(Data.specInfo) do
-                table.insert(options, { value = spec, text = data.display })
+            for spec, _ in pairs(Data.specInfo) do
+                table.insert(options, { value = spec, text = Data.GetLocalizedSpecDisplay(spec) })
             end
             table.sort(options, function(a, b)
                 return compareLocalizedText(a.text, b.text)
@@ -745,6 +794,8 @@ local function buildDesignerEqol(parentCategory)
             end)
         end
     })
+
+    createIndicatorActionControls(EQOL, category, setSelectedIndicatorIndex)
 
     EQOL:CreateHeader(category, {
         name = L.DESIGNER_EDIT_INDICATOR,
@@ -931,30 +982,6 @@ local function buildDesignerEqol(parentCategory)
         end
     })
     trackSetting(indicatorOffsetSetting)
-
-    local _, indicatorShowTextureSetting = EQOL:CreateCheckbox(category, {
-        key = 'indicatorShowTexture',
-        name = L.LABEL_SHOW_TEXTURE,
-        default = true,
-        get = function()
-            local indicator = getSelectedIndicator()
-            if not indicator then
-                return true
-            end
-            return indicator.showTexture ~= false
-        end,
-        set = function(value)
-            local indicator = getSelectedIndicator()
-            if not indicator then return end
-            indicator.showTexture = value
-            updateAfterDesignerChange(false)
-        end,
-        isEnabled = selectedIndicatorExists,
-        expandWith = function()
-            return isAppearanceSectionExpanded() and selectedIndicatorTypeIs('icon')
-        end
-    })
-    trackSetting(indicatorShowTextureSetting)
 
     local _, indicatorShowSparkSetting = EQOL:CreateCheckbox(category, {
         key = 'indicatorShowSpark',
@@ -1356,6 +1383,39 @@ local function buildDesignerEqol(parentCategory)
     })
     trackSetting(indicatorShowTextSetting)
 
+    local _, indicatorShowTextureSetting = EQOL:CreateCheckbox(category, {
+        key = 'indicatorShowTexture',
+        name = L.LABEL_SHOW_TEXTURE,
+        default = true,
+        get = function()
+            local indicator = getSelectedIndicator()
+            if not indicator then
+                return true
+            end
+            return indicator.showTexture ~= false
+        end,
+        set = function(value)
+            local indicator = getSelectedIndicator()
+            if not indicator then return end
+            indicator.showTexture = value
+            updateAfterDesignerChange(false)
+        end,
+        isEnabled = selectedIndicatorExists,
+        expandWith = function()
+            local indicator = getSelectedIndicator()
+            if not (isCooldownSectionExpanded() and indicator and indicator.Type == 'icon') then
+                return false
+            end
+
+            if indicator.showCooldownText == nil then
+                return indicator.showText ~= false
+            end
+
+            return indicator.showCooldownText ~= false
+        end
+    })
+    trackSetting(indicatorShowTextureSetting)
+
     local _, indicatorTextSizeSetting = EQOL:CreateSlider(category, {
         key = 'indicatorTextSize',
         name = L.LABEL_TEXT_SCALE,
@@ -1392,7 +1452,6 @@ local function buildDesignerEqol(parentCategory)
     })
     trackSetting(indicatorTextSizeSetting)
 
-    createIndicatorActionControls(EQOL, category, setSelectedIndicatorIndex)
     createImportExportControls(EQOL, category, setSelectedIndicatorIndex, updateAfterDesignerChange)
 
     updateAfterDesignerChange(false)

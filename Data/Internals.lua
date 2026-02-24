@@ -125,16 +125,16 @@ Data.spellIds = {
 
 Data.indicatorTypes = {
     icon = {
-        display = 'Icon'
+        display = L.INDICATOR_TYPE_ICON
     },
     square = {
-        display = 'Square'
+        display = L.INDICATOR_TYPE_SQUARE
     },
     bar = {
-        display = 'Bar'
+        display = L.INDICATOR_TYPE_BAR
     },
     healthColor = {
-        display = 'Border'
+        display = L.INDICATOR_TYPE_BORDER
     }
 }
 
@@ -347,58 +347,58 @@ Data.settings = {
     {
         key = 'clickThroughBuffs',
         type = 'checkbox',
-        text = 'Click Through Aura Icons',
+        text = L.OPTION_CLICK_THROUGH_AURAS,
         default = true,
-        tooltip = 'Disables mouse interaction on the aura icons on the frame, letting you mouseover and click through them.',
+        tooltip = L.OPTION_CLICK_THROUGH_AURAS_TOOLTIP,
         func = 'ToggleAurasMouseInteraction'
     },
     {
         key = 'buffIcons',
         type = 'slider',
-        text = 'Buff Icons',
+        text = L.OPTION_BUFF_ICONS,
         min = 0,
         max = 6,
         step = 1,
         default = 6,
-        tooltip = 'Changes the maximum amount of buff icons on the default frames.',
+        tooltip = L.OPTION_BUFF_ICONS_TOOLTIP,
         func = 'ToggleBuffIcons'
     },
     {
         key = 'debuffIcons',
         type = 'slider',
-        text = 'Debuff Icons',
+        text = L.OPTION_DEBUFF_ICONS,
         min = 0,
         max = 3,
         step = 1,
         default = 3,
-        tooltip = 'Changes the maximum amount of debuff icons on the default frames.',
+        tooltip = L.OPTION_DEBUFF_ICONS_TOOLTIP,
         func = 'ToggleDebuffIcons'
     },
     {
         key = 'frameTransparency',
         type = 'checkbox',
-        text = 'Frame Transparency',
+        text = L.OPTION_FRAME_TRANSPARENCY,
         default = false,
-        tooltip = 'Disabling frame transparency keeps the frame fully solid even when out of range.',
+        tooltip = L.OPTION_FRAME_TRANSPARENCY_TOOLTIP,
         func = 'SetGroupFrameTransparency'
     },
     {
         key = 'nameScale',
         type = 'slider',
-        text = 'Name Size',
+        text = L.OPTION_NAME_SIZE,
         min = 0.5,
         max = 3,
         step = 0.1,
         default = 1,
-        tooltip = 'Changes the size of the unit names.',
+        tooltip = L.OPTION_NAME_SIZE_TOOLTIP,
         func = 'ScaleNames'
     },
     {
         key = 'colorNames',
         type = 'checkbox',
-        text = 'Class Colored Names',
+        text = L.OPTION_CLASS_COLORED_NAMES,
         default = false,
-        tooltip = 'Replaces the unit name for class-colored ones.',
+        tooltip = L.OPTION_CLASS_COLORED_NAMES_TOOLTIP,
         func = 'ColorNames'
     },
     {
@@ -417,14 +417,14 @@ Data.settings = {
     {
         key = 'miscOptionsHeader',
         type = 'header',
-        text = 'Misc.'
+        text = L.OPTION_MISC_HEADER
     },
     {
         key = 'showMinimapIcon',
         type = 'checkbox',
-        text = 'Show Minimap Icon',
+        text = L.OPTION_SHOW_MINIMAP_ICON,
         default = true,
-        tooltip = 'Shows or hides the minimap icon for the addon',
+        tooltip = L.OPTION_SHOW_MINIMAP_ICON_TOOLTIP,
         func = 'ToggleMinimapIcon'
     }
 }

@@ -59,6 +59,13 @@ if Grid2 then
                 end
             end
 
+            function status:GetDurationObject(unit)
+                local aura = self.auras[unit]
+                if aura and aura.auraInstanceID then
+                    return C_UnitAuras.GetAuraDuration(unit, aura.auraInstanceID)
+                end
+            end
+
             function status:GetExpirationTime(unit)
                 local aura = self.auras[unit]
                 if aura and aura.auraInstanceID then

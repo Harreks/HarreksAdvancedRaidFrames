@@ -143,14 +143,51 @@ local function sampleDefaultFrameHealthColor()
     return nil
 end
 
+local function hasVisibleExternalFrames(trackedUnits, getFrameForUnit)
+    if not (trackedUnits and getFrameForUnit) then
+        return false
+    end
+
+    for _, unit in ipairs(trackedUnits) do
+        if UnitExists(unit) then
+            local frame = getFrameForUnit(unit)
+            if isFrameShown(frame) then
+                return true
+            end
+        end
+    end
+
+    return false
+end
+
+local function hasVisibleDefaultFrame()
+    local frameList = IsInRaid() and Data.frameList and Data.frameList.raid or Data.frameList and Data.frameList.party
+    if not frameList then
+        return false
+    end
+
+    for _, frameName in ipairs(frameList) do
+        local frame = _G[frameName]
+        if isFrameShown(frame) and frame.unit and UnitExists(frame.unit) then
+            return true
+        end
+    end
+
+    return false
+end
+
 local function isUsingBlizzardDefaultFrames()
     local trackedUnits = getTrackedUnitsForGroupContext()
 
     if DandersFrames_IsReady and DandersFrames_IsReady() and DandersFrames_GetFrameForUnit then
+        if hasVisibleExternalFrames(trackedUnits, DandersFrames_GetFrameForUnit) then
+            return false
+        end
+
         for _, unit in ipairs(trackedUnits) do
             if UnitExists(unit) then
                 local dandersFrame = DandersFrames_GetFrameForUnit(unit)
-                if dandersFrame and (isFrameShown(dandersFrame) or dandersFrame.unit) then
+                if dandersFrame and dandersFrame.unit then
                     return false
                 end
             end
@@ -158,30 +195,14 @@ local function isUsingBlizzardDefaultFrames()
     end
 
     if LGF and LGF.GetUnitFrame then
-        for _, unit in ipairs(trackedUnits) do
-            if UnitExists(unit) then
-                local externalFrame = LGF.GetUnitFrame(unit, { ignoreFrames = EXTERNAL_FRAME_IGNORE_PATTERNS })
-                if isFrameShown(externalFrame) then
-                    return false
-                end
-            end
+        if hasVisibleExternalFrames(trackedUnits, function(unit)
+            return LGF.GetUnitFrame(unit, { ignoreFrames = EXTERNAL_FRAME_IGNORE_PATTERNS })
+        end) then
+            return false
         end
     end
 
-    local hasVisibleDefaultFrame = false
-    local frameList = IsInRaid() and Data.frameList and Data.frameList.raid or Data.frameList and Data.frameList.party
-
-    if frameList then
-        for _, frameName in ipairs(frameList) do
-            local frame = _G[frameName]
-            if isFrameShown(frame) and frame.unit and UnitExists(frame.unit) then
-                hasVisibleDefaultFrame = true
-                break
-            end
-        end
-    end
-
-    if not hasVisibleDefaultFrame then
+    if not hasVisibleDefaultFrame() then
         return false
     end
 
@@ -334,19 +355,46 @@ local function bindPreviewSelectionHandlers(widget, onSelect)
         return
     end
 
+    local function setPreviewClickHandler(frame, handler)
+        if not frame then
+            return
+        end
+
+        if frame.SetMouseClickEnabled then
+            frame:SetMouseClickEnabled(handler ~= nil)
+        elseif frame.EnableMouse then
+            frame:EnableMouse(handler ~= nil)
+        end
+
+        if frame.SetScript then
+            frame:SetScript('OnMouseDown', handler)
+        end
+    end
+
     for index, element in ipairs(widget.Overlay.elements) do
         if element and element.EnableMouse and element.SetScript then
-            local isHealthColorIndicator = element.type == 'HealthColorIndicator'
-            element:EnableMouse(not isHealthColorIndicator)
+            local isHealthColorIndicator = element.type == 'HealthColor' or element.type == 'HealthColorIndicator'
             if not isHealthColorIndicator then
-                element:SetScript('OnMouseDown', function(_, button)
+                setPreviewClickHandler(element, function(_, button)
                     if button ~= 'LeftButton' then
                         return
                     end
                     onSelect(index)
                 end)
             else
-                element:SetScript('OnMouseDown', nil)
+                setPreviewClickHandler(element, nil)
+
+                local edgeClickHandler = function(_, button)
+                    if button ~= 'LeftButton' then
+                        return
+                    end
+                    onSelect(index)
+                end
+
+                setPreviewClickHandler(element.topEdge, edgeClickHandler)
+                setPreviewClickHandler(element.rightEdge, edgeClickHandler)
+                setPreviewClickHandler(element.bottomEdge, edgeClickHandler)
+                setPreviewClickHandler(element.leftEdge, edgeClickHandler)
             end
         end
     end
@@ -387,6 +435,12 @@ local function getCurrentSettingsCategoryId()
     end
 
     return nil
+end
+
+local function callIfFunction(func)
+    if func then
+        func()
+    end
 end
 
 function Ui.InitializeDesignerPreview(config)
@@ -604,9 +658,7 @@ function Ui.InitializeDesignerPreview(config)
         end
         Ui._designerPreviewRefreshing = true
 
-        if Ui.UpdateDesignerPreviewPlacement then
-            Ui.UpdateDesignerPreviewPlacement()
-        end
+        callIfFunction(Ui.UpdateDesignerPreviewPlacement)
 
         if not currentWidget:IsShown() then
             Ui._designerPreviewRefreshing = nil
@@ -632,9 +684,7 @@ function Ui.InitializeDesignerPreview(config)
         local desiredHeight = getDesiredPreviewHeight(currentWidget)
         if currentWidget.DesiredHeight ~= desiredHeight then
             currentWidget.DesiredHeight = desiredHeight
-            if Ui.UpdateDesignerPreviewPlacement then
-                Ui.UpdateDesignerPreviewPlacement()
-            end
+            callIfFunction(Ui.UpdateDesignerPreviewPlacement)
         end
 
         if currentWidget.Overlay then
@@ -660,12 +710,8 @@ function Ui.InitializeDesignerPreview(config)
 
     if not Ui._designerPreviewPanelHooked then
         Ui.RegisterDesignerPanelHook('show', function()
-            if Ui.UpdateDesignerPreviewPlacement then
-                Ui.UpdateDesignerPreviewPlacement()
-            end
-            if Ui.RefreshDesignerPreview then
-                Ui.RefreshDesignerPreview()
-            end
+            callIfFunction(Ui.UpdateDesignerPreviewPlacement)
+            callIfFunction(Ui.RefreshDesignerPreview)
         end)
 
         Ui.RegisterDesignerPanelHook('hide', function()
@@ -676,9 +722,7 @@ function Ui.InitializeDesignerPreview(config)
         end)
 
         Ui.RegisterDesignerPanelHook('tick', function()
-            if Ui.UpdateDesignerPreviewPlacement then
-                Ui.UpdateDesignerPreviewPlacement()
-            end
+            callIfFunction(Ui.UpdateDesignerPreviewPlacement)
         end)
 
         Ui._designerPreviewPanelHooked = true

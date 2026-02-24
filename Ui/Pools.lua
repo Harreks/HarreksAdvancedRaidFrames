@@ -782,6 +782,18 @@ Ui.HealthColorIndicatorPool = CreateFramePool('Frame', nil, 'BackdropTemplate',
             return true
         end
 
+        frame.ApplyBorderDisplayMode = function(self, duration)
+            local hasAnimatedBorder = self.showCooldown and duration and self:ShowAnimatedBorder(duration)
+            if hasAnimatedBorder then
+                self:SetBackdropBorderColor(self.color.r, self.color.g, self.color.b, 0)
+                return true
+            end
+
+            self:HideAnimatedBorder()
+            self:ShowStaticBorder()
+            return false
+        end
+
         frame.ShowAnimatedBorder = function(self, duration)
             if not duration then
                 self:HideAnimatedBorder()
@@ -791,6 +803,34 @@ Ui.HealthColorIndicatorPool = CreateFramePool('Frame', nil, 'BackdropTemplate',
             self:ApplyBorderThickness()
             self.activeDuration = duration
             return self:StartSimultaneousBorder(duration)
+        end
+
+        frame.ShowStaticBorder = function(self)
+            if not self.color then
+                return false
+            end
+
+            self:SetScript('OnUpdate', nil)
+            self:ApplyBorderThickness()
+            self:ApplyBorderColor()
+
+            if self.topClip then self.topClip:Show() end
+            if self.rightClip then self.rightClip:Show() end
+            if self.bottomClip then self.bottomClip:Show() end
+            if self.leftClip then self.leftClip:Show() end
+
+            self.topEdge:SetValue(1)
+            self.rightEdge:SetValue(1)
+            self.bottomEdge:SetValue(1)
+            self.leftEdge:SetValue(1)
+
+            self.topEdge:Show()
+            self.rightEdge:Show()
+            self.bottomEdge:Show()
+            self.leftEdge:Show()
+
+            self:SetBackdropBorderColor(self.color.r, self.color.g, self.color.b, 0)
+            return true
         end
 
         frame.DefaultCallback = function(self, shouldBeColored)
@@ -819,13 +859,7 @@ Ui.HealthColorIndicatorPool = CreateFramePool('Frame', nil, 'BackdropTemplate',
                 if not duration then
                     duration = C_UnitAuras.GetAuraDuration(unit, auraData[self.spell].auraInstanceID)
                 end
-                local hasAnimatedBorder = self.showCooldown and duration and self:ShowAnimatedBorder(duration)
-                if hasAnimatedBorder then
-                    self:SetBackdropBorderColor(self.color.r, self.color.g, self.color.b, 0)
-                else
-                    self:HideAnimatedBorder()
-                    self:SetBackdropBorderColor(self.color.r, self.color.g, self.color.b, self.color.a)
-                end
+                self:ApplyBorderDisplayMode(duration)
             else
                 elements.isColored = false
                 elements.recolor = nil
@@ -842,13 +876,12 @@ Ui.HealthColorIndicatorPool = CreateFramePool('Frame', nil, 'BackdropTemplate',
             if self.showCooldown then
                 local duration = C_DurationUtil.CreateDuration()
                 duration:SetTimeFromStart(GetTime(), 30)
-                self:ShowAnimatedBorder(duration)
-                self:SetBackdropBorderColor(self.color.r, self.color.g, self.color.b, 0)
+                self:ApplyBorderDisplayMode(duration)
                 if not self.previewTimer then
                     self.previewTimer = C_Timer.NewTicker(30, function()
                         local tickerDuration = C_DurationUtil.CreateDuration()
                         tickerDuration:SetTimeFromStart(GetTime(), 30)
-                        self:ShowAnimatedBorder(tickerDuration)
+                        self:ApplyBorderDisplayMode(tickerDuration)
                     end)
                 end
             else
@@ -857,7 +890,7 @@ Ui.HealthColorIndicatorPool = CreateFramePool('Frame', nil, 'BackdropTemplate',
                     self.previewTimer = nil
                 end
                 self:HideAnimatedBorder()
-                self:SetBackdropBorderColor(self.color.r, self.color.g, self.color.b, self.color.a)
+                self:ShowStaticBorder()
             end
             self:Show()
         end

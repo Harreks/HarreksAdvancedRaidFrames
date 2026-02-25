@@ -5,7 +5,7 @@ NS.Ui = {}
 NS.Util = {}
 NS.Core = {}
 NS.API = {}
-NS.Version = '2.1.1'
+NS.Version = '2.2.0'
 NS.Debug = false
 
 --Initialize saved variables

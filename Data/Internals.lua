@@ -19,7 +19,6 @@ Data.state = {
     extras = {}
 }
 
-
 Data.textures = {
     Echo = 4622456,
     Reversion = 4630467,
@@ -429,27 +428,5 @@ Data.settings = {
     }
 }
 
-Data.otherAddonsInfo = {
-    {
-        title = 'Compatibility With Other Frame Addons',
-        text = 'One of my goals is trying to integrate as much as possible with existing addons so you can very easily improve your gameplay without having to start over ' ..
-        'with a whole new set of frames. With that purpose i have designed advanced raid frames to seamlessly integrate into other frames with very little work. I have done ' ..
-        'this integration myself for a couple of them but others might require me to talk to their developers or for them to use my api. If you use different frames that i don\'t ' ..
-        'currently support please let me know about it and also let the author know, so we can work together to get you sorted.'
-    },
-    {
-        title = 'Grid2',
-        text = 'Grid2 lets other addons register plugins for it to add new statuses. Advanced Raid Frames registers all the buffs it tracks as custom statuses so you can assign them to ' ..
-        'any indicators like you normally would and did before Midnight. Simply having both addons installed is enough to get them to work.'
-    },
-    {
-        title = 'DandersFrames',
-        text = 'Integration with DandersFrames works via installing the Advanced Raid Frames indicators on top of the frames from the addon. If DandersFrames is installed when you form ' ..
-        'a group the addon will try to also add any indicator you have created in the designer onto those frames and show the tracking for the spells.'
-    }
-}
-
-Data.engineFunctions = {}
-Data.registeredExtraFrames = {}
 Data.initializerList = {}
 Data.playerSpec = nil

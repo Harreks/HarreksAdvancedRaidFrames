@@ -18,44 +18,12 @@ local function stopSelectedPreviewGlow(widget)
     widget.HighlightedPreviewElement = nil
 end
 
-local function applySelectedPreviewGlow(widget, getSelectedIndicatorIndex)
-    if not (widget and widget.Overlay and widget.Overlay.elements and LCG and getSelectedIndicatorIndex) then
-        return
-    end
-
-    stopSelectedPreviewGlow(widget)
-
-    local selectedIndex = getSelectedIndicatorIndex()
-    if not selectedIndex then
-        return
-    end
-
-    local selectedElement = widget.Overlay.elements[selectedIndex]
-    if not selectedElement then
-        return
-    end
-
-    LCG.PixelGlow_Start(
-        selectedElement,
-        { 0.95, 0.82, 0.20, 0.9 },
-        4,
-        0.25,
-        4,
-        1,
-        0,
-        0,
-        false,
-        'harfDesignerPreviewSelected'
-    )
-    widget.HighlightedPreviewElement = selectedElement
-end
-
-local function applyPreviewIndicatorFade(widget, getSelectedIndicatorIndex)
+local function applyPreviewIndicatorFade(widget)
     if not (widget and widget.Overlay and widget.Overlay.elements) then
         return
     end
 
-    local selectedIndex = getSelectedIndicatorIndex and getSelectedIndicatorIndex()
+    local selectedIndex = Ui.GetSelectedIndicatorIndex()
     local shouldFadeOthers = Ui.designerPreviewFadeOtherIndicators ~= false
 
     for index, element in ipairs(widget.Overlay.elements) do
@@ -69,74 +37,10 @@ local function applyPreviewIndicatorFade(widget, getSelectedIndicatorIndex)
     end
 end
 
-local function bindPreviewSelectionHandlers(widget, onSelect)
-    if not (widget and widget.Overlay and widget.Overlay.elements and onSelect) then
-        return
-    end
-
-    for index, element in ipairs(widget.Overlay.elements) do
-        if element and element.EnableMouse and element.SetScript then
-            local isHealthColorIndicator = element.type == 'HealthColorIndicator'
-            element:EnableMouse(not isHealthColorIndicator)
-            if not isHealthColorIndicator then
-                element:SetScript('OnMouseDown', function(_, button)
-                    if button ~= 'LeftButton' then
-                        return
-                    end
-                    onSelect(index)
-                end)
-            else
-                element:SetScript('OnMouseDown', nil)
-            end
-        end
-    end
-end
-
-local function getCategoryIdFromObject(categoryObject)
-    if type(categoryObject) == 'number' then
-        return categoryObject
-    end
-    if type(categoryObject) == 'table' and categoryObject.GetID then
-        local ok, id = pcall(categoryObject.GetID, categoryObject)
-        if ok then
-            return id
-        end
-    end
-end
-
-local function getCurrentSettingsCategoryId()
-    if not SettingsPanel then
-        return nil
-    end
-
-    if SettingsPanel.GetCurrentCategory then
-        local ok, categoryObject = pcall(SettingsPanel.GetCurrentCategory, SettingsPanel)
-        if ok and categoryObject ~= nil then
-            local id = getCategoryIdFromObject(categoryObject)
-            if id ~= nil then
-                return id
-            end
-        end
-    end
-
-    if SettingsPanel.GetCurrentCategoryID then
-        local ok, id = pcall(SettingsPanel.GetCurrentCategoryID, SettingsPanel)
-        if ok then
-            return id
-        end
-    end
-
-    return nil
-end
-
-function Ui.InitializeDesignerPreview(config)
+function Ui.InitializeDesignerPreview()
     if Ui._designerPreviewInitialized then
         return Ui.DesignerPreviewWidget
     end
-
-    local ensureEditingSpec = config and config.ensureEditingSpec
-    local getSelectedIndicatorIndex = config and config.getSelectedIndicatorIndex
-    local setSelectedIndicatorIndex = config and config.setSelectedIndicatorIndex
 
     if Ui.designerPreviewFadeOtherIndicators == nil then
         Ui.designerPreviewFadeOtherIndicators = true
@@ -144,7 +48,7 @@ function Ui.InitializeDesignerPreview(config)
 
     local widget = Ui.DesignerPreviewWidget
     if not widget then
-        widget = CreateFrame('Frame', nil, UIParent, 'InsetFrameTemplate3')
+        widget = CreateFrame('Frame', nil, UIParent, 'HelpFrameContainerFrameTemplate')
         widget:SetSize(PREVIEW_FLOAT_WIDTH, PREVIEW_FLOAT_HEIGHT)
         widget:SetFrameStrata('DIALOG')
         widget:SetFrameLevel(200)
@@ -166,7 +70,7 @@ function Ui.InitializeDesignerPreview(config)
         local exampleFrame = CreateFrame('Frame', nil, widget)
         exampleFrame:SetSize(165, 65)
         exampleFrame:SetScale(1.5)
-        exampleFrame:SetPoint('TOP', widget, 'TOP', 0, -85)
+        exampleFrame:SetPoint('CENTER', widget, 'CENTER', 0, 0)
         exampleFrame.bg = exampleFrame:CreateTexture(nil, 'BACKGROUND')
         exampleFrame.bg:SetAllPoints(exampleFrame)
         exampleFrame.bg:SetTexture('Interface\\RaidFrame\\Raid-Bar-Hp-Fill')
@@ -189,7 +93,7 @@ function Ui.InitializeDesignerPreview(config)
 
         fadeOthersCheckbox:SetScript('OnClick', function(self)
             Ui.designerPreviewFadeOtherIndicators = self:GetChecked() and true or false
-            applyPreviewIndicatorFade(widget, getSelectedIndicatorIndex)
+            applyPreviewIndicatorFade(widget)
         end)
 
         widget.FadeOthersCheckbox = fadeOthersCheckbox
@@ -216,7 +120,31 @@ function Ui.InitializeDesignerPreview(config)
 
         local designerCategory = Ui.DesignerEqolCategory
         local designerCategoryId = designerCategory and designerCategory.GetID and designerCategory:GetID() or nil
-        local currentCategoryId = getCurrentSettingsCategoryId()
+
+        local currentCategoryId
+        if SettingsPanel then
+            if SettingsPanel.GetCurrentCategory then
+                local ok, categoryObject = SettingsPanel.GetCurrentCategory(SettingsPanel)
+                if ok and categoryObject ~= nil then
+
+                    local id
+                    if type(categoryObject) == 'number' then
+                        id = categoryObject
+                    elseif type(categoryObject) == 'table' and categoryObject.GetID then
+                        id = select(2, categoryObject.GetID(categoryObject))
+                    end
+
+                    if id ~= nil then
+                        currentCategoryId = id
+                    end
+                end
+            elseif SettingsPanel.GetCurrentCategoryID then
+                local ok, id = pcall(SettingsPanel.GetCurrentCategoryID, SettingsPanel)
+                if ok then
+                    currentCategoryId = id
+                end
+            end
+        end
 
         local categoryMatches = false
         if designerCategoryId and currentCategoryId then
@@ -274,7 +202,7 @@ function Ui.InitializeDesignerPreview(config)
             return
         end
 
-        local spec = ensureEditingSpec and ensureEditingSpec()
+        local spec = Ui.EnsureEditingSpec()
         local specData = spec and Data.specInfo[spec]
         if specData and currentWidget.SpecLabel then
             currentWidget.SpecLabel:SetText(string.format(L.DESIGNER_CURRENT_SPEC_FMT, Data.GetLocalizedSpecDisplay(spec)))
@@ -299,9 +227,46 @@ function Ui.InitializeDesignerPreview(config)
             overlay:AttachToFrame(currentWidget.ExampleFrame)
             overlay:ShowPreview()
             currentWidget.Overlay = overlay
-            bindPreviewSelectionHandlers(currentWidget, setSelectedIndicatorIndex)
-            applySelectedPreviewGlow(currentWidget, getSelectedIndicatorIndex)
-            applyPreviewIndicatorFade(currentWidget, getSelectedIndicatorIndex)
+
+            for index, element in ipairs(currentWidget.Overlay.elements) do
+                if element and element.EnableMouse and element.SetScript then
+                    local isHealthColorIndicator = element.type == 'HealthColorIndicator'
+                    element:EnableMouse(not isHealthColorIndicator)
+                    if not isHealthColorIndicator then
+                        element:SetScript('OnMouseDown', function(_, button)
+                            if button ~= 'LeftButton' then
+                                return
+                            end
+                            Ui.SetSelectedIndicatorIndex(index)
+                        end)
+                    else
+                        element:SetScript('OnMouseDown', nil)
+                    end
+                end
+            end
+
+            stopSelectedPreviewGlow(widget)
+            local selectedIndex = Ui.GetSelectedIndicatorIndex()
+            if selectedIndex then
+                local selectedElement = widget.Overlay.elements[selectedIndex]
+                if selectedElement then
+                    LCG.PixelGlow_Start(
+                        selectedElement,
+                        { 0.95, 0.82, 0.20, 0.9 },
+                        4,
+                        0.25,
+                        4,
+                        1,
+                        0,
+                        0,
+                        false,
+                        'harfDesignerPreviewSelected'
+                    )
+                    widget.HighlightedPreviewElement = selectedElement
+                end
+            end
+
+            applyPreviewIndicatorFade(currentWidget)
         end
 
         Ui._designerPreviewRefreshing = nil

@@ -6,17 +6,11 @@ local Core = NS.Core
 local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
-local pairs = pairs
-local ipairs = ipairs
-local tonumber = tonumber
-local table_insert = table.insert
-local type = type
-
 local IsAuraFilteredOutByInstanceID = C_UnitAuras.IsAuraFilteredOutByInstanceID
 
 local auraSignatureLookupBySpec = {}
 
-local function MakeAuraSignature(pointCount, passesRaid, passesRic, passesExt, passesDisp)
+function Util.MakeAuraSignature(pointCount, passesRaid, passesRic, passesExt, passesDisp)
     return pointCount .. ':'
         .. (passesRaid and '1' or '0') .. ':'
         .. (passesRic and '1' or '0') .. ':'
@@ -24,7 +18,7 @@ local function MakeAuraSignature(pointCount, passesRaid, passesRic, passesExt, p
         .. (passesDisp and '1' or '0')
 end
 
-local function GetAuraSignatureLookup(spec)
+function Util.GetAuraSignatureLookup(spec)
     if auraSignatureLookupBySpec[spec] then
         return auraSignatureLookupBySpec[spec]
     end
@@ -32,10 +26,10 @@ local function GetAuraSignatureLookup(spec)
     local lookup = {}
     local specData = Data.specInfo[spec]
     if specData and specData.auras then
-        for auraName, auraData in pairs(specData.auras) do
-            local signature = MakeAuraSignature(auraData.points, auraData.raid, auraData.ric, auraData.ext, auraData.disp)
-            if not lookup[signature] then
-                lookup[signature] = auraName
+        for _, auraData in pairs(specData.auras) do
+            if auraData.secret then
+                local signature = Util.MakeAuraSignature(auraData.raid, auraData.ric, auraData.ext, auraData.disp)
+                lookup[signature] = auraData.name
             end
         end
     end
@@ -199,6 +193,26 @@ function Util.ReanchorSpotlights()
     end
 end
 
+function Util.HandlePlayerSpecializationChanged()
+    local previousSpec = Data.playerSpec
+    Util.UpdatePlayerSpec()
+    if previousSpec ~= Data.playerSpec then
+        Util.MapOutUnits()
+
+        if Ui.DesignerTrackedSettings then
+            for _, setting in ipairs(Ui.DesignerTrackedSettings) do
+                if setting and setting.NotifyUpdate then
+                    setting:NotifyUpdate()
+                end
+            end
+        end
+
+        if Ui.RefreshDesignerPreview then
+            Ui.RefreshDesignerPreview()
+        end
+    end
+end
+
 --Update unit data of current group members
 function Util.MapOutUnits()
     --Refresh some player data too
@@ -301,6 +315,13 @@ end
 
 --We sus out the buff, match the info we can get from it
 function Util.MatchAuraInfo(unit, aura)
+    --If aura is not secret, return the internal name
+    local specInfo = Data.specInfo[Data.playerSpec]
+    if not issecretvalue(aura.spellID) and specInfo.auras[aura.spellId] then
+        return specInfo.auras[aura.spellId].name
+    end
+
+    --If its secret we check if its a player aura and compose the signature
     local passesRaid = not IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|RAID')
     local passesRic = not IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|RAID_IN_COMBAT')
 
@@ -313,18 +334,11 @@ function Util.MatchAuraInfo(unit, aura)
     local pointCount = #aura.points
 
     local spec = Data.playerSpec
-    local lookup = spec and GetAuraSignatureLookup(spec)
-    local signature = MakeAuraSignature(pointCount, passesRaid, passesRic, passesExt, passesDisp)
+    local lookup = spec and Util.GetAuraSignatureLookup(spec)
+    local signature = Util.MakeAuraSignature(pointCount, passesRaid, passesRic, passesExt, passesDisp)
     return lookup and lookup[signature] or nil
 end
 
-function Util.MapEngineFunctions()
-    local functionMap = Data.engineFunctions
-    for spec, _ in pairs(Data.specInfo) do
-        functionMap[spec] = Core['Parse' .. spec .. 'Buffs']
-    end
-end
-
 function Util.IsSupportedSpec(spec)
-    return spec and Data.specInfo[spec] and Data.engineFunctions[spec]
+    return spec and Data.specInfo[spec]
 end

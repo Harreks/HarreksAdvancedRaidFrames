@@ -8,40 +8,17 @@ local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 local DesignerState = Ui.DesignerState
 
-local function printDesignerMessage(message)
+function Ui.PrintDesignerMessage(message)
     print('|cnNORMAL_FONT_COLOR:AdvancedRaidFrames|r: ' .. message)
 end
 
-local function getSpellIcon(spellKey)
-    if not spellKey then
-        return nil
-    end
-
-    if Data.textures and Data.textures[spellKey] then
+function Ui.GetSpellIcon(spellKey)
+    if spellKey and Data.textures and Data.textures[spellKey] then
         return Data.textures[spellKey]
     end
-
-    local spellId = Data.spellIds and Data.spellIds[spellKey]
-    if not spellId then
-        return nil
-    end
-
-    if C_Spell and C_Spell.GetSpellTexture then
-        local iconID = C_Spell.GetSpellTexture(spellId)
-        if iconID then
-            return iconID
-        end
-    elseif GetSpellTexture then
-        local iconID = GetSpellTexture(spellId)
-        if iconID then
-            return iconID
-        end
-    end
-
-    return nil
 end
 
-local function buildIconLabel(iconFileId, text)
+function Ui.BuildIconLabel(iconFileId, text)
     local label = tostring(text or '')
     if not iconFileId then
         return label
@@ -50,103 +27,15 @@ local function buildIconLabel(iconFileId, text)
     return string.format('|T%d:16:16:0:0:64:64:4:60:4:60|t  %s', iconFileId, label)
 end
 
-local function getEqolSettingsMode()
-    return (LibEQOL and LibEQOL.SettingsMode) or LibStub('LibEQOLSettingsMode-1.0')
-end
-
-local designerDropdownSteppersHooked = false
-local function hideDesignerDropdownSteppers(dropdownControl)
-    if not dropdownControl then
-        return
-    end
-
-    local setting = dropdownControl.GetSetting and dropdownControl:GetSetting()
-    local variable = setting and setting.GetVariable and setting:GetVariable()
-    if type(variable) ~= 'string' or not variable:find('^harfDesigner_') then
-        return
-    end
-
-    local control = dropdownControl.Control
-    if control and control.SetSteppersShown then
-        control:SetSteppersShown(false)
-    end
-
-    local function hideButtons(frame)
-        if not frame then
-            return
-        end
-
-        if frame.DecrementButton then
-            frame.DecrementButton:Hide()
-        end
-
-        if frame.IncrementButton then
-            frame.IncrementButton:Hide()
-        end
-    end
-
-    hideButtons(dropdownControl)
-    hideButtons(control)
-end
-
-local function ensureDesignerDropdownSteppersHidden()
-    if designerDropdownSteppersHooked then
-        return
-    end
-
-    if not (LibEQOL_ScrollDropdownMixin and hooksecurefunc) then
-        return
-    end
-
-    hooksecurefunc(LibEQOL_ScrollDropdownMixin, 'Init', hideDesignerDropdownSteppers)
-    designerDropdownSteppersHooked = true
-end
-
-local function refreshSettingsDisplay()
-    if SettingsInbound and SettingsInbound.RepairDisplay then
-        SettingsInbound.RepairDisplay()
-    elseif SettingsPanel and SettingsPanel.RepairDisplay then
-        SettingsPanel:RepairDisplay()
-    end
-end
-
-local function ensureEditingSpec()
+function Ui.EnsureEditingSpec()
     return DesignerState.EnsureEditingSpec()
 end
 
-local function ensureSpecIndicators(spec)
+function Ui.EnsureSpecIndicators(spec)
     return DesignerState.EnsureSpecIndicators(spec)
 end
 
-local function deepCopyValue(value)
-    return DesignerState.DeepCopyValue(value)
-end
-local function applyImportedIndicatorsForSpec(spec, importText, setSelectedIndicatorIndex, updateAfterDesignerChange)
-    local result, errorText = Ui.DesignerImportSpecIndicators(spec, importText)
-    if not result then
-        printDesignerMessage(errorText or L.DESIGNER_IMPORT_INVALID)
-        return false
-    end
-
-    SavedIndicators[spec] = result.indicators
-
-    if #result.indicators > 0 then
-        setSelectedIndicatorIndex(1)
-    else
-        Options.designerSelectedIndicatorIndex = nil
-        updateAfterDesignerChange(true)
-    end
-
-    if result.invalidCount and result.invalidCount > 0 then
-        printDesignerMessage(string.format(L.DESIGNER_IMPORT_PARTIAL_FMT, #result.indicators, result.totalCount, result.invalidCount))
-    else
-        printDesignerMessage(string.format(L.DESIGNER_IMPORT_SUCCESS_FMT, #result.indicators))
-    end
-
-    return true
-end
-
-local function confirmDesignerDelete(onConfirm)
+function Ui.ConfirmDesignerDelete(onConfirm)
     if not StaticPopupDialogs['HARF_CONFIRM_DELETE_INDICATOR'] then
         StaticPopupDialogs['HARF_CONFIRM_DELETE_INDICATOR'] = {
             text = L.DESIGNER_DELETE_CONFIRM_TEXT,
@@ -169,7 +58,7 @@ local function confirmDesignerDelete(onConfirm)
     })
 end
 
-local function getDuplicateIndexForIndicator(indicators, targetIndex, indicator)
+function Ui.GetDuplicateIndexForIndicator(indicators, targetIndex, indicator)
     if not (indicators and indicator and targetIndex) then
         return nil
     end
@@ -190,9 +79,28 @@ local function getDuplicateIndexForIndicator(indicators, targetIndex, indicator)
     return nil
 end
 
-local getLocalizedSpellLabel
+function Ui.GetLocalizedSpellLabel(spellKey, preferEchoVariantLabel)
+    if not spellKey then
+        return L.DESIGNER_UNKNOWN
+    end
 
-local function getEchoVariantDisplayLabel(spellKey)
+    if preferEchoVariantLabel then
+        local echoedLabel = Ui.GetEchoVariantDisplayLabel(spellKey)
+        if echoedLabel then
+            return echoedLabel
+        end
+    end
+
+    local spellId = Data.spellIds[spellKey]
+    local localizedName = C_Spell.GetSpellName(spellId)
+    if localizedName and localizedName ~= '' then
+        return localizedName
+    end
+
+    return spellKey
+end
+
+function Ui.GetEchoVariantDisplayLabel(spellKey)
     if type(spellKey) ~= 'string' or spellKey == 'Echo' or not spellKey:find('^Echo') then
         return nil
     end
@@ -202,7 +110,7 @@ local function getEchoVariantDisplayLabel(spellKey)
         return nil
     end
 
-    local baseSpellLabel = getLocalizedSpellLabel(baseSpellKey)
+    local baseSpellLabel = Ui.GetLocalizedSpellLabel(baseSpellKey)
     if not baseSpellLabel or baseSpellLabel == '' then
         return nil
     end
@@ -216,85 +124,38 @@ local function getEchoVariantDisplayLabel(spellKey)
     return echoedPrefix .. ' ' .. baseSpellLabel
 end
 
-local function buildIndicatorLabel(index, indicator)
-    if not indicator then
-        return L.INDICATOR_EMPTY
-    end
-
-    local spec = ensureEditingSpec()
-    local indicators = ensureSpecIndicators(spec)
-    local spell = getLocalizedSpellLabel(indicator.Spell, true)
-
-    local typeName = (indicator.Type and Data.indicatorTypes[indicator.Type] and Data.indicatorTypes[indicator.Type].display) or L.INDICATOR_GENERIC
-    local label = spell .. ' ' .. typeName
-    local duplicateIndex = getDuplicateIndexForIndicator(indicators, index, indicator)
-    if duplicateIndex and duplicateIndex > 1 then
-        return label .. ' #' .. duplicateIndex
-    end
-    return label
-end
-
-getLocalizedSpellLabel = function(spellKey, preferEchoVariantLabel)
-    if not spellKey then
-        return L.DESIGNER_UNKNOWN
-    end
-
-    if preferEchoVariantLabel then
-        local echoedLabel = getEchoVariantDisplayLabel(spellKey)
-        if echoedLabel then
-            return echoedLabel
-        end
-    end
-
-    if Data.spellIds and Data.spellIds[spellKey] then
-        local spellId = Data.spellIds[spellKey]
-        local localizedName
-        if C_Spell and C_Spell.GetSpellName then
-            localizedName = C_Spell.GetSpellName(spellId)
-        elseif GetSpellInfo then
-            localizedName = GetSpellInfo(spellId)
-        end
-
-        if localizedName and localizedName ~= '' then
-            return localizedName
-        end
-    end
-
-    return spellKey
-end
-
-local function getSelectedIndicatorIndex()
+function Ui.GetSelectedIndicatorIndex()
     return DesignerState.GetSelectedIndicatorIndex()
 end
 
-local function getSelectedIndicator()
-    local spec = ensureEditingSpec()
-    local indicators = ensureSpecIndicators(spec)
-    local index = getSelectedIndicatorIndex()
+function Ui.GetSelectedIndicator()
+    local spec = Ui.EnsureEditingSpec()
+    local indicators = Ui.EnsureSpecIndicators(spec)
+    local index = Ui.GetSelectedIndicatorIndex()
     if not index then
         return nil, nil, spec, indicators
     end
     return indicators[index], index, spec, indicators
 end
 
-local function selectedIndicatorExists()
-    local indicator = getSelectedIndicator()
+function Ui.SelectedIndicatorExists()
+    local indicator = Ui.GetSelectedIndicator()
     return indicator ~= nil
 end
 
-local function currentSpecHasIndicators()
-    local spec = ensureEditingSpec()
-    local indicators = ensureSpecIndicators(spec)
+function Ui.CurrentSpecHasIndicators()
+    local spec = Ui.EnsureEditingSpec()
+    local indicators = Ui.EnsureSpecIndicators(spec)
     return #indicators > 0
 end
 
-local function selectedIndicatorTypeIs(expectedType)
-    local indicator = getSelectedIndicator()
+function Ui.SelectedIndicatorTypeIs(expectedType)
+    local indicator = Ui.GetSelectedIndicator()
     return indicator and indicator.Type == expectedType
 end
 
-local function selectedIndicatorTypeIn(typeList)
-    local indicator = getSelectedIndicator()
+function Ui.SelectedIndicatorTypeIn(typeList)
+    local indicator = Ui.GetSelectedIndicator()
     if not indicator then return false end
     for _, value in ipairs(typeList) do
         if indicator.Type == value then
@@ -304,9 +165,13 @@ local function selectedIndicatorTypeIn(typeList)
     return false
 end
 
-local function updateAfterDesignerChange(refreshList)
+function Ui.UpdateAfterDesignerChange(refreshList)
     if refreshList then
-        refreshSettingsDisplay()
+        if SettingsInbound and SettingsInbound.RepairDisplay then
+            SettingsInbound.RepairDisplay()
+        elseif SettingsPanel and SettingsPanel.RepairDisplay then
+            SettingsPanel:RepairDisplay()
+        end
     end
 
     Util.MapOutUnits()
@@ -316,28 +181,7 @@ local function updateAfterDesignerChange(refreshList)
     end
 end
 
-local function refreshDesignerColorOverrideControls()
-    if not SettingsPanel or not SettingsPanel:IsShown() then
-        return
-    end
-
-    local queue = { SettingsPanel }
-    while #queue > 0 do
-        local frame = table.remove(queue)
-        if frame and frame.RefreshAll then
-            pcall(frame.RefreshAll, frame)
-        end
-
-        if frame and frame.GetChildren then
-            local children = { frame:GetChildren() }
-            for _, child in ipairs(children) do
-                table.insert(queue, child)
-            end
-        end
-    end
-end
-
-local function compareLocalizedText(leftText, rightText)
+function Ui.CompareLocalizedText(leftText, rightText)
     local left = tostring(leftText or '')
     local right = tostring(rightText or '')
 
@@ -360,26 +204,7 @@ local function compareLocalizedText(leftText, rightText)
     return lowerLeft < lowerRight
 end
 
-local function getSpellOptionsForCurrentSpec()
-    local spec = ensureEditingSpec()
-    local options = {}
-    if spec and Data.specInfo[spec] and Data.specInfo[spec].auras then
-        for spell, _ in pairs(Data.specInfo[spec].auras) do
-            local localizedSpell = getLocalizedSpellLabel(spell, true)
-            table.insert(options, {
-                value = spell,
-                text = buildIconLabel(getSpellIcon(spell), localizedSpell),
-                sortText = localizedSpell
-            })
-        end
-        table.sort(options, function(a, b)
-            return compareLocalizedText(a.sortText or a.text, b.sortText or b.text)
-        end)
-    end
-    return options
-end
-
-local function getDropdownValues(dropdownType)
+function Ui.GetDropdownValues(dropdownType)
     local function formatAnchorValue(value)
         if type(value) ~= 'string' then
             return value
@@ -461,30 +286,51 @@ local function getDropdownValues(dropdownType)
     return options
 end
 
-local function getSelectedIndicatorOptions()
-    local spec = ensureEditingSpec()
-    local indicators = ensureSpecIndicators(spec)
-    local options = {}
-    for index, indicator in ipairs(indicators) do
-        local plainLabel = buildIndicatorLabel(index, indicator)
-        table.insert(options, {
-            value = index,
-            text = buildIconLabel(getSpellIcon(indicator and indicator.Spell), plainLabel),
-            sortText = plainLabel
-        })
+function Ui.ShowCreateIndicatorTypePopup(onSelect)
+    local popup
+    if not Ui.DesignerCreateIndicatorTypePopup then
+        popup = CreateFrame('Frame', nil, UIParent, 'InsetFrameTemplate3')
+        popup:SetWidth(260)
+        popup:SetFrameStrata('DIALOG')
+        popup:SetFrameLevel(250)
+        popup:SetPoint('CENTER')
+        popup:Hide()
+
+        local title = popup:CreateFontString(nil, 'OVERLAY', 'GameFontNormal')
+        title:SetPoint('TOP', popup, 'TOP', 0, -10)
+        title:SetText(L.DESIGNER_CREATE_INDICATOR_TITLE)
+        popup.Title = title
+
+        local subtitle = popup:CreateFontString(nil, 'OVERLAY', 'GameFontHighlightSmall')
+        subtitle:SetPoint('TOP', title, 'BOTTOM', 0, -6)
+        subtitle:SetText(L.DESIGNER_CHOOSE_INDICATOR_TYPE)
+        popup.Subtitle = subtitle
+
+        local closeButton = CreateFrame('Button', nil, popup, 'UIPanelCloseButton')
+        closeButton:SetPoint('TOPRIGHT', popup, 'TOPRIGHT', -1, 0)
+        popup.CloseButton = closeButton
+
+        local emptyText = popup:CreateFontString(nil, 'OVERLAY', 'GameFontHighlightSmall')
+        emptyText:SetPoint('TOP', subtitle, 'BOTTOM', 0, -24)
+        emptyText:SetText(L.DESIGNER_NO_INDICATOR_TYPES)
+        emptyText:Hide()
+        popup.EmptyText = emptyText
+
+        popup.TypeButtons = {}
+        Ui.DesignerCreateIndicatorTypePopup = popup
+
+        if not popup._hideHookRegistered then
+            Ui.RegisterDesignerPanelHook('hide', function()
+                if Ui.DesignerCreateIndicatorTypePopup then
+                    Ui.DesignerCreateIndicatorTypePopup:Hide()
+                end
+            end)
+            popup._hideHookRegistered = true
+        end
+    else
+        popup = Ui.DesignerCreateIndicatorTypePopup
     end
 
-    table.sort(options, function(a, b)
-        if tostring(a.sortText or a.text or '') == tostring(b.sortText or b.text or '') then
-            return (a.value or 0) < (b.value or 0)
-        end
-        return compareLocalizedText(a.sortText or a.text, b.sortText or b.text)
-    end)
-
-    return options
-end
-
-local function getSortedIndicatorTypeEntries()
     local entries = {}
     for key, data in pairs(Data.indicatorTypes or {}) do
         table.insert(entries, {
@@ -493,61 +339,8 @@ local function getSortedIndicatorTypeEntries()
         })
     end
     table.sort(entries, function(a, b)
-        return compareLocalizedText(a.label, b.label)
+        return Ui.CompareLocalizedText(a.label, b.label)
     end)
-    return entries
-end
-
-local function ensureCreateIndicatorTypePopup()
-    if Ui.DesignerCreateIndicatorTypePopup then
-        return Ui.DesignerCreateIndicatorTypePopup
-    end
-
-    local popup = CreateFrame('Frame', nil, UIParent, 'InsetFrameTemplate3')
-    popup:SetWidth(260)
-    popup:SetFrameStrata('DIALOG')
-    popup:SetFrameLevel(250)
-    popup:SetPoint('CENTER')
-    popup:Hide()
-
-    local title = popup:CreateFontString(nil, 'OVERLAY', 'GameFontNormal')
-    title:SetPoint('TOP', popup, 'TOP', 0, -10)
-    title:SetText(L.DESIGNER_CREATE_INDICATOR_TITLE)
-    popup.Title = title
-
-    local subtitle = popup:CreateFontString(nil, 'OVERLAY', 'GameFontHighlightSmall')
-    subtitle:SetPoint('TOP', title, 'BOTTOM', 0, -6)
-    subtitle:SetText(L.DESIGNER_CHOOSE_INDICATOR_TYPE)
-    popup.Subtitle = subtitle
-
-    local closeButton = CreateFrame('Button', nil, popup, 'UIPanelCloseButton')
-    closeButton:SetPoint('TOPRIGHT', popup, 'TOPRIGHT', -1, 0)
-    popup.CloseButton = closeButton
-
-    local emptyText = popup:CreateFontString(nil, 'OVERLAY', 'GameFontHighlightSmall')
-    emptyText:SetPoint('TOP', subtitle, 'BOTTOM', 0, -24)
-    emptyText:SetText(L.DESIGNER_NO_INDICATOR_TYPES)
-    emptyText:Hide()
-    popup.EmptyText = emptyText
-
-    popup.TypeButtons = {}
-    Ui.DesignerCreateIndicatorTypePopup = popup
-
-    if not popup._hideHookRegistered then
-        Ui.RegisterDesignerPanelHook('hide', function()
-            if Ui.DesignerCreateIndicatorTypePopup then
-                Ui.DesignerCreateIndicatorTypePopup:Hide()
-            end
-        end)
-        popup._hideHookRegistered = true
-    end
-
-    return popup
-end
-
-local function showCreateIndicatorTypePopup(onSelect)
-    local popup = ensureCreateIndicatorTypePopup()
-    local entries = getSortedIndicatorTypeEntries()
 
     for _, button in ipairs(popup.TypeButtons) do
         button:Hide()
@@ -592,87 +385,66 @@ local function showCreateIndicatorTypePopup(onSelect)
     popup:Show()
 end
 
-local function createIndicatorActionControls(EQOL, category, setSelectedIndicatorIndex)
-    EQOL:CreateButton(category, {
-        key = 'duplicateSelectedIndicator',
-        text = L.DESIGNER_DUPLICATE_INDICATOR,
-        click = function()
-            local indicator, index, _, indicators = getSelectedIndicator()
-            if not indicator then return end
+function Ui.SyncDesignerSpecToCurrent()
+    local currentSpec = Data.playerSpec
+    if not (currentSpec and Data.specInfo[currentSpec]) then
+        currentSpec = Ui.EnsureEditingSpec()
+    end
 
-            local duplicatedIndicator = deepCopyValue(indicator)
-            table.insert(indicators, index + 1, duplicatedIndicator)
-            setSelectedIndicatorIndex(index + 1)
-        end,
-        isEnabled = selectedIndicatorExists,
-        expandWith = currentSpecHasIndicators
-    })
+    if not currentSpec then
+        return
+    end
 
-    EQOL:CreateButton(category, {
-        key = 'deleteSelectedIndicator',
-        text = L.DESIGNER_DELETE_INDICATOR,
-        click = function()
-            local indicator, index, _, indicators = getSelectedIndicator()
-            if not indicator then return end
-
-            confirmDesignerDelete(function()
-                table.remove(indicators, index)
-                local nextIndex = 1
-                if #indicators > 0 then
-                    if index > #indicators then
-                        nextIndex = #indicators
-                    else
-                        nextIndex = index
-                    end
-                end
-                setSelectedIndicatorIndex(nextIndex)
-            end)
-        end,
-        isEnabled = selectedIndicatorExists,
-        expandWith = currentSpecHasIndicators
-    })
+    Options.editingSpec = currentSpec
+    local indicators = Ui.EnsureSpecIndicators(currentSpec)
+    if #indicators > 0 then
+        Ui.SetSelectedIndicatorIndex(1)
+    else
+        Ui.SetSelectedIndicatorIndex(nil)
+    end
 end
 
-local function createImportExportControls(EQOL, category, setSelectedIndicatorIndex, updateAfterDesignerChange)
-    EQOL:CreateHeader(category, {
-        name = L.DESIGNER_IMPORT_EXPORT_HEADER
-    })
-
-    EQOL:CreateButton(category, {
-        key = 'exportCurrentSpecIndicators',
-        text = L.DESIGNER_EXPORT_SPEC_INDICATORS,
-        click = function()
-            local spec = ensureEditingSpec()
-            local exportString, errorText = Ui.DesignerExportSpecIndicators(spec)
-            if not exportString then
-                printDesignerMessage(errorText or L.DESIGNER_EXPORT_FAILED)
-                return
-            end
-
-            Util.DisplayPopupTextbox(string.format(L.DESIGNER_EXPORT_POPUP_TITLE_FMT, spec), exportString)
-        end
-    })
-
-    EQOL:CreateButton(category, {
-        key = 'importCurrentSpecIndicators',
-        text = L.DESIGNER_IMPORT_SPEC_INDICATORS,
-        click = function()
-            local spec = ensureEditingSpec()
-            Ui.ShowDesignerImportPopup(spec, function(importText)
-                applyImportedIndicatorsForSpec(spec, importText, setSelectedIndicatorIndex, updateAfterDesignerChange)
-            end)
-        end
-    })
-end
-
-local function buildDesignerEqol(parentCategory)
+function Ui.CreateDesignerCategory(parentCategory)
     if Ui.DesignerEqolCategory then
         return Ui.DesignerEqolCategory
     end
 
-    local EQOL = getEqolSettingsMode()
+    local EQOL = (LibEQOL and LibEQOL.SettingsMode) or LibStub('LibEQOLSettingsMode-1.0')
     EQOL:SetVariablePrefix('harfDesigner_')
-    ensureDesignerDropdownSteppersHidden()
+
+    hooksecurefunc(LibEQOL_ScrollDropdownMixin, 'Init', function(dropdownControl)
+        if not dropdownControl then
+            return
+        end
+
+        local setting = dropdownControl.GetSetting and dropdownControl:GetSetting()
+        local variable = setting and setting.GetVariable and setting:GetVariable()
+        if type(variable) ~= 'string' or not variable:find('^harfDesigner_') then
+            return
+        end
+
+        local control = dropdownControl.Control
+        if control and control.SetSteppersShown then
+            control:SetSteppersShown(false)
+        end
+
+        local function hideButtons(frame)
+            if not frame then
+                return
+            end
+
+            if frame.DecrementButton then
+                frame.DecrementButton:Hide()
+            end
+
+            if frame.IncrementButton then
+                frame.IncrementButton:Hide()
+            end
+        end
+
+        hideButtons(dropdownControl)
+        hideButtons(control)
+    end)
 
     local category = EQOL:CreateCategory(parentCategory, L.MENU_CATEGORY_DESIGNER, false)
     Ui.DesignerEqolCategory = category
@@ -690,48 +462,43 @@ local function buildDesignerEqol(parentCategory)
         end
     end
 
-    local function setSelectedIndicatorIndex(index)
+    function Ui.SetSelectedIndicatorIndex(index)
         local normalizedIndex = tonumber(index)
         if normalizedIndex and normalizedIndex >= 1 then
             Options.designerSelectedIndicatorIndex = normalizedIndex
         else
             Options.designerSelectedIndicatorIndex = nil
         end
-        notifyTrackedSettings()
-        refreshDesignerColorOverrideControls()
-        updateAfterDesignerChange(true)
-    end
 
-    local function syncDesignerSpecToCurrent()
-        local currentSpec = Data.playerSpec
-        if not (currentSpec and Data.specInfo[currentSpec]) then
-            currentSpec = ensureEditingSpec()
-        end
-
-        if not currentSpec then
+        if not SettingsPanel or not SettingsPanel:IsShown() then
             return
         end
 
-        Options.editingSpec = currentSpec
-        local indicators = ensureSpecIndicators(currentSpec)
-        if #indicators > 0 then
-            setSelectedIndicatorIndex(1)
-        else
-            setSelectedIndicatorIndex(nil)
+        local queue = { SettingsPanel }
+        while #queue > 0 do
+            local frame = table.remove(queue)
+            if frame and frame.RefreshAll then
+                pcall(frame.RefreshAll, frame)
+            end
+
+            if frame and frame.GetChildren then
+                local children = { frame:GetChildren() }
+                for _, child in ipairs(children) do
+                    table.insert(queue, child)
+                end
+            end
         end
+        notifyTrackedSettings()
+        Ui.UpdateAfterDesignerChange(true)
     end
 
-    Ui.InitializeDesignerPreview({
-        ensureEditingSpec = ensureEditingSpec,
-        getSelectedIndicatorIndex = getSelectedIndicatorIndex,
-        setSelectedIndicatorIndex = setSelectedIndicatorIndex
-    })
+    Ui.InitializeDesignerPreview()
 
-    syncDesignerSpecToCurrent()
+    Ui.SyncDesignerSpecToCurrent()
 
     if not Ui._designerSpecSyncHooked then
         Ui.RegisterDesignerPanelHook('show', function()
-            syncDesignerSpecToCurrent()
+            Ui.SyncDesignerSpecToCurrent()
         end)
         Ui._designerSpecSyncHooked = true
     end
@@ -739,27 +506,27 @@ local function buildDesignerEqol(parentCategory)
     EQOL:CreateScrollDropdown(category, {
         key = 'editingSpec',
         name = L.DESIGNER_CURRENTLY_EDITING_SPEC,
-        default = ensureEditingSpec(),
+        default = Ui.EnsureEditingSpec(),
         optionfunc = function()
             local options = {}
             for spec, _ in pairs(Data.specInfo) do
                 table.insert(options, { value = spec, text = Data.GetLocalizedSpecDisplay(spec) })
             end
             table.sort(options, function(a, b)
-                return compareLocalizedText(a.text, b.text)
+                return Ui.CompareLocalizedText(a.text, b.text)
             end)
             return options
         end,
         get = function()
-            return ensureEditingSpec()
+            return Ui.EnsureEditingSpec()
         end,
         set = function(value)
             Options.editingSpec = value
-            local indicators = ensureSpecIndicators(value)
+            local indicators = Ui.EnsureSpecIndicators(value)
             if #indicators > 0 then
-                setSelectedIndicatorIndex(1)
+                Ui.SetSelectedIndicatorIndex(1)
             else
-                setSelectedIndicatorIndex(nil)
+                Ui.SetSelectedIndicatorIndex(nil)
             end
         end,
         height = 260
@@ -769,16 +536,52 @@ local function buildDesignerEqol(parentCategory)
         key = 'selectedIndicator',
         name = L.DESIGNER_INDICATORS,
         default = 1,
-        optionfunc = getSelectedIndicatorOptions,
+        optionfunc = function()
+            local spec = Ui.EnsureEditingSpec()
+            local indicators = Ui.EnsureSpecIndicators(spec)
+            local options = {}
+            for index, indicator in ipairs(indicators) do
+
+                local plainLabel
+                if indicator then
+                    local spell = Ui.GetLocalizedSpellLabel(indicator.Spell, true)
+                    local typeName = (indicator.Type and Data.indicatorTypes[indicator.Type] and Data.indicatorTypes[indicator.Type].display) or L.INDICATOR_GENERIC
+                    local label = spell .. ' ' .. typeName
+                    local duplicateIndex = Ui.GetDuplicateIndexForIndicator(indicators, index, indicator)
+                    if duplicateIndex and duplicateIndex > 1 then
+                        plainLabel = label .. ' #' .. duplicateIndex
+                    else
+                        plainLabel = label
+                    end
+                else
+                    plainLabel = L.INDICATOR_EMPTY
+                end
+
+                table.insert(options, {
+                    value = index,
+                    text = Ui.BuildIconLabel(Ui.GetSpellIcon(indicator and indicator.Spell), plainLabel),
+                    sortText = plainLabel
+                })
+            end
+
+            table.sort(options, function(a, b)
+                if tostring(a.sortText or a.text or '') == tostring(b.sortText or b.text or '') then
+                    return (a.value or 0) < (b.value or 0)
+                end
+                return Ui.CompareLocalizedText(a.sortText or a.text, b.sortText or b.text)
+            end)
+
+            return options
+        end,
         get = function()
-            return getSelectedIndicatorIndex() or 0
+            return Ui.GetSelectedIndicatorIndex() or 0
         end,
         set = function(value)
-            setSelectedIndicatorIndex(value)
+            Ui.SetSelectedIndicatorIndex(value)
         end,
         height = 320,
-        isEnabled = selectedIndicatorExists,
-        expandWith = currentSpecHasIndicators
+        isEnabled = Ui.SelectedIndicatorExists,
+        expandWith = Ui.CurrentSpecHasIndicators
     })
     trackSetting(selectedIndicatorSetting)
 
@@ -786,27 +589,64 @@ local function buildDesignerEqol(parentCategory)
         key = 'createIndicator',
         text = L.DESIGNER_CREATE_INDICATOR,
         click = function()
-            showCreateIndicatorTypePopup(function(indicatorType)
-                local spec = ensureEditingSpec()
-                local indicators = ensureSpecIndicators(spec)
+            Ui.ShowCreateIndicatorTypePopup(function(indicatorType)
+                local spec = Ui.EnsureEditingSpec()
+                local indicators = Ui.EnsureSpecIndicators(spec)
                 table.insert(indicators, Util.GetDefaultSettingsForIndicator(indicatorType or 'icon'))
-                setSelectedIndicatorIndex(#indicators)
+                Ui.SetSelectedIndicatorIndex(#indicators)
             end)
         end
     })
 
-    createIndicatorActionControls(EQOL, category, setSelectedIndicatorIndex)
+    EQOL:CreateButton(category, {
+        key = 'duplicateSelectedIndicator',
+        text = L.DESIGNER_DUPLICATE_INDICATOR,
+        click = function()
+            local indicator, index, _, indicators = Ui.GetSelectedIndicator()
+            if not indicator then return end
+
+            local duplicatedIndicator = DesignerState.DeepCopyValue(indicator)
+            table.insert(indicators, index + 1, duplicatedIndicator)
+            Ui.SetSelectedIndicatorIndex(index + 1)
+        end,
+        isEnabled = Ui.SelectedIndicatorExists,
+        expandWith = Ui.CurrentSpecHasIndicators
+    })
+
+    EQOL:CreateButton(category, {
+        key = 'deleteSelectedIndicator',
+        text = L.DESIGNER_DELETE_INDICATOR,
+        click = function()
+            local indicator, index, _, indicators = Ui.GetSelectedIndicator()
+            if not indicator then return end
+
+            Ui.ConfirmDesignerDelete(function()
+                table.remove(indicators, index)
+                local nextIndex = 1
+                if #indicators > 0 then
+                    if index > #indicators then
+                        nextIndex = #indicators
+                    else
+                        nextIndex = index
+                    end
+                end
+                Ui.SetSelectedIndicatorIndex(nextIndex)
+            end)
+        end,
+        isEnabled = Ui.SelectedIndicatorExists,
+        expandWith = Ui.CurrentSpecHasIndicators
+    })
 
     EQOL:CreateHeader(category, {
         name = L.DESIGNER_EDIT_INDICATOR,
-        expandWith = currentSpecHasIndicators
+        expandWith = Ui.CurrentSpecHasIndicators
     })
 
     local appearanceSection = EQOL:CreateExpandableSection(category, {
         key = 'indicatorAppearanceSection',
         name = L.DESIGNER_APPEARANCE_SECTION,
         expanded = true,
-        expandWith = selectedIndicatorExists
+        expandWith = Ui.SelectedIndicatorExists
     })
 
     local function isAppearanceSectionExpanded()
@@ -825,22 +665,39 @@ local function buildDesignerEqol(parentCategory)
         key = 'indicatorSpell',
         name = L.LABEL_SPELL,
         default = '',
-        optionfunc = getSpellOptionsForCurrentSpec,
+        optionfunc = function()
+            local spec = Ui.EnsureEditingSpec()
+            local options = {}
+            if spec and Data.specInfo[spec] and Data.specInfo[spec].auras then
+                for _, spellData in pairs(Data.specInfo[spec].auras) do
+                    local localizedSpell = Ui.GetLocalizedSpellLabel(spellData.name, true)
+                    table.insert(options, {
+                        value = spellData.name,
+                        text = Ui.BuildIconLabel(Ui.GetSpellIcon(spellData.name), localizedSpell),
+                        sortText = localizedSpell
+                    })
+                end
+                table.sort(options, function(a, b)
+                    return Ui.CompareLocalizedText(a.sortText or a.text, b.sortText or b.text)
+                end)
+            end
+            return options
+        end,
         get = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             return indicator and indicator.Spell or ''
         end,
         set = function(value)
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if not indicator then return end
             indicator.Spell = value
             notifyTrackedSettings()
-            updateAfterDesignerChange(false)
+            Ui.UpdateAfterDesignerChange(false)
         end,
         height = 260,
-        isEnabled = selectedIndicatorExists,
+        isEnabled = Ui.SelectedIndicatorExists,
         expandWith = function()
-            return isAppearanceSectionExpanded() and selectedIndicatorExists()
+            return isAppearanceSectionExpanded() and Ui.SelectedIndicatorExists()
         end
     })
     trackSetting(indicatorSpellSetting)
@@ -850,14 +707,14 @@ local function buildDesignerEqol(parentCategory)
         name = L.LABEL_POSITION,
         default = 'CENTER',
         optionfunc = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if indicator and indicator.Type == 'bar' then
-                return getDropdownValues('barPosition')
+                return Ui.GetDropdownValues('barPosition')
             end
-            return getDropdownValues('iconPosition')
+            return Ui.GetDropdownValues('iconPosition')
         end,
         get = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if indicator then
                 if indicator.Position then
                     return indicator.Position
@@ -870,15 +727,15 @@ local function buildDesignerEqol(parentCategory)
             return 'CENTER'
         end,
         set = function(value)
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if not indicator then return end
             indicator.Position = value
-            updateAfterDesignerChange(false)
+            Ui.UpdateAfterDesignerChange(false)
         end,
         height = 220,
-        isEnabled = selectedIndicatorExists,
+        isEnabled = Ui.SelectedIndicatorExists,
         expandWith = function()
-            return isAppearanceSectionExpanded() and selectedIndicatorTypeIn({ 'icon', 'square', 'bar' })
+            return isAppearanceSectionExpanded() and Ui.SelectedIndicatorTypeIn({ 'icon', 'square', 'bar' })
         end
     })
     trackSetting(indicatorPositionSetting)
@@ -892,18 +749,18 @@ local function buildDesignerEqol(parentCategory)
         step = 1,
         formatter = Util.FormatForDisplay,
         get = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             return indicator and indicator.Size or 25
         end,
         set = function(value)
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if not indicator then return end
             indicator.Size = value
-            updateAfterDesignerChange(false)
+            Ui.UpdateAfterDesignerChange(false)
         end,
-        isEnabled = selectedIndicatorExists,
+        isEnabled = Ui.SelectedIndicatorExists,
         expandWith = function()
-            return isAppearanceSectionExpanded() and selectedIndicatorTypeIn({ 'icon', 'square', 'bar' })
+            return isAppearanceSectionExpanded() and Ui.SelectedIndicatorTypeIn({ 'icon', 'square', 'bar' })
         end
     })
     trackSetting(indicatorSizeSetting)
@@ -917,18 +774,18 @@ local function buildDesignerEqol(parentCategory)
         step = 1,
         formatter = Util.FormatForDisplay,
         get = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             return indicator and indicator.xOffset or 0
         end,
         set = function(value)
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if not indicator then return end
             indicator.xOffset = value
-            updateAfterDesignerChange(false)
+            Ui.UpdateAfterDesignerChange(false)
         end,
-        isEnabled = selectedIndicatorExists,
+        isEnabled = Ui.SelectedIndicatorExists,
         expandWith = function()
-            return isAppearanceSectionExpanded() and selectedIndicatorTypeIn({ 'icon', 'square' })
+            return isAppearanceSectionExpanded() and Ui.SelectedIndicatorTypeIn({ 'icon', 'square' })
         end
     })
     trackSetting(indicatorXOffsetSetting)
@@ -942,18 +799,18 @@ local function buildDesignerEqol(parentCategory)
         step = 1,
         formatter = Util.FormatForDisplay,
         get = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             return indicator and indicator.yOffset or 0
         end,
         set = function(value)
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if not indicator then return end
             indicator.yOffset = value
-            updateAfterDesignerChange(false)
+            Ui.UpdateAfterDesignerChange(false)
         end,
-        isEnabled = selectedIndicatorExists,
+        isEnabled = Ui.SelectedIndicatorExists,
         expandWith = function()
-            return isAppearanceSectionExpanded() and selectedIndicatorTypeIn({ 'icon', 'square' })
+            return isAppearanceSectionExpanded() and Ui.SelectedIndicatorTypeIn({ 'icon', 'square' })
         end
     })
     trackSetting(indicatorYOffsetSetting)
@@ -967,18 +824,18 @@ local function buildDesignerEqol(parentCategory)
         step = 1,
         formatter = Util.FormatForDisplay,
         get = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             return indicator and indicator.Offset or 0
         end,
         set = function(value)
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if not indicator then return end
             indicator.Offset = value
-            updateAfterDesignerChange(false)
+            Ui.UpdateAfterDesignerChange(false)
         end,
-        isEnabled = selectedIndicatorExists,
+        isEnabled = Ui.SelectedIndicatorExists,
         expandWith = function()
-            return isAppearanceSectionExpanded() and selectedIndicatorTypeIs('bar')
+            return isAppearanceSectionExpanded() and Ui.SelectedIndicatorTypeIs('bar')
         end
     })
     trackSetting(indicatorOffsetSetting)
@@ -988,18 +845,18 @@ local function buildDesignerEqol(parentCategory)
         name = L.LABEL_SHOW_SPARK,
         default = false,
         get = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             return indicator and indicator.showSpark or false
         end,
         set = function(value)
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if not indicator then return end
             indicator.showSpark = value
-            updateAfterDesignerChange(false)
+            Ui.UpdateAfterDesignerChange(false)
         end,
-        isEnabled = selectedIndicatorExists,
+        isEnabled = Ui.SelectedIndicatorExists,
         expandWith = function()
-            return isAppearanceSectionExpanded() and selectedIndicatorTypeIs('bar')
+            return isAppearanceSectionExpanded() and Ui.SelectedIndicatorTypeIs('bar')
         end
     })
     trackSetting(indicatorShowSparkSetting)
@@ -1008,21 +865,21 @@ local function buildDesignerEqol(parentCategory)
         key = 'indicatorLayerPriority',
         name = L.LABEL_LAYER_PRIORITY,
         default = 'Normal',
-        values = getDropdownValues('indicatorLayer'),
+        values = Ui.GetDropdownValues('indicatorLayer'),
         get = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             return indicator and indicator.LayerPriority or 'Normal'
         end,
         set = function(value)
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if not indicator then return end
             indicator.LayerPriority = value
-            updateAfterDesignerChange(false)
+            Ui.UpdateAfterDesignerChange(false)
         end,
         height = 120,
-        isEnabled = selectedIndicatorExists,
+        isEnabled = Ui.SelectedIndicatorExists,
         expandWith = function()
-            return isAppearanceSectionExpanded() and selectedIndicatorExists()
+            return isAppearanceSectionExpanded() and Ui.SelectedIndicatorExists()
         end
     })
     trackSetting(indicatorLayerPrioritySetting)
@@ -1036,18 +893,18 @@ local function buildDesignerEqol(parentCategory)
         step = 1,
         formatter = Util.FormatForDisplay,
         get = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             return indicator and indicator.borderWidth or 3
         end,
         set = function(value)
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if not indicator then return end
             indicator.borderWidth = value
-            updateAfterDesignerChange(false)
+            Ui.UpdateAfterDesignerChange(false)
         end,
-        isEnabled = selectedIndicatorExists,
+        isEnabled = Ui.SelectedIndicatorExists,
         expandWith = function()
-            return isAppearanceSectionExpanded() and selectedIndicatorTypeIs('healthColor')
+            return isAppearanceSectionExpanded() and Ui.SelectedIndicatorTypeIs('healthColor')
         end
     })
     trackSetting(indicatorBorderWidthSetting)
@@ -1057,21 +914,21 @@ local function buildDesignerEqol(parentCategory)
         name = L.LABEL_BORDER_PLACEMENT,
         desc = L.DESC_BORDER_PLACEMENT_HINT,
         default = 'Inset',
-        values = getDropdownValues('borderPlacement'),
+        values = Ui.GetDropdownValues('borderPlacement'),
         get = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             return indicator and indicator.borderPlacement or 'Inset'
         end,
         set = function(value)
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if not indicator then return end
             indicator.borderPlacement = value
-            updateAfterDesignerChange(false)
+            Ui.UpdateAfterDesignerChange(false)
         end,
         height = 120,
-        isEnabled = selectedIndicatorExists,
+        isEnabled = Ui.SelectedIndicatorExists,
         expandWith = function()
-            return isAppearanceSectionExpanded() and selectedIndicatorTypeIs('healthColor')
+            return isAppearanceSectionExpanded() and Ui.SelectedIndicatorTypeIs('healthColor')
         end
     })
     trackSetting(indicatorBorderPlacementSetting)
@@ -1080,21 +937,21 @@ local function buildDesignerEqol(parentCategory)
         key = 'barScale',
         name = L.LABEL_BAR_SCALE,
         default = 'Full',
-        values = getDropdownValues('barScale'),
+        values = Ui.GetDropdownValues('barScale'),
         get = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             return indicator and indicator.Scale or 'Full'
         end,
         set = function(value)
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if not indicator then return end
             indicator.Scale = value
-            updateAfterDesignerChange(false)
+            Ui.UpdateAfterDesignerChange(false)
         end,
         height = 140,
-        isEnabled = selectedIndicatorExists,
+        isEnabled = Ui.SelectedIndicatorExists,
         expandWith = function()
-            return isAppearanceSectionExpanded() and selectedIndicatorTypeIs('bar')
+            return isAppearanceSectionExpanded() and Ui.SelectedIndicatorTypeIs('bar')
         end
     })
     trackSetting(barScaleSetting)
@@ -1103,21 +960,21 @@ local function buildDesignerEqol(parentCategory)
         key = 'barOrientation',
         name = L.LABEL_BAR_ORIENTATION,
         default = 'Horizontal',
-        values = getDropdownValues('barOrientation'),
+        values = Ui.GetDropdownValues('barOrientation'),
         get = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             return indicator and indicator.Orientation or 'Horizontal'
         end,
         set = function(value)
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if not indicator then return end
             indicator.Orientation = value
-            updateAfterDesignerChange(false)
+            Ui.UpdateAfterDesignerChange(false)
         end,
         height = 140,
-        isEnabled = selectedIndicatorExists,
+        isEnabled = Ui.SelectedIndicatorExists,
         expandWith = function()
-            return isAppearanceSectionExpanded() and selectedIndicatorTypeIs('bar')
+            return isAppearanceSectionExpanded() and Ui.SelectedIndicatorTypeIs('bar')
         end
     })
     trackSetting(barOrientationSetting)
@@ -1128,7 +985,7 @@ local function buildDesignerEqol(parentCategory)
             { key = 'main', label = L.LABEL_COLOR }
         },
         getColor = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if indicator and indicator.Color then
                 local c = indicator.Color
                 return c.r or 1, c.g or 1, c.b or 1, c.a or 1
@@ -1136,15 +993,15 @@ local function buildDesignerEqol(parentCategory)
             return 1, 1, 1, 1
         end,
         setColor = function(_, r, g, b, a)
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if not indicator then return end
             indicator.Color = { r = r, g = g, b = b, a = a }
-            updateAfterDesignerChange(false)
+            Ui.UpdateAfterDesignerChange(false)
         end,
         hasOpacity = true,
-        isEnabled = selectedIndicatorExists,
+        isEnabled = Ui.SelectedIndicatorExists,
         expandWith = function()
-            return isAppearanceSectionExpanded() and selectedIndicatorTypeIn({ 'square', 'bar', 'healthColor' })
+            return isAppearanceSectionExpanded() and Ui.SelectedIndicatorTypeIn({ 'square', 'bar', 'healthColor' })
         end
     })
 
@@ -1154,7 +1011,7 @@ local function buildDesignerEqol(parentCategory)
             { key = 'background', label = L.LABEL_BACKGROUND_COLOR }
         },
         getColor = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if indicator and indicator.BackgroundColor then
                 local c = indicator.BackgroundColor
                 return c.r or 0, c.g or 0, c.b or 0, c.a or 0.8
@@ -1162,15 +1019,15 @@ local function buildDesignerEqol(parentCategory)
             return 0, 0, 0, 0.8
         end,
         setColor = function(_, r, g, b, a)
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if not indicator then return end
             indicator.BackgroundColor = { r = r, g = g, b = b, a = a }
-            updateAfterDesignerChange(false)
+            Ui.UpdateAfterDesignerChange(false)
         end,
         hasOpacity = true,
-        isEnabled = selectedIndicatorExists,
+        isEnabled = Ui.SelectedIndicatorExists,
         expandWith = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if not indicator then
                 return false
             end
@@ -1192,7 +1049,7 @@ local function buildDesignerEqol(parentCategory)
         name = L.DESIGNER_COOLDOWN_SECTION,
         expanded = true,
         expandWith = function()
-            return selectedIndicatorTypeIn({ 'square', 'healthColor', 'icon' })
+            return Ui.SelectedIndicatorTypeIn({ 'square', 'healthColor', 'icon' })
         end
     })
 
@@ -1213,18 +1070,18 @@ local function buildDesignerEqol(parentCategory)
         name = L.LABEL_SHOW_COOLDOWN,
         default = false,
         get = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             return indicator and indicator.showCooldown or false
         end,
         set = function(value)
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if not indicator then return end
             indicator.showCooldown = value
-            updateAfterDesignerChange(false)
+            Ui.UpdateAfterDesignerChange(false)
         end,
-        isEnabled = selectedIndicatorExists,
+        isEnabled = Ui.SelectedIndicatorExists,
         expandWith = function()
-            return isCooldownSectionExpanded() and selectedIndicatorTypeIn({ 'square', 'healthColor' })
+            return isCooldownSectionExpanded() and Ui.SelectedIndicatorTypeIn({ 'square', 'healthColor' })
         end
     })
     trackSetting(indicatorShowCooldownSetting)
@@ -1233,21 +1090,21 @@ local function buildDesignerEqol(parentCategory)
         key = 'indicatorBorderCooldownDirection',
         name = L.LABEL_COOLDOWN_DIRECTION,
         default = 'Clockwise',
-        values = getDropdownValues('borderCooldownDirection'),
+        values = Ui.GetDropdownValues('borderCooldownDirection'),
         get = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             return indicator and indicator.borderCooldownDirection or 'Clockwise'
         end,
         set = function(value)
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if not indicator then return end
             indicator.borderCooldownDirection = value
-            updateAfterDesignerChange(false)
+            Ui.UpdateAfterDesignerChange(false)
         end,
         height = 120,
-        isEnabled = selectedIndicatorExists,
+        isEnabled = Ui.SelectedIndicatorExists,
         expandWith = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             return isCooldownSectionExpanded() and indicator and indicator.Type == 'healthColor' and indicator.showCooldown
         end
     })
@@ -1257,21 +1114,21 @@ local function buildDesignerEqol(parentCategory)
         key = 'indicatorBorderCooldownStartCorner',
         name = L.LABEL_COOLDOWN_START_CORNER,
         default = 'TOPRIGHT',
-        values = getDropdownValues('borderCooldownStartCorner'),
+        values = Ui.GetDropdownValues('borderCooldownStartCorner'),
         get = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             return indicator and indicator.borderCooldownStartCorner or 'TOPRIGHT'
         end,
         set = function(value)
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if not indicator then return end
             indicator.borderCooldownStartCorner = value
-            updateAfterDesignerChange(false)
+            Ui.UpdateAfterDesignerChange(false)
         end,
         height = 140,
-        isEnabled = selectedIndicatorExists,
+        isEnabled = Ui.SelectedIndicatorExists,
         expandWith = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             return isCooldownSectionExpanded() and indicator and indicator.Type == 'healthColor' and indicator.showCooldown
         end
     })
@@ -1281,21 +1138,21 @@ local function buildDesignerEqol(parentCategory)
         key = 'indicatorCooldownStyle',
         name = L.LABEL_COOLDOWN_STYLE,
         default = 'Swipe',
-        values = getDropdownValues('squareCooldownStyle'),
+        values = Ui.GetDropdownValues('squareCooldownStyle'),
         get = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             return indicator and indicator.cooldownStyle or 'Swipe'
         end,
         set = function(value)
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if not indicator then return end
             indicator.cooldownStyle = value
-            updateAfterDesignerChange(false)
+            Ui.UpdateAfterDesignerChange(false)
         end,
         height = 120,
-        isEnabled = selectedIndicatorExists,
+        isEnabled = Ui.SelectedIndicatorExists,
         expandWith = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             return isCooldownSectionExpanded() and indicator and indicator.Type == 'square' and indicator.showCooldown
         end
     })
@@ -1305,21 +1162,21 @@ local function buildDesignerEqol(parentCategory)
         key = 'indicatorDepleteDirection',
         name = L.LABEL_DEPLETE_DIRECTION,
         default = 'Right to Left',
-        values = getDropdownValues('squareDepleteDirection'),
+        values = Ui.GetDropdownValues('squareDepleteDirection'),
         get = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             return indicator and indicator.depleteDirection or 'Right to Left'
         end,
         set = function(value)
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if not indicator then return end
             indicator.depleteDirection = value
-            updateAfterDesignerChange(false)
+            Ui.UpdateAfterDesignerChange(false)
         end,
         height = 160,
-        isEnabled = selectedIndicatorExists,
+        isEnabled = Ui.SelectedIndicatorExists,
         expandWith = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             return isCooldownSectionExpanded() and indicator
                 and indicator.Type == 'square'
                 and indicator.showCooldown
@@ -1333,21 +1190,21 @@ local function buildDesignerEqol(parentCategory)
         name = L.LABEL_SHOW_COOLDOWN_TEXT,
         default = true,
         get = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if not indicator then
                 return true
             end
             return indicator.showCooldownText ~= false
         end,
         set = function(value)
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if not indicator then return end
             indicator.showCooldownText = value
-            updateAfterDesignerChange(false)
+            Ui.UpdateAfterDesignerChange(false)
         end,
-        isEnabled = selectedIndicatorExists,
+        isEnabled = Ui.SelectedIndicatorExists,
         expandWith = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             return isCooldownSectionExpanded() and indicator and indicator.Type == 'square' and indicator.showCooldown
         end
     })
@@ -1358,7 +1215,7 @@ local function buildDesignerEqol(parentCategory)
         name = L.LABEL_SHOW_COOLDOWN_TEXT,
         default = true,
         get = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if not indicator then
                 return true
             end
@@ -1370,15 +1227,15 @@ local function buildDesignerEqol(parentCategory)
             return indicator.showCooldownText ~= false
         end,
         set = function(value)
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if not indicator then return end
             indicator.showCooldownText = value
             indicator.showText = value
-            updateAfterDesignerChange(false)
+            Ui.UpdateAfterDesignerChange(false)
         end,
-        isEnabled = selectedIndicatorExists,
+        isEnabled = Ui.SelectedIndicatorExists,
         expandWith = function()
-            return isCooldownSectionExpanded() and selectedIndicatorTypeIs('icon')
+            return isCooldownSectionExpanded() and Ui.SelectedIndicatorTypeIs('icon')
         end
     })
     trackSetting(indicatorShowTextSetting)
@@ -1388,21 +1245,21 @@ local function buildDesignerEqol(parentCategory)
         name = L.LABEL_SHOW_TEXTURE,
         default = true,
         get = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if not indicator then
                 return true
             end
             return indicator.showTexture ~= false
         end,
         set = function(value)
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if not indicator then return end
             indicator.showTexture = value
-            updateAfterDesignerChange(false)
+            Ui.UpdateAfterDesignerChange(false)
         end,
-        isEnabled = selectedIndicatorExists,
+        isEnabled = Ui.SelectedIndicatorExists,
         expandWith = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if not (isCooldownSectionExpanded() and indicator and indicator.Type == 'icon') then
                 return false
             end
@@ -1425,18 +1282,18 @@ local function buildDesignerEqol(parentCategory)
         step = 0.1,
         formatter = Util.FormatForDisplay,
         get = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             return indicator and indicator.textSize or 1
         end,
         set = function(value)
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
             if not indicator then return end
             indicator.textSize = value
-            updateAfterDesignerChange(false)
+            Ui.UpdateAfterDesignerChange(false)
         end,
-        isEnabled = selectedIndicatorExists,
+        isEnabled = Ui.SelectedIndicatorExists,
         expandWith = function()
-            local indicator = getSelectedIndicator()
+            local indicator = Ui.GetSelectedIndicator()
 
             if indicator and indicator.Type == 'icon' then
                 return isAppearanceSectionExpanded()
@@ -1452,12 +1309,56 @@ local function buildDesignerEqol(parentCategory)
     })
     trackSetting(indicatorTextSizeSetting)
 
-    createImportExportControls(EQOL, category, setSelectedIndicatorIndex, updateAfterDesignerChange)
+    EQOL:CreateHeader(category, {
+        name = L.DESIGNER_IMPORT_EXPORT_HEADER
+    })
 
-    updateAfterDesignerChange(false)
+    EQOL:CreateButton(category, {
+        key = 'exportCurrentSpecIndicators',
+        text = L.DESIGNER_EXPORT_SPEC_INDICATORS,
+        click = function()
+            local spec = Ui.EnsureEditingSpec()
+            local exportString, errorText = Ui.DesignerExportSpecIndicators(spec)
+            if not exportString then
+                Ui.PrintDesignerMessage(errorText or L.DESIGNER_EXPORT_FAILED)
+                return
+            end
+
+            Util.DisplayPopupTextbox(string.format(L.DESIGNER_EXPORT_POPUP_TITLE_FMT, spec), exportString)
+        end
+    })
+
+    EQOL:CreateButton(category, {
+        key = 'importCurrentSpecIndicators',
+        text = L.DESIGNER_IMPORT_SPEC_INDICATORS,
+        click = function()
+            local spec = Ui.EnsureEditingSpec()
+            Ui.ShowDesignerImportPopup(spec, function(importText)
+
+                local result, errorText = Ui.DesignerImportSpecIndicators(spec, importText)
+                if result then
+                    SavedIndicators[spec] = result.indicators
+
+                    if #result.indicators > 0 then
+                        Ui.SetSelectedIndicatorIndex(1)
+                    else
+                        Options.designerSelectedIndicatorIndex = nil
+                        Ui.UpdateAfterDesignerChange(true)
+                    end
+
+                    if result.invalidCount and result.invalidCount > 0 then
+                        Ui.PrintDesignerMessage(string.format(L.DESIGNER_IMPORT_PARTIAL_FMT, #result.indicators, result.totalCount, result.invalidCount))
+                    else
+                        Ui.PrintDesignerMessage(string.format(L.DESIGNER_IMPORT_SUCCESS_FMT, #result.indicators))
+                    end
+                else
+                    Ui.PrintDesignerMessage(errorText or L.DESIGNER_IMPORT_INVALID)
+                end
+
+            end)
+        end
+    })
+
+    Ui.UpdateAfterDesignerChange(false)
     return category
-end
-
-function Ui.CreateDesignerCategory(parentCategory)
-    return buildDesignerEqol(parentCategory)
 end

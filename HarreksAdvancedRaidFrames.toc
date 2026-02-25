@@ -1,8 +1,8 @@
 ## Interface: 120000, 120001
 ## Title: Harreks Advanced Raid Frames
 ## Author: Harrek
-## Version: 2.1.1
-## Notes: Functionality enhancement for party and raid frames
+## Version: 2.2.0
+## Notes: Functionality enhancement for default party and raid frames
 ## IconTexture: Interface/Addons/HarreksAdvancedRaidFrames/Assets/harrek-logo.png
 ## Category: Unit Frames
 ## SavedVariables: HARFDB
@@ -50,19 +50,8 @@ Utility/Helpers.lua
 Utility/Visuals.lua
 Utility/Debug.lua
 
-Core/Engines/Common.lua
-Core/Engines/Druid.lua
-Core/Engines/Evoker.lua
-Core/Engines/Monk.lua
-Core/Engines/Paladin.lua
-Core/Engines/Priest.lua
-Core/Engines/Shaman.lua
 Core/Engines.lua
 Core/Options.lua
 Core/Trackers.lua
 
 Main.lua
-
-External/Api.lua
-External/Grid2Plugin.lua
-External/ExternalFramesPlugin.lua

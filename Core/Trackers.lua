@@ -24,9 +24,6 @@ function Core.InstallTrackers()
     if not Core.CastTracker then
         local castTracker = CreateFrame('Frame')
         castTracker:RegisterUnitEvent('UNIT_SPELLCAST_SUCCEEDED', 'player')
-        castTracker:RegisterUnitEvent('UNIT_SPELLCAST_EMPOWER_STOP', 'player')
-        castTracker:RegisterUnitEvent('UNIT_SPELLCAST_CHANNEL_STOP', 'player')
-        castTracker:RegisterUnitEvent('UNIT_SPELLCAST_CHANNEL_START', 'player')
         castTracker:SetScript('OnEvent', function(_, event, _, _, spellId)
             local state = Data.state
             if Util.IsSupportedSpec(Data.playerSpec) then --Getting some weird triggers on casts before the player logs in
@@ -35,10 +32,6 @@ function Core.InstallTrackers()
 
                 if event == 'UNIT_SPELLCAST_SUCCEEDED' then
                     if specInfo.casts[spellId] then
-                        state.casts[spellId] = timestamp
-                    end
-                elseif event == 'UNIT_SPELLCAST_EMPOWER_STOP' then
-                    if specInfo.empowers and specInfo.empowers[spellId] then
                         state.casts[spellId] = timestamp
                     end
                 end
@@ -55,28 +48,6 @@ function Core.InstallTrackers()
         stateTracker:RegisterEvent('ACTIVE_PLAYER_SPECIALIZATION_CHANGED')
         stateTracker:RegisterEvent('ACTIVE_TALENT_GROUP_CHANGED')
 
-        local function HandlePlayerSpecializationChanged()
-            local previousSpec = Data.playerSpec
-            Util.UpdatePlayerSpec()
-            if previousSpec == Data.playerSpec then
-                return
-            end
-
-            Util.MapOutUnits()
-
-            if Ui.DesignerTrackedSettings then
-                for _, setting in ipairs(Ui.DesignerTrackedSettings) do
-                    if setting and setting.NotifyUpdate then
-                        setting:NotifyUpdate()
-                    end
-                end
-            end
-
-            if Ui.RefreshDesignerPreview then
-                Ui.RefreshDesignerPreview()
-            end
-        end
-
         stateTracker:SetScript('OnEvent', function(self, event, unitTarget)
             if event == 'PLAYER_LOGIN' then
                 Util.DebugData(Data.state, 'State')
@@ -86,13 +57,13 @@ function Core.InstallTrackers()
                 if not Options.editingSpec or not Data.specInfo[Options.editingSpec] then
                     Options.editingSpec = Data.playerSpec
                 end
-                Util.MapEngineFunctions()
 
                 local spotlightFrame = Ui.GetSpotlightFrame()
 
                 Ui.CreateOptionsPanel(Data.settings)
 
                 Core.ModifySettings()
+
                 local LEM = (LibEQOL and LibEQOL.EditMode) or LibStub('LibEQOLEditMode-1.0')
 
                 if not Options.spotlight then
@@ -192,9 +163,9 @@ function Core.InstallTrackers()
             elseif event == 'GROUP_ROSTER_UPDATE' then
                 Core.ModifySettings()
             elseif event == 'ACTIVE_PLAYER_SPECIALIZATION_CHANGED' or event == 'ACTIVE_TALENT_GROUP_CHANGED' then
-                HandlePlayerSpecializationChanged()
+                Util.HandlePlayerSpecializationChanged()
             elseif event == 'PLAYER_SPECIALIZATION_CHANGED' and unitTarget and UnitIsUnit(unitTarget, 'player') then
-                HandlePlayerSpecializationChanged()
+                Util.HandlePlayerSpecializationChanged()
             end
         end)
     end

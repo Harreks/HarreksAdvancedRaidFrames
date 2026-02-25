@@ -7,40 +7,6 @@ local API = NS.API
 local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
-local function Print(message)
-    print('|cnNORMAL_FONT_COLOR:AdvancedRaidFrames|r: ' .. message)
-end
-
-local function ResetAddonDataAndReload()
-    if not HARFDB then
-        return
-    end
-
-    HARFDB.options = HARFDB.options or {}
-    HARFDB.savedIndicators = HARFDB.savedIndicators or {}
-
-    wipe(HARFDB.options)
-    wipe(HARFDB.savedIndicators)
-    HARFDB.debugProfile = { enabled = false, stats = {} }
-    HARFDB.version = NS.Version
-
-    Print('Addon data reset. Reloading UI...')
-    ReloadUI()
-end
-
-StaticPopupDialogs['HARF_CONFIRM_RESET_DB'] = {
-    text = 'Reset Advanced Raid Frames data? This will clear options and saved indicators.',
-    button1 = ACCEPT,
-    button2 = CANCEL,
-    OnAccept = function()
-        ResetAddonDataAndReload()
-    end,
-    timeout = 0,
-    whileDead = true,
-    hideOnEscape = true,
-    preferredIndex = 3,
-}
-
 function Core.ToggleMinimapIcon(value, _, _)
     local LibDBIcon = LibStub('LibDBIcon-1.0')
     if value then
@@ -48,36 +14,6 @@ function Core.ToggleMinimapIcon(value, _, _)
     else
         LibDBIcon:Hide('HARF')
     end
-end
-
-function Core.ToggleProfiling()
-    local currentlyEnabled = Util.IsProfileEnabled()
-    Util.SetProfileEnabled(not currentlyEnabled)
-    if currentlyEnabled then
-        Print('Profiling disabled.')
-    else
-        Print('Profiling enabled.')
-    end
-end
-
-function Core.PrintProfilingStats()
-    if not Util.IsProfileEnabled() then
-        Print('Profiling is disabled. Enable it first to collect fresh metrics.')
-    end
-    Util.PrintProfileStats()
-end
-
-function Core.ResetProfilingStats()
-    Util.ResetProfileStats()
-    Print('Profiling stats reset.')
-end
-
-function Core.ConfirmResetDatabase()
-    if InCombatLockdown() then
-        Print('Cannot reset data in combat.')
-        return
-    end
-    StaticPopup_Show('HARF_CONFIRM_RESET_DB')
 end
 
 function Core.OpenSpotlightEditMode()
@@ -207,7 +143,10 @@ function Core.ColorNames(value, unit, elements)
             customName:SetScale(nameFrame:GetScale())
             customName:SetFont(font, size, flags)
             customName:SetWordWrap(false)
-            customName:SetWidth(nameFrame:GetWidth())
+            local nameWidth = nameFrame:GetWidth()
+            if not issecretvalue(nameWidth) then
+                customName:SetWidth(nameWidth)
+            end
             if string.find(elements.frame, 'Raid') then
                 customName:SetJustifyH('CENTER')
                 customName:SetPoint('CENTER', nameFrame, 'CENTER')

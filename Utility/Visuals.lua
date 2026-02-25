@@ -6,19 +6,13 @@ local API = NS.API
 local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
-local pairs = pairs
-local ipairs = ipairs
-local wipe = wipe
-local next = next
-local type = type
-
 local GetAuraDataByAuraInstanceID = C_UnitAuras.GetAuraDataByAuraInstanceID
 local GetAuraDuration = C_UnitAuras.GetAuraDuration
 
-local function GetFirstSpellForSpec(spec)
+function Util.GetFirstSpellForSpec(spec)
     if spec and Data.specInfo[spec] and Data.specInfo[spec].auras then
-        for spell, _ in pairs(Data.specInfo[spec].auras) do
-            return spell
+        for _, spellData in pairs(Data.specInfo[spec].auras) do
+            return spellData.name
         end
     end
 end
@@ -61,9 +55,9 @@ function Util.NormalizeSavedIndicators()
                     end
 
                     if not indicatorData.Spell then
-                        indicatorData.Spell = GetFirstSpellForSpec(spec)
-                            or GetFirstSpellForSpec(Options.editingSpec)
-                            or GetFirstSpellForSpec(Data.playerSpec)
+                        indicatorData.Spell = Util.GetFirstSpellForSpec(spec)
+                            or Util.GetFirstSpellForSpec(Options.editingSpec)
+                            or Util.GetFirstSpellForSpec(Data.playerSpec)
                     end
                 end
             end
@@ -72,7 +66,6 @@ function Util.NormalizeSavedIndicators()
 end
 
 function Util.UpdateIndicatorsForUnit(unit, updateInfo)
-    local profileStart = Util.ProfileStart()
     local unitList = Util.GetRelevantList()
     local auras = Data.state.auras[unit]
     local elements = unitList[unit]
@@ -274,17 +267,8 @@ function Util.UpdateIndicatorsForUnit(unit, updateInfo)
         if elements.indicatorOverlay then
             elements.indicatorOverlay:UpdateIndicators(elements.auras, elements.auraDurations)
         end
-        if #elements.extraFrames > 0 then
-            for _, extraFrameData in ipairs(elements.extraFrames) do
-                if extraFrameData.indicatorOverlay then
-                    extraFrameData.indicatorOverlay:UpdateIndicators(elements.auras, elements.auraDurations)
-                end
-            end
-        end
-        API.Callbacks:Fire('HARF_UNIT_AURA', unit, elements.auras)
     end
 
-    Util.ProfileStop('UpdateIndicatorsForUnit', profileStart)
 end
 
 --What a stupid fucking function to have to write
@@ -381,9 +365,9 @@ function Util.GetDefaultSettingsForIndicator(indicatorType)
         end
     end
 
-    data.Spell = GetFirstSpellForSpec(Options.editingSpec or Data.playerSpec)
-        or GetFirstSpellForSpec(Options.editingSpec)
-        or GetFirstSpellForSpec(Data.playerSpec)
+    data.Spell = Util.GetFirstSpellForSpec(Options.editingSpec or Data.playerSpec)
+        or Util.GetFirstSpellForSpec(Options.editingSpec)
+        or Util.GetFirstSpellForSpec(Data.playerSpec)
 
     return data
 end

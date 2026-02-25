@@ -28,17 +28,16 @@ Data.specInfo = {
         display = 'Preservation Evoker',
         class = 'EVOKER',
         auras = {
-            Echo = { points = 2, raid = true, ric = true, ext = false, disp = false }, -- ID: 364343
-            Reversion = { points = 3, raid = true, ric = true, ext = false, disp = true }, -- ID: 366155
-            EchoReversion = { points = 3, raid = false, ric = true, ext = false, disp = true }, -- ID: 367364
-            DreamBreath = { points = 3, raid = false, ric = true, ext = false, disp = false }, -- ID: 355941
-            EchoDreamBreath = { points = 3 - 4 , raid = false, ric = true, ext = false, disp = false }, -- ID: 376788
-            TimeDilation = { points = 2, raid = true, ric = true, ext = true, disp = false }, -- ID: 357170
-            Rewind = { points = 4, raid = true, ric = true, ext = false, disp = false }, -- ID: 363534
-            DreamFlight = { points = 2, raid = false, ric = true, ext = false, disp = false }, -- ID: 363502
-            --DreamFlightSelf = { points = 9, raid = true, ric = false, ext = false, disp = false }, -- ID: 359816
-            Lifebind = { points = 1 - 2, raid = false, ric = true, ext = false, disp = false }, -- ID: 373267
-            VerdantEmbrace = { points = 1, raid = false, ric = true, ext = false, disp = false }, -- ID: 409895
+            [364343] = { name = 'Echo', raid = true, ric = true, ext = false, disp = false },
+            [366155] = { name = 'Reversion', raid = true, ric = true, ext = false, disp = true },
+            [367364] = { name = 'EchoReversion', raid = false, ric = true, ext = false, disp = true },
+            [355941] = { name = 'DreamBreath', raid = false, ric = true, ext = false, disp = false },
+            [376788] = { name = 'EchoDreamBreath', raid = false, ric = true, ext = false, disp = false },
+            [357170] = { name = 'TimeDilation', raid = true, ric = true, ext = true, disp = false, secret = true },
+            [363534] = { name = 'Rewind', raid = true, ric = true, ext = false, disp = false, secret = true },
+            [363502] = { name = 'DreamFlight', raid = false, ric = true, ext = false, disp = false },
+            [373267] = { name = 'Lifebind', raid = false, ric = true, ext = false, disp = false },
+            [409895] = { name = 'VerdantEmbrace', raid = false, ric = true, ext = false, disp = false, secret = true },
         },
         casts = {
             [364343] = { 'Echo' },
@@ -59,13 +58,13 @@ Data.specInfo = {
         display = 'Augmentation Evoker',
         class = 'EVOKER',
         auras = {
-            Prescience = { points = 3, raid = false, ric = true, ext = false, disp = false }, -- ID: 410089
-            ShiftingSands = { points = 2, raid = false, ric = true, ext = false, disp = false }, -- ID: 413984
-            BlisteringScales = { points = 2, raid = true, ric = true, ext = false, disp = false }, -- ID: 360827
-            InfernosBlessing = { points = 0, raid = false, ric = true, ext = false, disp = false }, -- ID: 410263
-            SymbioticBloom = { points = 1, raid = false, ric = true, ext = false, disp = false }, -- ID: 410686
-            EbonMight = { points = 3, raid = true, ric = true, ext = false, disp = false }, -- ID: 395152
-            SensePower = { points = 0, raid = false, ric = false, ext = false, disp = false }, -- ID: 0
+            [410089] = { name = 'Prescience', points = 3, raid = false, ric = true, ext = false, disp = false },
+            [413984] = { name = 'ShiftingSands', points = 2, raid = false, ric = true, ext = false, disp = false },
+            [360827] = { name = 'BlisteringScales', points = 2, raid = true, ric = true, ext = false, disp = false },
+            [410263] = { name = 'InfernosBlessing', points = 0, raid = false, ric = true, ext = false, disp = false },
+            [410686] = { name = 'SymbioticBloom', points = 1, raid = false, ric = true, ext = false, disp = false },
+            [395152] = { name = 'EbonMight', points = 3, raid = true, ric = true, ext = false, disp = false },
+            [0] = { name = 'SensePower', points = 0, raid = false, ric = false, ext = false, disp = false },
         },
         casts = {
             [409311] = { 'Prescience' },
@@ -85,12 +84,12 @@ Data.specInfo = {
         display = 'Restoration Druid',
         class = 'DRUID',
         auras = {
-            Lifebloom = { points = 1 - 2, raid = true, ric = true, ext = false, disp = true }, -- ID: 33763
-            Rejuvenation = { points = 1, raid = true, ric = true, ext = false, disp = true }, -- ID: 774
-            Regrowth = { points = 3, raid = true, ric = true, ext = false, disp = true }, -- ID: 8936
-            Germination = { points = 1, raid = false, ric = true, ext = false, disp = true }, -- ID: 155777
-            WildGrowth = { points = 2, raid = true, ric = true, ext = false, disp = true }, -- ID: 48438
-            IronBark = { points = 2, raid = true, ric = true, ext = true, disp = false }, -- ID: 102342
+            [33763] = { name = 'Lifebloom', raid = true, ric = true, ext = false, disp = true },
+            [774] = { name = 'Rejuvenation', raid = true, ric = true, ext = false, disp = true },
+            [8936] = { name = 'Regrowth', raid = true, ric = true, ext = false, disp = true },
+            [155777] = { name = 'Germination', raid = false, ric = true, ext = false, disp = true },
+            [48438] = { name = 'WildGrowth', raid = true, ric = true, ext = false, disp = true },
+            [102342] = { name = 'IronBark', raid = true, ric = true, ext = true, disp = false },
         },
         casts = {
             [774] = { 'Rejuvenation', 'Germination' },
@@ -105,12 +104,12 @@ Data.specInfo = {
         display = 'Discipline Priest',
         class = 'PRIEST',
         auras = {
-            PowerWordShield = { points = 2, raid = true, ric = true, ext = false, disp = true }, -- ID: 17
-            Atonement = { points = 0, raid = false, ric = true, ext = false, disp = false }, -- ID: 194384
-            PainSuppression = { points = 0, raid = true, ric = true, ext = true, disp = false }, -- ID: 33206
-            VoidShield = { points = 3, raid = false, ric = true, ext = false, disp = true }, -- ID: 1253593
-            PrayerOfMending = { points = 1, raid = false, ric = true, ext = false, disp = true }, -- ID: 41635
-            PowerInfusion = { points = 2, raid = true, ric = false, ext = false, disp = true }, -- ID: 10060
+            [17] = { name = 'PowerWordShield', points = 2, raid = true, ric = true, ext = false, disp = true },
+            [194384] = { name = 'Atonement', points = 0, raid = false, ric = true, ext = false, disp = false },
+            [33206] = { name = 'PainSuppression', points = 0, raid = true, ric = true, ext = true, disp = false },
+            [1253593] = { name = 'VoidShield', points = 3, raid = false, ric = true, ext = false, disp = true },
+            [41635] = { name = 'PrayerOfMending', points = 1, raid = false, ric = true, ext = false, disp = true },
+            [10060] = { name = 'PowerInfusion', points = 2, raid = true, ric = false, ext = false, disp = true },
         },
         casts = {
             [17] = { 'Atonement', 'PowerWordShield', 'PrayerOfMending' }, --PW: Shield
@@ -129,11 +128,11 @@ Data.specInfo = {
         display = 'Holy Priest',
         class = 'PRIEST',
         auras = {
-            Renew = { points = 2, raid = false, ric = true, ext = false, disp = true }, -- ID: 139
-            EchoOfLight = { points = 1, raid = false, ric = true, ext = false, disp = false }, -- ID: 77489
-            GuardianSpirit = { points = 3, raid = true, ric = true, ext = true, disp = false }, -- ID: 47788
-            PrayerOfMending = { points = 1, raid = false, ric = true, ext = false, disp = true }, -- ID: 41635
-            PowerInfusion = { points = 2, raid = true, ric = false, ext = false, disp = true }, -- ID: 10060
+            [139] = { name = 'Renew', points = 2, raid = false, ric = true, ext = false, disp = true },
+            [77489] = { name = 'EchoOfLight', points = 1, raid = false, ric = true, ext = false, disp = false },
+            [47788] = { name = 'GuardianSpirit', points = 3, raid = true, ric = true, ext = true, disp = false },
+            [41635] = { name = 'PrayerOfMending', points = 1, raid = false, ric = true, ext = false, disp = true },
+            [10060] = { name = 'PowerInfusion', points = 2, raid = true, ric = false, ext = false, disp = true },
         },
         casts = {
             [2061] = { 'Renew' }, --Flash Heal
@@ -152,12 +151,13 @@ Data.specInfo = {
         display = 'Mistweaver Monk',
         class = 'MONK',
         auras = {
-            RenewingMist = { points = 2, raid = false, ric = true, ext = false, disp = true }, -- ID: 119611
-            EnvelopingMist = { points = 3, raid = true, ric = true, ext = false, disp = true }, -- ID: 124682
-            SoothingMist = { points = 3, raid = true, ric = true, ext = false, disp = false }, -- ID: 115175
-            LifeCocoon = { points = 3, raid = true, ric = true, ext = true, disp = false }, -- ID: 116849
-            AspectOfHarmony = { points = 2, raid = false, ric = true, ext = false, disp = false }, -- ID: 450769
-            StrengthOfTheBlackOx = { points = 3, raid = false, ric = true, ext = false, disp = true } -- ID: 443113
+            [119611] = { name = 'RenewingMist', raid = false, ric = true, ext = false, disp = true },
+            [124682] = { name = 'EnvelopingMist', raid = true, ric = true, ext = false, disp = true },
+            [115175] = { name = 'SoothingMist', raid = true, ric = true, ext = false, disp = false },
+            [116849] = { name = 'LifeCocoon', raid = true, ric = true, ext = true, disp = false },
+            [450769] = { name = 'AspectOfHarmony', raid = false, ric = true, ext = false, disp = false },
+            [443113] = { name = 'StrengthOfTheBlackOx', raid = false, ric = true, ext = false, disp = true },
+            [406139] = { name = 'ChiCocoon', raid = false, ric = true, ext = false, disp = true }
         },
         casts = {
             [124682] = { 'EnvelopingMist', 'RenewingMist' },
@@ -173,8 +173,8 @@ Data.specInfo = {
         display = 'Restoration Shaman',
         class = 'SHAMAN',
         auras = {
-            Riptide = { points = 2, raid = true, ric = true, ext = false, disp = true }, -- ID: 61295
-            EarthShield = { points = 3, raid = false, ric = true, ext = false, disp = true }, -- ID: 383648
+            [61295] = { name = 'Riptide', points = 2, raid = true, ric = true, ext = false, disp = true },
+            [383648] = { name = 'EarthShield', points = 3, raid = false, ric = true, ext = false, disp = true },
         },
         casts = {
             [61295] = { 'Riptide' },
@@ -186,15 +186,16 @@ Data.specInfo = {
         display = 'Holy Paladin',
         class = 'PALADIN',
         auras = {
-            BeaconOfFaith = { points = 7, raid = true, ric = true, ext = false, disp = false }, -- ID: 156910
-            EternalFlame = { points = 3, raid = true, ric = true, ext = false, disp = true }, -- ID: 156322
-            BeaconOfLight = { points = 6, raid = true, ric = true, ext = false, disp = false }, -- ID: 53563
-            BlessingOfProtection = { points = 0, raid = true, ric = true, ext = true, disp = true }, -- ID: 1022
-            HolyBulwark = { points = 5 - 6, raid = false, ric = true, ext = false, disp = false }, -- ID: 432496
-            SacredWeapon = { points = 5, raid = false, ric = true, ext = false, disp = false }, -- ID: 432502
-            BlessingOfSacrifice = { points = 9, raid = true, ric = true, ext = true, disp = false }, -- ID: 6940
-            BeaconOfVirtue = { points = 4, raid = true, ric = false, ext = false, disp = false }, -- ID: 200025
-            BeaconOfTheSavior = { points = 7, raid = false, ric = true, ext = false, disp = false }, -- ID: 1244893
+            [156910] = { name = 'BeaconOfFaith', points = 7, raid = true, ric = true, ext = false, disp = false },
+            [156322] = { name = 'EternalFlame', points = 3, raid = true, ric = true, ext = false, disp = true },
+            [53563] = { name = 'BeaconOfLight', points = 6, raid = true, ric = true, ext = false, disp = false },
+            [1022] = { name = 'BlessingOfProtection', points = 0, raid = true, ric = true, ext = true, disp = true },
+            [432496] = { name = 'HolyBulwark', points = 5 - 6, raid = false, ric = true, ext = false, disp = false },
+            [432502] = { name = 'SacredWeapon', points = 5, raid = false, ric = true, ext = false, disp = false },
+            [6940] = { name = 'BlessingOfSacrifice', points = 9, raid = true, ric = true, ext = true, disp = false },
+            [200025] = { name = 'BeaconOfVirtue', points = 4, raid = true, ric = false, ext = false, disp = false },
+            [1244893] = { name = 'BeaconOfTheSavior', points = 7, raid = false, ric = true, ext = false, disp = false },
+            [431381] = { name = 'Dawnlight', raid = false, ric = true, ext = false, disp = false }
         },
         casts = {
             [156910] = { 'BeaconOfFaith' },
@@ -244,11 +245,12 @@ function Data.GetLocalizedSpecDisplay(specKey)
 
     if GetSpecializationInfoForClassID and specData.classID and specData.specIndex then
         local specID, name = GetSpecializationInfoForClassID(specData.classID, specData.specIndex)
+        local classInfo = C_CreatureInfo.GetClassInfo(specData.classID)
         if specID and not specData.specID then
             specData.specID = specID
         end
-        if name and name ~= '' then
-            return name
+        if name and name ~= '' and classInfo and classInfo.className then
+            return name .. ' ' .. classInfo.className
         end
     end
 

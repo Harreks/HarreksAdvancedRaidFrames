@@ -7,26 +7,32 @@ local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
 function Core.InstallTrackers()
-    if not Core.AuraTracker then
-        local auraTracker = CreateFrame('Frame')
-        auraTracker:SetSize(25, 25)
-        auraTracker:SetScript('OnEvent', function(_, _, unitId, auraUpdateInfo)
-            if Util.IsSupportedSpec(Data.playerSpec) and unitId and Util.GetRelevantList()[unitId] then
-                Core.UpdateAuraStatus(unitId, auraUpdateInfo)
+    --The aura trackers are per-unit, this is the most efficient way because the events only ever fire for valid units
+    --So even if we install trackers for raid40, they would simply never activate on a 5man party
+    --We also completely avoid all events that are not from group members this way
+    for groupType, units in pairs(Data.unitList) do
+        for unit, _ in pairs(units) do
+            local elements = Data.unitList[groupType][unit]
+            if not elements.tracker then
+                local tracker = CreateFrame('Frame')
+                tracker:SetScript('OnEvent', function(_, _, unitId, auraUpdateInfo)
+                    if Data.playerSpec then
+                        Core.UpdateAuraStatus(unitId, auraUpdateInfo)
+                    end
+                end)
+                tracker:RegisterUnitEvent('UNIT_AURA', unit)
+                elements.tracker = tracker
             end
-        end)
-
-        auraTracker:RegisterEvent('UNIT_AURA')
-
-        Core.AuraTracker = auraTracker
+        end
     end
 
+    --Cast tracker is to assist in identifying some auras that are still secret
     if not Core.CastTracker then
         local castTracker = CreateFrame('Frame')
         castTracker:RegisterUnitEvent('UNIT_SPELLCAST_SUCCEEDED', 'player')
         castTracker:SetScript('OnEvent', function(_, event, _, _, spellId)
             local state = Data.state
-            if Util.IsSupportedSpec(Data.playerSpec) then --Getting some weird triggers on casts before the player logs in
+            if Data.playerSpec then
                 local specInfo = Data.specInfo[Data.playerSpec]
                 local timestamp = GetTime()
 
@@ -40,6 +46,7 @@ function Core.InstallTrackers()
         Core.CastTracker = castTracker
     end
 
+    --State tracker to initialize settings and keep them updated
     if not Core.StateTracker then
         local stateTracker = CreateFrame('Frame')
         stateTracker:RegisterEvent('PLAYER_LOGIN')
@@ -50,9 +57,6 @@ function Core.InstallTrackers()
 
         stateTracker:SetScript('OnEvent', function(self, event, unitTarget)
             if event == 'PLAYER_LOGIN' then
-                Util.DebugData(Data.state, 'State')
-                Util.DebugData(Data.unitList, 'Units')
-                Util.DebugData(SavedIndicators, 'Indicators')
                 Util.UpdatePlayerSpec()
                 if not Options.editingSpec or not Data.specInfo[Options.editingSpec] then
                     Options.editingSpec = Data.playerSpec
@@ -64,20 +68,7 @@ function Core.InstallTrackers()
 
                 Core.ModifySettings()
 
-                local LEM = (LibEQOL and LibEQOL.EditMode) or LibStub('LibEQOLEditMode-1.0')
-
-                if not Options.spotlight then
-                    Options.spotlight = {
-                        pos = { p = 'CENTER', x = 0, y = 0 },
-                        names = {},
-                        grow = 'right'
-                    }
-                end
-
-                if type(Options.spotlight.names) ~= 'table' then
-                    Options.spotlight.names = {}
-                end
-
+                local LEM = NS.LibEditMode
                 LEM:RegisterCallback('enter', function()
                     spotlightFrame:SetAlpha(1)
                 end)
@@ -108,36 +99,26 @@ function Core.InstallTrackers()
                 LEM:AddFrameSettings(spotlightFrame, {
                     {
                         name = 'Player List',
-                        kind = LEM.SettingType.MultiDropdown,
+                        kind = LEM.SettingType.Dropdown,
                         default = {},
                         desc = 'Select the players to be shown in the spotlight',
+                        multiple = true,
                         get = function()
-                            return (Options.spotlight and Options.spotlight.names) or {}
+                            local nameList = {}
+                            for name, _ in pairs(Options.spotlight.names) do
+                                table.insert(nameList, name)
+                            end
+                            return nameList
                         end,
-                        setSelected = function(_, value, shouldSelect)
-                            if not Options.spotlight then
-                                Options.spotlight = { pos = { p = 'CENTER', x = 0, y = 0 }, names = {}, grow = 'right' }
-                            end
-                            if type(Options.spotlight.names) ~= 'table' then
-                                Options.spotlight.names = {}
-                            end
-                            if shouldSelect then
-                                Options.spotlight.names[value] = true
-                            else
+                        set = function(_, value)
+                            if Options.spotlight.names[value] then
                                 Options.spotlight.names[value] = nil
+                            else
+                                Options.spotlight.names[value] = true
                             end
                             Util.MapSpotlightAnchors()
-                            if IsInRaid() and not InCombatLockdown() then
-                                Util.ReanchorSpotlights()
-                            end
                         end,
-                        optionfunc = function()
-                            local values = Util.GetSpotlightNames()
-                            if type(values) ~= 'table' then
-                                return {}
-                            end
-                            return values
-                        end
+                        values = Util.GetSpotlightNames
                     },
                     {
                         name = 'Grow Direction',
@@ -149,10 +130,6 @@ function Core.InstallTrackers()
                         end,
                         set = function(_, value)
                             Options.spotlight.grow = value
-                            if IsInRaid() and not InCombatLockdown() and Options.spotlight.names then
-                                Util.MapSpotlightAnchors()
-                                Util.ReanchorSpotlights()
-                            end
                         end,
                         values = {
                             { text = 'Right', value = 'right' },

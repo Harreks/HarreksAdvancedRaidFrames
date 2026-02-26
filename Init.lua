@@ -1,17 +1,17 @@
 --Initialize tables
-local _, NS = ...
+local addonName, NS = ...
 NS.Data = {}
 NS.Ui = {}
 NS.Util = {}
 NS.Core = {}
 NS.API = {}
-NS.Version = '2.2.0'
+NS.Version = C_AddOns.GetAddOnMetadata(addonName, 'Version')
 NS.Debug = false
 
 --Initialize saved variables
 HARFDB = HARFDB or {}
 if HARFDB.version ~= NS.Version then
-    --HARFDB = {}
+    HARFDB = {}
     HARFDB.version = NS.Version
 end
 if not HARFDB.options then HARFDB.options = {} end

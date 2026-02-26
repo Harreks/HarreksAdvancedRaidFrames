@@ -24,14 +24,10 @@ Data.defaultUnitData = {
     frame = nil,
     buffs = {},
     debuffs = {},
-    auras = {},
-    auraInstanceMap = {},
-    auraDurations = {},
     centerIcon = nil,
     name = nil,
     isColored = false,
-    defensive = { type = 'defensive', frame = nil },
-    extraFrames = {}
+    defensive = { type = 'defensive', frame = nil }
 }
 
 --Build a list of units to store data for each group member

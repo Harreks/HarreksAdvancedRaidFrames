@@ -6,17 +6,6 @@ local Core = NS.Core
 local L = NS.L
 local Options = HARFDB.options
 
-function Ui.GenerateMinimapIcon(categoryId)
-    local HarfLDB = LibStub("LibDataBroker-1.1"):NewDataObject("HARF", {
-        type = 'data source',
-        text = 'Harrek\'s Advanced Raid Frames',
-        icon = 'Interface/Addons/HarreksAdvancedRaidFrames/Assets/harrek-logo.png',
-        OnClick = function() Settings.OpenToCategory(categoryId) end
-    })
-    local LibDBIcon = LibStub("LibDBIcon-1.0")
-    LibDBIcon:Register('HARF', HarfLDB, Options.minimapButton)
-end
-
 function Ui.GetOptionsIntroPanel()
     if not Ui.OptionsIntroPanel then
         local optionsIntroPanel = CreateFrame('Frame')
@@ -25,7 +14,7 @@ function Ui.GetOptionsIntroPanel()
         local title = optionsIntroPanel:CreateFontString(nil, 'ARTWORK', 'GameFontNormal')
         title:SetScale(1.5)
         title:SetPoint('TOP', optionsIntroPanel, 'TOP', 0, -10)
-        title:SetText(string.format(L.MENU_INTRO_TITLE_FMT, NS.Version))
+        title:SetText('Advanced Raid Frames v' .. NS.Version)
 
         local logo = optionsIntroPanel:CreateTexture(nil, "ARTWORK")
         logo:SetTexture('Interface/Addons/HarreksAdvancedRaidFrames/Assets/harrek-logo.png')
@@ -33,41 +22,46 @@ function Ui.GetOptionsIntroPanel()
         logo:SetPoint('TOP', title, 'TOP', 0, -30)
         optionsIntroPanel.logo = logo
 
-        local fontString = optionsIntroPanel:CreateFontString(nil, 'ARTWORK', 'GameFontNormal')
-        fontString:SetPoint('TOP', logo, 'BOTTOM', 0, -10)
-        fontString:SetPoint('LEFT', optionsIntroPanel, 'LEFT', 24, 0)
-        fontString:SetPoint('RIGHT', optionsIntroPanel, 'RIGHT', -24, 0)
-        fontString:SetJustifyH('CENTER')
-        fontString:SetScale(1.15)
-        fontString:SetWordWrap(true)
-        local text = L.MENU_INTRO_BODY
-        fontString:SetText(text)
-        optionsIntroPanel.text = fontString
+        local introText = optionsIntroPanel:CreateFontString(nil, 'ARTWORK', 'GameFontNormal')
+        introText:SetPoint('TOP', logo, 'BOTTOM', 0, -20)
+        introText:SetWidth(400)
+        introText:SetJustifyH('CENTER')
+        introText:SetScale(1.15)
+        introText:SetWordWrap(true)
+        local text = [[Advanced Raid Frames is a simple and straightforward way to enhance the default party and raid frames. The main focus is functionality and the goal is to avoid all the fluff and the need to navigate through a lot of different menus. You should find it incredibly simple to set up but still powerful enough to do anything you might need to properly play the game.
+
+If you have any questions, feedback, or bug reports please come by the SpiritbloomPro discord and let me know. The project is constantly evolving and improving and that is made possible thanks to you.
+
+-Harrek
+
+|cFFFFFFFFTo open the designer directly, use the command|r /harf des]]
+        introText:SetText(text)
+        optionsIntroPanel.text = introText
 
         optionsIntroPanel.buttons = {}
         local patreonButton = CreateFrame("Button", nil, optionsIntroPanel, "UIPanelButtonTemplate")
         patreonButton:SetSize(120, 30)
-        patreonButton:SetText(L.MENU_BUTTON_PATREON)
-        patreonButton:SetPoint('TOP', fontString, 'BOTTOM', 0, -20)
+        patreonButton:SetText('Patreon')
+        patreonButton:SetPoint('BOTTOM', optionsIntroPanel, 'BOTTOM', 0, 50)
         patreonButton:SetScript("OnClick", function()
-            Util.DisplayPopupTextbox(L.MENU_POPUP_PATREON_TITLE, 'https://www.patreon.com/cw/harrek')
+            Util.DisplayPopupTextbox('Harrek\'s Patreon', 'https://www.patreon.com/cw/harrek')
         end)
         optionsIntroPanel.buttons.Patreon = patreonButton
 
         local discordButton = CreateFrame("Button", nil, optionsIntroPanel, "UIPanelButtonTemplate")
         discordButton:SetSize(120, 30)
-        discordButton:SetText(L.MENU_BUTTON_DISCORD)
+        discordButton:SetText('Discord')
         discordButton:SetPoint('RIGHT', patreonButton, 'LEFT', -50, 0)
         discordButton:SetScript("OnClick", function()
-            Util.DisplayPopupTextbox(L.MENU_POPUP_DISCORD_TITLE, 'https://discord.gg/MMjNrUTxQe')
+            Util.DisplayPopupTextbox('Spiritbloom.Pro Discord', 'https://discord.gg/MMjNrUTxQe')
         end)
 
         local kofiButton = CreateFrame("Button", nil, optionsIntroPanel, "UIPanelButtonTemplate")
         kofiButton:SetSize(120, 30)
-        kofiButton:SetText(L.MENU_BUTTON_KOFI)
+        kofiButton:SetText('Ko-fi')
         kofiButton:SetPoint('LEFT', patreonButton, 'RIGHT', 50, 0)
         kofiButton:SetScript("OnClick", function()
-            Util.DisplayPopupTextbox(L.MENU_POPUP_KOFI_TITLE, 'https://ko-fi.com/harrek')
+            Util.DisplayPopupTextbox('Buy me a Coffee', 'https://ko-fi.com/harrek')
         end)
 
     end
@@ -161,23 +155,33 @@ end
 
 function Ui.CreateOptionsPanel(optionsTable)
     local optionsIntroPanel = Ui.GetOptionsIntroPanel()
-    local category = Settings.RegisterCanvasLayoutCategory(optionsIntroPanel, L.MENU_CATEGORY_ADDON)
+    local category = Settings.RegisterCanvasLayoutCategory(optionsIntroPanel, 'Advanced Raid Frames')
     Settings.RegisterAddOnCategory(category)
 
-    local defaultFramesSubcategory, defaultFramesLayout = Settings.RegisterVerticalLayoutSubcategory(category, L.MENU_CATEGORY_DEFAULT_FRAMES)
+    local defaultFramesSubcategory, defaultFramesLayout = Settings.RegisterVerticalLayoutSubcategory(category, 'Default Frames')
     Settings.RegisterAddOnCategory(defaultFramesSubcategory)
 
-    optionsIntroPanel:HookScript('OnShow', function() Options.lastOpenedCategory = category.ID end)
     for _, data in ipairs(optionsTable) do
         Ui.CreateOptionsElement(data, { category = defaultFramesSubcategory, layout = defaultFramesLayout })
     end
 
-    Ui.CreateDesignerCategory(category)
+    local designer = Ui.GetDesignerFrame()
+    local designerSubCategory = Settings.RegisterCanvasLayoutSubcategory(category, designer, 'Designer')
+    Settings.RegisterAddOnCategory(designerSubCategory)
 
+    Data.addonSettingsCategory = category.ID
     SLASH_HARREKSADVANCEDRAIDFRAMES1 = "/harf"
-    SlashCmdList.HARREKSADVANCEDRAIDFRAMES = function()
-        Settings.OpenToCategory(category.ID)
+    SlashCmdList.HARREKSADVANCEDRAIDFRAMES = function(msg)
+        if msg and msg == 'des' then
+            Settings.OpenToCategory(designerSubCategory.ID)
+        else
+            Settings.OpenToCategory(category.ID)
+        end
     end
+end
 
-    Ui.GenerateMinimapIcon(category.ID)
+function AdvancedRaidFrames_CompartmentClick()
+    if Data.addonSettingsCategory then
+        Settings.OpenToCategory(Data.addonSettingsCategory)
+    end
 end

@@ -7,37 +7,24 @@ local API = NS.API
 local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
-local CLASS_ID_BY_TOKEN = {
-    WARRIOR = 1,
-    PALADIN = 2,
-    HUNTER = 3,
-    ROGUE = 4,
-    PRIEST = 5,
-    DEATHKNIGHT = 6,
-    SHAMAN = 7,
-    MAGE = 8,
-    WARLOCK = 9,
-    MONK = 10,
-    DRUID = 11,
-    DEMONHUNTER = 12,
-    EVOKER = 13,
-}
-
+--All the data about spec buffs we could possibly need
+--Most of this isn't needed as of the great Midnight de-secreting but i still keep it just in case
+--Added extra parameters to parse only some of the auras so i can keep tracking some secret stuff
 Data.specInfo = {
     PreservationEvoker = {
         display = 'Preservation Evoker',
         class = 'EVOKER',
         auras = {
-            [364343] = { name = 'Echo', raid = true, ric = true, ext = false, disp = false },
-            [366155] = { name = 'Reversion', raid = true, ric = true, ext = false, disp = true },
-            [367364] = { name = 'EchoReversion', raid = false, ric = true, ext = false, disp = true },
-            [355941] = { name = 'DreamBreath', raid = false, ric = true, ext = false, disp = false },
-            [376788] = { name = 'EchoDreamBreath', raid = false, ric = true, ext = false, disp = false },
-            [357170] = { name = 'TimeDilation', raid = true, ric = true, ext = true, disp = false, secret = true },
-            [363534] = { name = 'Rewind', raid = true, ric = true, ext = false, disp = false, secret = true },
-            [363502] = { name = 'DreamFlight', raid = false, ric = true, ext = false, disp = false },
-            [373267] = { name = 'Lifebind', raid = false, ric = true, ext = false, disp = false },
-            [409895] = { name = 'VerdantEmbrace', raid = false, ric = true, ext = false, disp = false, secret = true },
+            [364343] = { name = 'Echo', signature = '1:1:0:0' },
+            [366155] = { name = 'Reversion', signature = '1:1:0:1' },
+            [367364] = { name = 'EchoReversion', signature = '0:1:0:1' },
+            [355941] = { name = 'DreamBreath', signature = '0:1:0:0' },
+            [376788] = { name = 'EchoDreamBreath', signature = '0:1:0:0' },
+            [357170] = { name = 'TimeDilation', signature = '1:1:1:0', secret = true },
+            [363534] = { name = 'Rewind', signature = '1:1:0:0', secret = true },
+            [363502] = { name = 'DreamFlight', signature = '0:1:0:0' },
+            [373267] = { name = 'Lifebind', signature = '0:1:0:0' },
+            [409895] = { name = 'VerdantEmbrace', signature = '0:1:0:0', secret = true },
         },
         casts = {
             [364343] = { 'Echo' },
@@ -58,13 +45,13 @@ Data.specInfo = {
         display = 'Augmentation Evoker',
         class = 'EVOKER',
         auras = {
-            [410089] = { name = 'Prescience', points = 3, raid = false, ric = true, ext = false, disp = false },
-            [413984] = { name = 'ShiftingSands', points = 2, raid = false, ric = true, ext = false, disp = false },
-            [360827] = { name = 'BlisteringScales', points = 2, raid = true, ric = true, ext = false, disp = false },
-            [410263] = { name = 'InfernosBlessing', points = 0, raid = false, ric = true, ext = false, disp = false },
-            [410686] = { name = 'SymbioticBloom', points = 1, raid = false, ric = true, ext = false, disp = false },
-            [395152] = { name = 'EbonMight', points = 3, raid = true, ric = true, ext = false, disp = false },
-            [0] = { name = 'SensePower', points = 0, raid = false, ric = false, ext = false, disp = false },
+            [410089] = { name = 'Prescience', signature = '0:1:0:0' },
+            [413984] = { name = 'ShiftingSands', signature = '0:1:0:0' },
+            [360827] = { name = 'BlisteringScales', signature = '1:1:0:0' },
+            [410263] = { name = 'InfernosBlessing', signature = '0:1:0:0' },
+            [410686] = { name = 'SymbioticBloom', signature = '0:1:0:0' },
+            [395152] = { name = 'EbonMight', signature = '' },
+            [0] = { name = 'SensePower', signature = '' },
         },
         casts = {
             [409311] = { 'Prescience' },
@@ -84,12 +71,12 @@ Data.specInfo = {
         display = 'Restoration Druid',
         class = 'DRUID',
         auras = {
-            [33763] = { name = 'Lifebloom', raid = true, ric = true, ext = false, disp = true },
-            [774] = { name = 'Rejuvenation', raid = true, ric = true, ext = false, disp = true },
-            [8936] = { name = 'Regrowth', raid = true, ric = true, ext = false, disp = true },
-            [155777] = { name = 'Germination', raid = false, ric = true, ext = false, disp = true },
-            [48438] = { name = 'WildGrowth', raid = true, ric = true, ext = false, disp = true },
-            [102342] = { name = 'IronBark', raid = true, ric = true, ext = true, disp = false },
+            [33763] = { name = 'Lifebloom', signature = '1:1:0:1' },
+            [774] = { name = 'Rejuvenation', signature = '1:1:0:1' },
+            [8936] = { name = 'Regrowth', signature = '1:1:0:1' },
+            [155777] = { name = 'Germination', signature = '0:1:0:1' },
+            [48438] = { name = 'WildGrowth', signature = '1:1:0:1' },
+            [102342] = { name = 'IronBark', signature = '1:1:1:0', secret = true },
         },
         casts = {
             [774] = { 'Rejuvenation', 'Germination' },
@@ -104,12 +91,12 @@ Data.specInfo = {
         display = 'Discipline Priest',
         class = 'PRIEST',
         auras = {
-            [17] = { name = 'PowerWordShield', points = 2, raid = true, ric = true, ext = false, disp = true },
-            [194384] = { name = 'Atonement', points = 0, raid = false, ric = true, ext = false, disp = false },
-            [33206] = { name = 'PainSuppression', points = 0, raid = true, ric = true, ext = true, disp = false },
-            [1253593] = { name = 'VoidShield', points = 3, raid = false, ric = true, ext = false, disp = true },
-            [41635] = { name = 'PrayerOfMending', points = 1, raid = false, ric = true, ext = false, disp = true },
-            [10060] = { name = 'PowerInfusion', points = 2, raid = true, ric = false, ext = false, disp = true },
+            [17] = { name = 'PowerWordShield', signature = '1:1:0:1' },
+            [194384] = { name = 'Atonement', signature = '0:1:0:0' },
+            [33206] = { name = 'PainSuppression', signature = '1:1:1:0', secret = true },
+            [1253593] = { name = 'VoidShield', signature = '' },
+            [41635] = { name = 'PrayerOfMending', signature = '0:1:0:1' },
+            [10060] = { name = 'PowerInfusion', signature = '1:0:0:1', secret = true },
         },
         casts = {
             [17] = { 'Atonement', 'PowerWordShield', 'PrayerOfMending' }, --PW: Shield
@@ -128,11 +115,11 @@ Data.specInfo = {
         display = 'Holy Priest',
         class = 'PRIEST',
         auras = {
-            [139] = { name = 'Renew', points = 2, raid = false, ric = true, ext = false, disp = true },
-            [77489] = { name = 'EchoOfLight', points = 1, raid = false, ric = true, ext = false, disp = false },
-            [47788] = { name = 'GuardianSpirit', points = 3, raid = true, ric = true, ext = true, disp = false },
-            [41635] = { name = 'PrayerOfMending', points = 1, raid = false, ric = true, ext = false, disp = true },
-            [10060] = { name = 'PowerInfusion', points = 2, raid = true, ric = false, ext = false, disp = true },
+            [139] = { name = 'Renew', signature = '0:1:0:1' },
+            [77489] = { name = 'EchoOfLight', signature = '0:1:0:0' },
+            [47788] = { name = 'GuardianSpirit', signature = '1:1:1:0', secret = true },
+            [41635] = { name = 'PrayerOfMending', signature = '0:1:0:1' },
+            [10060] = { name = 'PowerInfusion', signature = '1:0:0:1', secret = true },
         },
         casts = {
             [2061] = { 'Renew' }, --Flash Heal
@@ -151,13 +138,13 @@ Data.specInfo = {
         display = 'Mistweaver Monk',
         class = 'MONK',
         auras = {
-            [119611] = { name = 'RenewingMist', raid = false, ric = true, ext = false, disp = true },
-            [124682] = { name = 'EnvelopingMist', raid = true, ric = true, ext = false, disp = true },
-            [115175] = { name = 'SoothingMist', raid = true, ric = true, ext = false, disp = false },
-            [116849] = { name = 'LifeCocoon', raid = true, ric = true, ext = true, disp = false },
-            [450769] = { name = 'AspectOfHarmony', raid = false, ric = true, ext = false, disp = false },
-            [443113] = { name = 'StrengthOfTheBlackOx', raid = false, ric = true, ext = false, disp = true },
-            [406139] = { name = 'ChiCocoon', raid = false, ric = true, ext = false, disp = true }
+            [119611] = { name = 'RenewingMist', signature = '0:1:0:1' },
+            [124682] = { name = 'EnvelopingMist', signature = '1:1:0:1' },
+            [115175] = { name = 'SoothingMist', signature = '1:1:0:0' },
+            [116849] = { name = 'LifeCocoon', signature = '1:1:1:0', secret = true },
+            [450769] = { name = 'AspectOfHarmony', signature = '0:1:0:0' },
+            [443113] = { name = 'StrengthOfTheBlackOx', signature = '0:1:0:1', secret = true }, --TODO fix this match
+            [406139] = { name = 'ChiCocoon', signature = '0:1:0:1', secret = true }
         },
         casts = {
             [124682] = { 'EnvelopingMist', 'RenewingMist' },
@@ -173,8 +160,9 @@ Data.specInfo = {
         display = 'Restoration Shaman',
         class = 'SHAMAN',
         auras = {
-            [61295] = { name = 'Riptide', points = 2, raid = true, ric = true, ext = false, disp = true },
-            [383648] = { name = 'EarthShield', points = 3, raid = false, ric = true, ext = false, disp = true },
+            [61295] = { name = 'Riptide', signature = '1:1:0:1' },
+            [974] = { name = 'EarthShield', signature = '1:1:0:1' },
+            [383648] = { name = 'EarthShield', signature = '1:1:0:1' }
         },
         casts = {
             [61295] = { 'Riptide' },
@@ -186,16 +174,17 @@ Data.specInfo = {
         display = 'Holy Paladin',
         class = 'PALADIN',
         auras = {
-            [156910] = { name = 'BeaconOfFaith', points = 7, raid = true, ric = true, ext = false, disp = false },
-            [156322] = { name = 'EternalFlame', points = 3, raid = true, ric = true, ext = false, disp = true },
-            [53563] = { name = 'BeaconOfLight', points = 6, raid = true, ric = true, ext = false, disp = false },
-            [1022] = { name = 'BlessingOfProtection', points = 0, raid = true, ric = true, ext = true, disp = true },
-            [432496] = { name = 'HolyBulwark', points = 5 - 6, raid = false, ric = true, ext = false, disp = false },
-            [432502] = { name = 'SacredWeapon', points = 5, raid = false, ric = true, ext = false, disp = false },
-            [6940] = { name = 'BlessingOfSacrifice', points = 9, raid = true, ric = true, ext = true, disp = false },
-            [200025] = { name = 'BeaconOfVirtue', points = 4, raid = true, ric = false, ext = false, disp = false },
-            [1244893] = { name = 'BeaconOfTheSavior', points = 7, raid = false, ric = true, ext = false, disp = false },
-            [431381] = { name = 'Dawnlight', raid = false, ric = true, ext = false, disp = false }
+            [156910] = { name = 'BeaconOfFaith', signature = '1:1:0:0' },
+            [156322] = { name = 'EternalFlame', signature = '1:1:0:1' },
+            [53563] = { name = 'BeaconOfLight', signature = '1:1:0:0' },
+            [1022] = { name = 'BlessingOfProtection', signature = '1:1:1:1', secret = true },
+            --[432496] = { name = 'HolyBulwark', signature = '0:1:0:0', secret = true },
+            --[432502] = { name = 'SacredWeapon', signature = '0:1:0:0', secret = true },
+            [432502] = { name = 'HolyArmaments', signature = '0:1:0:0', secret = true }, --Both armaments look the same, we combine them to make my life easier
+            [6940] = { name = 'BlessingOfSacrifice', signature = '1:1:1:0', secret = true },
+            [200025] = { name = 'BeaconOfVirtue', signature = '1:0:0:0', secret = true },
+            [1244893] = { name = 'BeaconOfTheSavior', signature = '' },
+            [431381] = { name = 'Dawnlight', signature = '0:1:0:0', secret = true }
         },
         casts = {
             [156910] = { 'BeaconOfFaith' },
@@ -212,6 +201,7 @@ Data.specInfo = {
     },
 }
 
+--Each spec has a specific id, combined with the class token we can know what spec we're using without worrying about language
 Data.specMap = {
     DRUID_4 = 'RestorationDruid',
     SHAMAN_3 = 'RestorationShaman',
@@ -222,44 +212,3 @@ Data.specMap = {
     EVOKER_3 = 'AugmentationEvoker',
     MONK_2 = 'MistweaverMonk'
 }
-
-local function BuildSpecApiMapping()
-    for mapKey, specKey in pairs(Data.specMap) do
-        local classToken, specIndex = string.match(mapKey, '^(%u+)_(%d+)$')
-        local specData = Data.specInfo[specKey]
-
-        if classToken and specIndex and specData then
-            specData.specIndex = tonumber(specIndex)
-            specData.classID = CLASS_ID_BY_TOKEN[classToken] or CLASS_ID_BY_TOKEN[specData.class]
-        end
-    end
-end
-
-BuildSpecApiMapping()
-
-function Data.GetLocalizedSpecDisplay(specKey)
-    local specData = specKey and Data.specInfo and Data.specInfo[specKey]
-    if not specData then
-        return specKey
-    end
-
-    if GetSpecializationInfoForClassID and specData.classID and specData.specIndex then
-        local specID, name = GetSpecializationInfoForClassID(specData.classID, specData.specIndex)
-        local classInfo = C_CreatureInfo.GetClassInfo(specData.classID)
-        if specID and not specData.specID then
-            specData.specID = specID
-        end
-        if name and name ~= '' and classInfo and classInfo.className then
-            return name .. ' ' .. classInfo.className
-        end
-    end
-
-    if GetSpecializationNameForSpecID and specData.specID then
-        local localizedName = GetSpecializationNameForSpecID(specData.specID)
-        if localizedName and localizedName ~= '' then
-            return localizedName
-        end
-    end
-
-    return specData.display or specKey
-end

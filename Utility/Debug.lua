@@ -1,5 +1,13 @@
 local _, NS = ...
+local Data = NS.Data
+local Ui = NS.Ui
 local Util = NS.Util
+local Core = NS.Core
+local API = NS.API
+local SavedIndicators = HARFDB.savedIndicators
+local Options = HARFDB.options
+
+--TODO: Expand the debug options, let users export error data to share
 
 function Util.DebugData(data, name)
     if NS.Debug and DevTool then

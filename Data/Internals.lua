@@ -8,18 +8,22 @@ local L = NS.L
 local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
+--When we re-order frames for the spotlight we save what they are anchored to
 Data.spotlightAnchors = {
     spotlights = {},
     defaults = {},
 }
 
+--This handles a list of the current auras you have applied on each unit, your casts, and some extras for more complex tracking
 Data.state = {
     casts = {},
     auras = {},
     extras = {}
 }
 
+--These are the texture ids to show the icons on the designer
 Data.textures = {
+    --Pres
     Echo = 4622456,
     Reversion = 4630467,
     EchoReversion = 4630469,
@@ -30,6 +34,7 @@ Data.textures = {
     DreamFlight = 4622455,
     Lifebind = 4630453,
     VerdantEmbrace = 4622471,
+    --Aug
     Prescience = 5199639,
     ShiftingSands = 5199633,
     InfernosBlessing = 5199632,
@@ -37,6 +42,7 @@ Data.textures = {
     SensePower = 132160,
     SymbioticBloom = 4554354,
     BlisteringScales = 5199621,
+    --Priest
     PowerWordShield = 135940,
     Atonement = 458720,
     PainSuppression = 135936,
@@ -46,18 +52,24 @@ Data.textures = {
     GuardianSpirit = 237542,
     PrayerOfMending = 135944,
     PowerInfusion = 135939,
+    --Mw
     RenewingMist = 627487,
     EnvelopingMist = 775461,
     SoothingMist = 606550,
     LifeCocoon = 627485,
+    AspectOfHarmony = 5927638,
+    StrengthOfTheBlackOx = 615340,
+    --rDruid
     Rejuvenation = 136081,
     Regrowth = 136085,
     Lifebloom = 134206,
     Germination = 1033478,
     WildGrowth = 236153,
     IronBark = 572025,
+    --rSham
     Riptide = 252995,
     EarthShield = 136089,
+    --hPal
     BeaconOfFaith = 1030095,
     EternalFlame = 135433,
     BeaconOfLight = 236247,
@@ -66,101 +78,16 @@ Data.textures = {
     SacredWeapon = 5927637,
     BlessingOfSacrifice = 135966,
     BeaconOfVirtue = 1030094,
-    BeaconOfTheSavior = 7514188,
-    AspectOfHarmony = 5927638,
-    StrengthOfTheBlackOx = 615340
+    BeaconOfTheSavior = 7514188
 }
 
-Data.spellIds = {
-    Echo = 364343,
-    Reversion = 366155,
-    EchoReversion = 367364,
-    DreamBreath = 355941,
-    EchoDreamBreath = 376788,
-    TimeDilation = 357170,
-    Rewind = 363534,
-    DreamFlight = 363502,
-    Lifebind = 373267,
-    VerdantEmbrace = 409895,
-    Prescience = 410089,
-    ShiftingSands = 413984,
-    InfernosBlessing = 410263,
-    EbonMight = 395152,
-    SymbioticBloom = 410686,
-    BlisteringScales = 360827,
-    PowerWordShield = 17,
-    Atonement = 194384,
-    PainSuppression = 33206,
-    VoidShield = 1253593,
-    Renew = 139,
-    EchoOfLight = 77489,
-    GuardianSpirit = 47788,
-    PrayerOfMending = 41635,
-    PowerInfusion = 10060,
-    RenewingMist = 119611,
-    EnvelopingMist = 124682,
-    SoothingMist = 115175,
-    LifeCocoon = 116849,
-    Rejuvenation = 774,
-    Regrowth = 8936,
-    Lifebloom = 33763,
-    Germination = 155777,
-    WildGrowth = 48438,
-    IronBark = 102342,
-    Riptide = 61295,
-    EarthShield = 383648,
-    BeaconOfFaith = 156910,
-    EternalFlame = 156322,
-    BeaconOfLight = 53563,
-    BlessingOfProtection = 1022,
-    HolyBulwark = 432496,
-    SacredWeapon = 432502,
-    BlessingOfSacrifice = 6940,
-    BeaconOfVirtue = 200025,
-    BeaconOfTheSavior = 1244893,
-    AspectOfHarmony = 450769,
-    StrengthOfTheBlackOx = 443113
-}
-
+--This has all the data for the indicators the addon supports
 Data.indicatorTypes = {
     icon = {
-        display = L.INDICATOR_TYPE_ICON
-    },
-    square = {
-        display = L.INDICATOR_TYPE_SQUARE
-    },
-    bar = {
-        display = L.INDICATOR_TYPE_BAR
-    },
-    healthColor = {
-        display = L.INDICATOR_TYPE_BORDER
-    }
-}
-
-Data.indicatorTypeSettings = {
-    healthColor = {
+        display = 'Icon',
         defaults = {
-            Color = { r = 0, g = 1, b = 0, a = 1 },
-            LayerPriority = 'Normal',
-            showCooldown = false,
-            borderCooldownDirection = 'Clockwise',
-            borderCooldownStartCorner = 'TOPRIGHT',
-            borderWidth = 3,
-            borderPlacement = 'Inset'
-        },
-        controls = {
-            { controlType = 'SpellSelector', setting = 'Spell', row = 1 },
-            { controlType = 'ColorPicker', setting = 'Color', row = 1 },
-            { controlType = 'Checkbox', setting = 'showCooldown', text = 'Show Cooldown', row = 2 },
-            { controlType = 'Slider', sliderType = 'borderWidth', setting = 'borderWidth', row = 2 },
-            { controlType = 'Dropdown', dropdownType = 'borderPlacement', setting = 'borderPlacement', row = 3 }
-        }
-    },
-    icon = {
-        defaults = {
-            LayerPriority = 'Normal',
             Position = 'CENTER',
-            Size = 25,
+            iconSize = 25,
             xOffset = 0,
             yOffset = 0,
             textSize = 1,
@@ -170,72 +97,84 @@ Data.indicatorTypeSettings = {
         controls = {
             { controlType = 'SpellSelector', setting = 'Spell', row = 1 },
             { controlType = 'Dropdown', dropdownType = 'iconPosition', setting = 'Position', row = 1 },
-            { controlType = 'Slider', sliderType = 'iconSize', setting = 'Size', row = 1 },
-            { controlType = 'Slider', sliderType = 'xOffset', setting = 'xOffset', row = 1 },
-            { controlType = 'Slider', sliderType = 'yOffset', setting = 'yOffset', row = 1 },
-            { controlType = 'Slider', sliderType = 'textSize', setting = 'textSize', row = 2 },
+            { controlType = 'Slider', sliderType = 'iconSize', setting = 'iconSize', row = 1 },
+            { controlType = 'Slider', sliderType = 'textSize', setting = 'textSize', row = 1 },
+            { controlType = 'Slider', sliderType = 'xOffset', setting = 'xOffset', row = 2 },
+            { controlType = 'Slider', sliderType = 'yOffset', setting = 'yOffset', row = 2 },
             { controlType = 'Checkbox', setting = 'showText', text = 'Show Text', row = 2 },
             { controlType = 'Checkbox', setting = 'showTexture', text = 'Show Texture', row = 2 }
         }
     },
     square = {
+        display = 'Square',
         defaults = {
             Color = { r = 0, g = 1, b = 0, a = 1 },
-            BackgroundColor = { r = 0, g = 0, b = 0, a = 0.8 },
-            LayerPriority = 'Normal',
             Position = 'CENTER',
-            Size = 25,
+            iconSize = 25,
             xOffset = 0,
             yOffset = 0,
             textSize = 1,
             showText = false,
-                showCooldown = false,
-                showCooldownText = true,
-                cooldownStyle = 'Swipe',
-                depleteDirection = 'Right to Left'
+            showCooldown = false
         },
         controls = {
             { controlType = 'SpellSelector', setting = 'Spell', row = 1 },
-            { controlType = 'ColorPicker', setting = 'Color', row = 1 },
             { controlType = 'Dropdown', dropdownType = 'iconPosition', setting = 'Position', row = 1 },
-            { controlType = 'Slider', sliderType = 'iconSize', setting = 'Size', row = 1 },
+            { controlType = 'Slider', sliderType = 'iconSize', setting = 'iconSize', row = 1 },
             { controlType = 'Slider', sliderType = 'xOffset', setting = 'xOffset', row = 1 },
             { controlType = 'Slider', sliderType = 'yOffset', setting = 'yOffset', row = 1 },
             { controlType = 'Slider', sliderType = 'textSize', setting = 'textSize', row = 2 },
-            { controlType = 'Checkbox', setting = 'showCooldown', text = 'Show Cooldown', row = 2 },
-            { controlType = 'Checkbox', setting = 'showText', text = 'Show Text', row = 2 }
+            { controlType = 'ColorPicker', setting = 'Color', row = 2 },
+            { controlType = 'Checkbox', setting = 'showText', text = 'Show Text', row = 2 },
+            { controlType = 'Checkbox', setting = 'showCooldown', text = 'Show Cooldown', row = 2 }
         }
     },
     bar = {
+        display = 'Bar',
         defaults = {
             Color = { r = 0, g = 1, b = 0, a = 1 },
-            BackgroundColor = { r = 0, g = 0, b = 0, a = 0.8 },
-            LayerPriority = 'Normal',
-            showSpark = false,
             Position = 'TOPRIGHT',
             Scale = 'Full',
             Orientation = 'Horizontal',
-            Size = 15,
+            barSize = 15,
             Offset = 0
         },
         controls = {
             { controlType = 'SpellSelector', setting = 'Spell', row = 1 },
             { controlType = 'ColorPicker', setting = 'Color', row = 1 },
             { controlType = 'Dropdown', dropdownType = 'barPosition', setting = 'Position', row = 1 },
-            { controlType = 'Slider', sliderType = 'barSize', setting = 'Size', row = 1 },
+            { controlType = 'Slider', sliderType = 'barSize', setting = 'barSize', row = 1 },
             { controlType = 'Dropdown', dropdownType = 'barOrientation', setting = 'Orientation', row = 1 },
             { controlType = 'Dropdown', dropdownType = 'barScale', setting = 'Scale', row = 2 },
             { controlType = 'Slider', sliderType = 'offset', setting = 'Offset', row = 2 }
         }
+    },
+    border = {
+        display = 'Border',
+        defaults = {
+            Color = { r = 0, g = 1, b = 0, a = 1 },
+            borderWidth = 3
+        },
+        controls = {
+            { controlType = 'SpellSelector', setting = 'Spell', row = 1 },
+            { controlType = 'ColorPicker', setting = 'Color', row = 1 },
+            { controlType = 'Slider', sliderType = 'borderWidth', setting = 'borderWidth', row = 2 }
+        }
+    },
+    healthColor = {
+        display = 'Health Bar Color',
+        defaults = {
+            Color = { r = 0, g = 1, b = 0, a = 1 }
+        },
+        controls = {
+            { controlType = 'SpellSelector', setting = 'Spell', row = 1 },
+            { controlType = 'ColorPicker', setting = 'Color', row = 1 }
+        }
     }
 }
 
+--Different type of dropdown controls
 Data.dropdownOptions = {
-    indicatorLayer = {
-        text = 'Select Layer Priority',
-        default = 'Normal',
-        options = { 'Low', 'Normal', 'High', 'Top' }
-    },
     iconPosition = {
         text = 'Select Icon Position',
         default = 'CENTER',
@@ -260,29 +199,10 @@ Data.dropdownOptions = {
         text = 'Select Cooldown Style',
         default = 'Swipe',
         options = { 'Swipe', 'Deplete' }
-    },
-    squareDepleteDirection = {
-        text = 'Select Deplete Direction',
-        default = 'Right to Left',
-        options = { 'Right to Left', 'Left to Right', 'Top to Bottom', 'Bottom to Top' }
-    },
-    borderCooldownDirection = {
-        text = 'Select Cooldown Direction',
-        default = 'Clockwise',
-        options = { 'Clockwise', 'Anti-Clockwise' }
-    },
-    borderCooldownStartCorner = {
-        text = 'Select Cooldown Start Corner',
-        default = 'TOPRIGHT',
-        options = { 'TOPLEFT', 'TOPRIGHT', 'BOTTOMLEFT', 'BOTTOMRIGHT' }
-    },
-    borderPlacement = {
-        text = 'Select Border Placement',
-        default = 'Inset',
-        options = { 'Inset', 'Outset' }
-    },
+    }
 }
 
+--Presets default values for the different types of sliders
 Data.sliderPresets = {
     iconSize = {
         text = 'Size',
@@ -342,91 +262,76 @@ Data.sliderPresets = {
     }
 }
 
+--This is the data table for the default frames options of the addons
 Data.settings = {
     {
         key = 'clickThroughBuffs',
         type = 'checkbox',
-        text = L.OPTION_CLICK_THROUGH_AURAS,
+        text = 'Click Through Aura Icons',
         default = true,
-        tooltip = L.OPTION_CLICK_THROUGH_AURAS_TOOLTIP,
+        tooltip = 'Disables mouse interaction on the aura icons on the frame, letting you mouseover and click through them.',
         func = 'ToggleAurasMouseInteraction'
     },
     {
         key = 'buffIcons',
         type = 'slider',
-        text = L.OPTION_BUFF_ICONS,
+        text = 'Buff Icons',
         min = 0,
         max = 6,
         step = 1,
         default = 6,
-        tooltip = L.OPTION_BUFF_ICONS_TOOLTIP,
+        tooltip = 'Changes the maximum amount of buff icons on the default frames.',
         func = 'ToggleBuffIcons'
     },
     {
         key = 'debuffIcons',
         type = 'slider',
-        text = L.OPTION_DEBUFF_ICONS,
+        text = 'Debuff Icons',
         min = 0,
         max = 3,
         step = 1,
         default = 3,
-        tooltip = L.OPTION_DEBUFF_ICONS_TOOLTIP,
+        tooltip = 'Changes the maximum amount of debuff icons on the default frames.',
         func = 'ToggleDebuffIcons'
     },
     {
         key = 'frameTransparency',
         type = 'checkbox',
-        text = L.OPTION_FRAME_TRANSPARENCY,
+        text = 'Frame Transparency',
         default = false,
-        tooltip = L.OPTION_FRAME_TRANSPARENCY_TOOLTIP,
+        tooltip = 'Disabling frame transparency keeps the frame fully solid even when out of range.',
         func = 'SetGroupFrameTransparency'
     },
     {
         key = 'nameScale',
         type = 'slider',
-        text = L.OPTION_NAME_SIZE,
+        text = 'Name Size',
         min = 0.5,
         max = 3,
         step = 0.1,
         default = 1,
-        tooltip = L.OPTION_NAME_SIZE_TOOLTIP,
+        tooltip = 'Changes the size of the unit names.',
         func = 'ScaleNames'
     },
     {
         key = 'colorNames',
         type = 'checkbox',
-        text = L.OPTION_CLASS_COLORED_NAMES,
+        text = 'Class Colored Names',
         default = false,
-        tooltip = L.OPTION_CLASS_COLORED_NAMES_TOOLTIP,
+        tooltip = 'Replaces the unit name for class-colored ones.',
         func = 'ColorNames'
     },
-    {
-        key = 'spotlightHeader',
-        type = 'header',
-        text = L.SPOTLIGHT_SETTINGS_HEADER
-    },
-    {
-        key = 'spotlightOpenEditMode',
-        type = 'button',
-        text = L.SPOTLIGHT_SETTINGS_BUTTON_TITLE,
-        content = L.SPOTLIGHT_SETTINGS_BUTTON,
-        tooltip = L.SPOTLIGHT_SETTINGS_BUTTON_TOOLTIP,
-        func = 'OpenSpotlightEditMode'
-    },
+    --[[
     {
         key = 'miscOptionsHeader',
         type = 'header',
-        text = L.OPTION_MISC_HEADER
+        text = 'Misc.'
     },
-    {
-        key = 'showMinimapIcon',
-        type = 'checkbox',
-        text = L.OPTION_SHOW_MINIMAP_ICON,
-        default = true,
-        tooltip = L.OPTION_SHOW_MINIMAP_ICON_TOOLTIP,
-        func = 'ToggleMinimapIcon'
-    }
+    ]]
 }
 
+--Initializer list is used when we generate the menu, so we can parent some options to others
 Data.initializerList = {}
+--Player spec is checked constantly through the run to make sure we're using appropriate data
 Data.playerSpec = nil
+Data.auraSignatures = {}

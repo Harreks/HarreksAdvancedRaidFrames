@@ -6,36 +6,24 @@ local Core = NS.Core
 local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
-local IsAuraFilteredOutByInstanceID = C_UnitAuras.IsAuraFilteredOutByInstanceID
-
-local auraSignatureLookupBySpec = {}
-
-function Util.MakeAuraSignature(pointCount, passesRaid, passesRic, passesExt, passesDisp)
-    return pointCount .. ':'
-        .. (passesRaid and '1' or '0') .. ':'
-        .. (passesRic and '1' or '0') .. ':'
-        .. (passesExt and '1' or '0') .. ':'
-        .. (passesDisp and '1' or '0')
+function Util.MakeAuraSignature(passesRaid, passesRic, passesExt, passesDisp)
+    return (passesRaid and '1' or '0') .. ':' .. (passesRic and '1' or '0') .. ':' .. (passesExt and '1' or '0') .. ':' .. (passesDisp and '1' or '0')
 end
 
-function Util.GetAuraSignatureLookup(spec)
-    if auraSignatureLookupBySpec[spec] then
-        return auraSignatureLookupBySpec[spec]
-    end
-
-    local lookup = {}
-    local specData = Data.specInfo[spec]
-    if specData and specData.auras then
-        for _, auraData in pairs(specData.auras) do
-            if auraData.secret then
-                local signature = Util.MakeAuraSignature(auraData.raid, auraData.ric, auraData.ext, auraData.disp)
-                lookup[signature] = auraData.name
+function Util.GetAuraSignatures(spec)
+    if not Data.auraSignatures[spec] then
+        local signatures = {}
+        local specData = Data.specInfo[spec]
+        if specData and specData.auras then
+            for _, auraData in pairs(specData.auras) do
+                if auraData.secret then
+                    signatures[auraData.signature] = auraData.name
+                end
             end
         end
+        Data.auraSignatures[spec] = signatures
     end
-
-    auraSignatureLookupBySpec[spec] = lookup
-    return lookup
+    return Data.auraSignatures[spec]
 end
 
 --Function to format decimals out for display
@@ -92,7 +80,7 @@ function Util.GetSpotlightNames()
     local selectedNames = spotlight.names or {}
     local spotlightNameList = {}
     for name, _ in pairs(selectedNames) do
-        table_insert(spotlightNameList, { text = name })
+        table.insert(spotlightNameList, { text = name })
     end
 
     if IsInRaid() then
@@ -102,7 +90,7 @@ function Util.GetSpotlightNames()
             if UnitExists(unit) and not UnitIsUnit(unit, 'player') then
                 local unitName = UnitName(unit)
                 if unitName and unitName ~= '' and not selectedNames[unitName] then
-                    table_insert(spotlightNameList, { text = unitName })
+                    table.insert(spotlightNameList, { text = unitName })
                 end
             end
         end
@@ -127,9 +115,9 @@ function Util.MapSpotlightAnchors()
                 seenUnits[unit] = true
                 local unitName = UnitName(unit)
                 if unitName and units[unitName] then
-                    table_insert(Data.spotlightAnchors.spotlights, frameString)
+                    table.insert(Data.spotlightAnchors.spotlights, frameString)
                 else
-                    table_insert(Data.spotlightAnchors.defaults, frameString)
+                    table.insert(Data.spotlightAnchors.defaults, frameString)
                 end
             end
         end
@@ -198,18 +186,8 @@ function Util.HandlePlayerSpecializationChanged()
     Util.UpdatePlayerSpec()
     if previousSpec ~= Data.playerSpec then
         Util.MapOutUnits()
-
-        if Ui.DesignerTrackedSettings then
-            for _, setting in ipairs(Ui.DesignerTrackedSettings) do
-                if setting and setting.NotifyUpdate then
-                    setting:NotifyUpdate()
-                end
-            end
-        end
-
-        if Ui.RefreshDesignerPreview then
-            Ui.RefreshDesignerPreview()
-        end
+        local designer = Ui.GetDesignerFrame()
+        designer.RefreshPreview()
     end
 end
 
@@ -229,34 +207,9 @@ function Util.MapOutUnits()
             elements.name = nil
             wipe(elements.buffs)
             wipe(elements.debuffs)
-            if elements.auras then wipe(elements.auras) end
-            if elements.auraInstanceMap then wipe(elements.auraInstanceMap) end
-            if elements.auraDurations then wipe(elements.auraDurations) end
             if elements.indicatorOverlay then
                 elements.indicatorOverlay:Delete()
                 elements.indicatorOverlay = nil
-            end
-
-            if #elements.extraFrames > 0 then
-                for _, extraFrameData in ipairs(elements.extraFrames) do
-                    if extraFrameData.frame then
-                        if extraFrameData.indicatorOverlay then
-                            extraFrameData.indicatorOverlay:Delete()
-                            extraFrameData.indicatorOverlay = nil
-                        end
-                        local indicatorOverlay = Ui.CreateIndicatorOverlay(SavedIndicators[Data.playerSpec])
-                        if indicatorOverlay then
-                            indicatorOverlay.unit = unit
-                            indicatorOverlay:AttachToFrame(extraFrameData.frame)
-                            indicatorOverlay:Show()
-                            indicatorOverlay.extraFrameIndex = extraFrameData.index
-                            if extraFrameData.coloringFunc and type(extraFrameData.coloringFunc) == 'function' then
-                                indicatorOverlay.coloringFunc = extraFrameData.coloringFunc
-                            end
-                            extraFrameData.indicatorOverlay = indicatorOverlay
-                        end
-                    end
-                end
             end
         end
     end
@@ -303,42 +256,46 @@ end
 function Util.UpdatePlayerSpec()
     local class = UnitClassBase('player')
     local spec = C_SpecializationInfo.GetSpecialization()
-    Data.playerSpec = Data.specMap[class .. '_' .. spec]
+    if Data.specMap[class .. '_' .. spec] then
+        Data.playerSpec = Data.specMap[class .. '_' .. spec]
+    else
+        Data.playerSpec = nil
+    end
 end
 
 --it says "is from player" but really we are checking it is not a trash buff
 function Util.IsAuraFromPlayer(unit, auraId)
-    local passesRic = not IsAuraFilteredOutByInstanceID(unit, auraId, 'PLAYER|HELPFUL|RAID_IN_COMBAT')
-    local passesRaid = not IsAuraFilteredOutByInstanceID(unit, auraId, 'PLAYER|HELPFUL|RAID')
+    local passesRic = not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, auraId, 'PLAYER|HELPFUL|RAID_IN_COMBAT')
+    local passesRaid = not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, auraId, 'PLAYER|HELPFUL|RAID')
     return passesRic or passesRaid
 end
 
---We sus out the buff, match the info we can get from it
-function Util.MatchAuraInfo(unit, aura)
-    --If aura is not secret, return the internal name
-    local specInfo = Data.specInfo[Data.playerSpec]
-    if not issecretvalue(aura.spellID) and specInfo.auras[aura.spellId] then
-        return specInfo.auras[aura.spellId].name
+--Here we handle encoding and decoding for export and import
+function Util.EncodeIndicators(spec)
+    local indicators = SavedIndicators[spec]
+    if indicators then
+        local dataToExport = {
+            spec = spec,
+            indicators = indicators
+        }
+        local jsonData = C_EncodingUtil.SerializeJSON(dataToExport)
+        local compressedJson = C_EncodingUtil.CompressString(jsonData, Enum.CompressionMethod.Gzip)
+        local baseText = C_EncodingUtil.EncodeBase64(compressedJson)
+        return baseText
     end
-
-    --If its secret we check if its a player aura and compose the signature
-    local passesRaid = not IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|RAID')
-    local passesRic = not IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|RAID_IN_COMBAT')
-
-    if not (passesRaid or passesRic) then
-        return nil
-    end
-
-    local passesExt = not IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|EXTERNAL_DEFENSIVE')
-    local passesDisp = not IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|RAID_PLAYER_DISPELLABLE')
-    local pointCount = #aura.points
-
-    local spec = Data.playerSpec
-    local lookup = spec and Util.GetAuraSignatureLookup(spec)
-    local signature = Util.MakeAuraSignature(pointCount, passesRaid, passesRic, passesExt, passesDisp)
-    return lookup and lookup[signature] or nil
 end
 
-function Util.IsSupportedSpec(spec)
-    return spec and Data.specInfo[spec]
+function Util.DecodeIndicators(string)
+    local compressedJson = C_EncodingUtil.DecodeBase64(string)
+    if compressedJson then
+        local success, jsonData = pcall(C_EncodingUtil.DecompressString, compressedJson, Enum.CompressionMethod.Gzip)
+        if success then
+            local importedData = C_EncodingUtil.DeserializeJSON(jsonData)
+            if importedData and importedData.spec and importedData.indicators then
+                Util.DisplayEncodingPopup('confirm', importedData)
+            end
+        else
+            print('|cnNORMAL_FONT_COLOR:AdvancedRaidFrames:|r Error importing indicators.')
+        end
+    end
 end

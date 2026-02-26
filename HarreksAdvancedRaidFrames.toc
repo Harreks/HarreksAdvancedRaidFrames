@@ -1,4 +1,4 @@
-## Interface: 120000, 120001
+## Interface: 120001
 ## Title: Harreks Advanced Raid Frames
 ## Author: Harrek
 ## Version: 2.2.0
@@ -6,32 +6,13 @@
 ## IconTexture: Interface/Addons/HarreksAdvancedRaidFrames/Assets/harrek-logo.png
 ## Category: Unit Frames
 ## SavedVariables: HARFDB
-## OptionalDeps: DandersFrames, Grid2
+## AddonCompartmentFunc: AdvancedRaidFrames_CompartmentClick
 ## LoadSavedVariablesFirst: 1
 
-Libraries/LibStub.lua
-Libraries/CallbackHandler-1.0.lua
-Libraries/LibDataBroker-1.1.lua
-Libraries/LibDBIcon-1.0.lua
-Libraries/LibCustomGlow-1.0.lua
-Libraries/LibGetFrame-1.0.lua
-Libraries/LibEQOL/LibEQOL.xml
+LibEditMode/namespaced.lua
+LibEditMode/embed.xml
 
 Init.lua
-
-Locale/Localization.lua
-Locale/enUS.lua
-Locale/enGB.lua
-Locale/deDE.lua
-Locale/frFR.lua
-Locale/esES.lua
-Locale/esMX.lua
-Locale/itIT.lua
-Locale/ptBR.lua
-Locale/ruRU.lua
-Locale/koKR.lua
-Locale/zhCN.lua
-Locale/zhTW.lua
 
 Data/Internals.lua
 Data/Specs.lua
@@ -39,10 +20,6 @@ Data/Units.lua
 
 Ui/Pools.lua
 Ui/Elements.lua
-Ui/DesignerState.lua
-Ui/DesignerPanelHooks.lua
-Ui/DesignerImportExport.lua
-Ui/DesignerPreview.lua
 Ui/Designer.lua
 Ui/Menu.lua
 

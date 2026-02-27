@@ -121,9 +121,9 @@ Data.indicatorTypes = {
             { controlType = 'SpellSelector', setting = 'Spell', row = 1 },
             { controlType = 'Dropdown', dropdownType = 'iconPosition', setting = 'Position', row = 1 },
             { controlType = 'Slider', sliderType = 'iconSize', setting = 'iconSize', row = 1 },
-            { controlType = 'Slider', sliderType = 'xOffset', setting = 'xOffset', row = 1 },
-            { controlType = 'Slider', sliderType = 'yOffset', setting = 'yOffset', row = 1 },
-            { controlType = 'Slider', sliderType = 'textSize', setting = 'textSize', row = 2 },
+            { controlType = 'Slider', sliderType = 'textSize', setting = 'textSize', row = 1 },
+            { controlType = 'Slider', sliderType = 'xOffset', setting = 'xOffset', row = 2 },
+            { controlType = 'Slider', sliderType = 'yOffset', setting = 'yOffset', row = 2 },
             { controlType = 'ColorPicker', setting = 'Color', row = 2 },
             { controlType = 'Checkbox', setting = 'showText', text = 'Show Text', row = 2 },
             { controlType = 'Checkbox', setting = 'showCooldown', text = 'Show Cooldown', row = 2 }
@@ -321,13 +321,29 @@ Data.settings = {
         tooltip = 'Replaces the unit name for class-colored ones.',
         func = 'ColorNames'
     },
-    --[[
     {
-        key = 'miscOptionsHeader',
-        type = 'header',
-        text = 'Misc.'
-    },
-    ]]
+        key = 'extFrames',
+        type = 'checkbox',
+        text = 'Use Frame Addons',
+        default = false,
+        tooltip = 'Add Advanced Raid Frames indicators on top of other active frame addons instead of the default frames.',
+        func = 'Setup'
+    }
+}
+
+--This is a list of external frames we ignore for libGetFrame
+Data.ignoredFrames = {
+    '^CompactRaid',
+    '^CompactParty',
+    '^InvenUnitFrames_Player$',
+    '^SUFUnitplayer$',
+    '^LUFUnitplayer$',
+    '^PitBull4_Frames_Player$',
+    '^ElvUF_Player$',
+    '^oUF_.-Player$',
+    '^XPerl_Player$',
+    '^UUF_Player$',
+    '^PlayerFrame$'
 }
 
 --Initializer list is used when we generate the menu, so we can parent some options to others

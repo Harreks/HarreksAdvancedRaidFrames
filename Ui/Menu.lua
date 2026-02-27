@@ -107,7 +107,6 @@ function Ui.CreateOptionsElement(data, parent)
             local settingKey = setting:GetVariable()
             if data.readOnly and Options[settingKey] ~= data.default then
                 Options[settingKey] = data.default
-                setting:NotifyUpdate()
             else
                 local func
                 for _, opt in ipairs(Data.settings) do
@@ -158,11 +157,11 @@ function Ui.CreateOptionsPanel(optionsTable)
     local category = Settings.RegisterCanvasLayoutCategory(optionsIntroPanel, 'Advanced Raid Frames')
     Settings.RegisterAddOnCategory(category)
 
-    local defaultFramesSubcategory, defaultFramesLayout = Settings.RegisterVerticalLayoutSubcategory(category, 'Default Frames')
-    Settings.RegisterAddOnCategory(defaultFramesSubcategory)
+    local defaultOptionsSubcategory, defaultOptionsLayout = Settings.RegisterVerticalLayoutSubcategory(category, 'Options')
+    Settings.RegisterAddOnCategory(defaultOptionsSubcategory)
 
     for _, data in ipairs(optionsTable) do
-        Ui.CreateOptionsElement(data, { category = defaultFramesSubcategory, layout = defaultFramesLayout })
+        Ui.CreateOptionsElement(data, { category = defaultOptionsSubcategory, layout = defaultOptionsLayout })
     end
 
     local designer = Ui.GetDesignerFrame()

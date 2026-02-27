@@ -649,24 +649,33 @@ Ui.HealthColorIndicatorPool = CreateFramePool('Frame', nil, nil,
         frame.color = nil
         frame.type = 'HealthColor'
         frame.UpdateIndicator = function(self, auraInfo)
+            local overlay = self:GetParent()
             local unitList = Util.GetRelevantList()
-            local unit = self:GetParent().unit
+            local unit = overlay.unit
             local elements = unitList[unit]
             if elements then
-                local unitFrame = _G[elements.frame]
-                if unitFrame then
+                local unitFrame = overlay:GetParent()
+                if unitFrame and unitFrame.healthBar and unitFrame.healthBar.GetStatusBarTexture then
                     local texture = unitFrame.healthBar:GetStatusBarTexture()
+                    local isDefault = unitFrame == _G[elements.frame]
                     if auraInfo.active then
-                        elements.isColored = true
-                        elements.recolor = self.color
-                        local oldR, oldG, oldB = texture:GetVertexColor()
-                        self.oldColor = { r = oldR, g = oldG, b = oldB }
+                        if isDefault then
+                            elements.isColored = true
+                            elements.recolor = self.color
+                        end
+                        if not self.oldColor then
+                            local oldR, oldG, oldB = texture:GetVertexColor()
+                            self.oldColor = { r = oldR, g = oldG, b = oldB }
+                        end
                         texture:SetVertexColor(self.color.r, self.color.g, self.color.b)
                     else
-                        elements.isColored = false
-                        elements.recolor = nil
+                        if isDefault then
+                            elements.isColored = false
+                            elements.recolor = nil
+                        end
                         if self.oldColor then
                             texture:SetVertexColor(self.oldColor.r, self.oldColor.g, self.oldColor.b)
+                            self.oldColor = nil
                         end
                     end
                 end

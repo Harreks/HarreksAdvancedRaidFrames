@@ -57,6 +57,7 @@ function Core.InstallTrackers()
 
         stateTracker:SetScript('OnEvent', function(self, event, unitTarget)
             if event == 'PLAYER_LOGIN' then
+                Util.DebugData(Data.unitList, 'Units')
                 Util.UpdatePlayerSpec()
                 if not Options.editingSpec or not Data.specInfo[Options.editingSpec] then
                     Options.editingSpec = Data.playerSpec
@@ -137,6 +138,14 @@ function Core.InstallTrackers()
                         }
                     }
                 })
+
+                local LGF = LibStub('LibGetFrame-1.0')
+                LGF.RegisterCallback('HarreksAdvancedRaidFrames', 'GETFRAME_REFRESH', function()
+                    if Options.extFrames and Data.updatingExternalFrames then
+                        Data.updatingExternalFrames = false
+                        Util.GetExternalFrames()
+                    end
+                end)
             elseif event == 'GROUP_ROSTER_UPDATE' then
                 Core.ModifySettings()
             elseif event == 'ACTIVE_PLAYER_SPECIALIZATION_CHANGED' or event == 'ACTIVE_TALENT_GROUP_CHANGED' then

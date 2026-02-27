@@ -143,9 +143,9 @@ function Core.ModifySettings(modifiedSettingFunction, newValue)
             table.insert(functionsToRun, { func = Core.SetGroupFrameTransparency, val = Options.frameTransparency } )
             table.insert(functionsToRun, { func = Core.ScaleNames, val = Options.nameScale } )
             table.insert(functionsToRun, { func = Core.ColorNames, val = Options.colorNames } )
-
-            Util.MapOutUnits()
         end
+
+        Util.MapOutUnits()
 
         for unit, elements in pairs(unitList) do
             for _, functionData in ipairs(functionsToRun) do

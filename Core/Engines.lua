@@ -88,7 +88,7 @@ function Core.UpdateAuraStatus(unit, updateInfo)
     if next(updatedAuras) then
         local unitList = Util.GetRelevantList()
         local elements = unitList[unit]
-        if elements and elements.indicatorOverlay then
+        if elements and (elements.indicatorOverlay or elements.extIndicatorOverlay) then
             local unitAuras = Data.state.auras[unit]
             local updatedAuraData = {}
             for buffName, instanceId in pairs(updatedAuras) do
@@ -102,7 +102,12 @@ function Core.UpdateAuraStatus(unit, updateInfo)
                 end
                 updatedAuraData[buffName] = aura
             end
-            elements.indicatorOverlay:UpdateIndicators(updatedAuraData)
+            if elements.indicatorOverlay then
+                elements.indicatorOverlay:UpdateIndicators(updatedAuraData)
+            end
+            if elements.extIndicatorOverlay then
+                elements.extIndicatorOverlay:UpdateIndicators(updatedAuraData)
+            end
         end
     end
 end

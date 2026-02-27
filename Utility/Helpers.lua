@@ -201,6 +201,7 @@ function Util.MapOutUnits()
         for unit, _ in pairs(units) do
             local elements = Data.unitList[groupType][unit]
             elements.frame = nil
+            elements.extFrame = nil
             elements.centerIcon = nil
             elements.isColored = false
             elements.defensive.frame = nil
@@ -211,8 +212,20 @@ function Util.MapOutUnits()
                 elements.indicatorOverlay:Delete()
                 elements.indicatorOverlay = nil
             end
+            if elements.extIndicatorOverlay then
+                elements.extIndicatorOverlay:Delete()
+                elements.extIndicatorOverlay = nil
+            end
         end
     end
+
+    --If we are using external frames, call a cache refresh
+    if Options.extFrames then
+        local LGF = LibStub('LibGetFrame-1.0')
+        LGF:ScanForUnitFrames()
+        Data.updatingExternalFrames = true
+    end
+
     --We check the frames for the party or raid to find where each unit is
     local currentGroupType = IsInRaid() and 'raid' or 'party'
     local unitList = Util.GetRelevantList()
@@ -248,6 +261,28 @@ function Util.MapOutUnits()
         for _, units in pairs(Data.unitList) do
             for unit, _ in pairs(units) do
                 if UnitIsVisible(unit) then Core.UpdateAuraStatus(unit) end
+            end
+        end
+    end
+end
+
+function Util.GetExternalFrames()
+    local LGF = LibStub('LibGetFrame-1.0')
+    for groupType, units in pairs(Data.unitList) do
+        for unit, _ in pairs(units) do
+            local elements = Data.unitList[groupType][unit]
+            local extFrame = LGF.GetUnitFrame(unit, { ignoreFrames = Data.ignoredFrames })
+            if extFrame then
+                elements.extFrame = extFrame
+                if elements.extIndicatorOverlay then
+                    elements.extIndicatorOverlay:Delete()
+                    elements.extIndicatorOverlay = nil
+                end
+                local indicatorOverlay = Ui.CreateIndicatorOverlay(SavedIndicators[Data.playerSpec])
+                indicatorOverlay.unit = unit
+                indicatorOverlay:AttachToFrame(extFrame)
+                indicatorOverlay:Show()
+                elements.extIndicatorOverlay = indicatorOverlay
             end
         end
     end

@@ -11,7 +11,6 @@ NS.Debug = false
 --Initialize saved variables
 HARFDB = HARFDB or {}
 if HARFDB.version ~= NS.Version then
-    HARFDB = {}
     HARFDB.version = NS.Version
 end
 if not HARFDB.options then HARFDB.options = {} end

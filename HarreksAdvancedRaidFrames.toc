@@ -1,16 +1,19 @@
 ## Interface: 120001
 ## Title: Harreks Advanced Raid Frames
 ## Author: Harrek
-## Version: 2.2.0
-## Notes: Functionality enhancement for default party and raid frames
+## Version: 2.2.1
+## Notes: Functionality enhancement for party and raid frames
 ## IconTexture: Interface/Addons/HarreksAdvancedRaidFrames/Assets/harrek-logo.png
 ## Category: Unit Frames
 ## SavedVariables: HARFDB
 ## AddonCompartmentFunc: AdvancedRaidFrames_CompartmentClick
 ## LoadSavedVariablesFirst: 1
 
-LibEditMode/namespaced.lua
-LibEditMode/embed.xml
+Libraries/LibStub.lua
+Libraries/LibEditMode/namespaced.lua
+Libraries/LibEditMode/embed.xml
+Libraries/LibGetFrame/CallbackHandler-1.0.lua
+Libraries/LibGetFrame/LibGetFrame-1.0.lua
 
 Init.lua
 

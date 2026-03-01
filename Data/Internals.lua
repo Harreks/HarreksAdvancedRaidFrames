@@ -85,90 +85,56 @@ Data.textures = {
 Data.indicatorTypes = {
     icon = {
         display = 'Icon',
-        defaults = {
-            Position = 'CENTER',
-            iconSize = 25,
-            xOffset = 0,
-            yOffset = 0,
-            textSize = 1,
-            showText = true,
-            showTexture = true
-        },
         controls = {
             { controlType = 'SpellSelector', setting = 'Spell', row = 1 },
-            { controlType = 'Dropdown', dropdownType = 'iconPosition', setting = 'Position', row = 1 },
-            { controlType = 'Slider', sliderType = 'iconSize', setting = 'iconSize', row = 1 },
-            { controlType = 'Slider', sliderType = 'textSize', setting = 'textSize', row = 1 },
-            { controlType = 'Slider', sliderType = 'xOffset', setting = 'xOffset', row = 2 },
-            { controlType = 'Slider', sliderType = 'yOffset', setting = 'yOffset', row = 2 },
-            { controlType = 'Checkbox', setting = 'showText', text = 'Show Text', row = 2 },
-            { controlType = 'Checkbox', setting = 'showTexture', text = 'Show Texture', row = 2 }
+            { controlType = 'Dropdown', dropdownType = 'iconPosition', setting = 'Position', row = 1, default = 'CENTER' },
+            { controlType = 'Slider', sliderType = 'iconSize', setting = 'iconSize', row = 1, default = 25 },
+            { controlType = 'Slider', sliderType = 'textSize', setting = 'textSize', row = 1, default = 1 },
+            { controlType = 'Slider', sliderType = 'xOffset', setting = 'xOffset', row = 2, default = 0 },
+            { controlType = 'Slider', sliderType = 'yOffset', setting = 'yOffset', row = 2, default = 0 },
+            { controlType = 'Checkbox', setting = 'showText', text = 'Show Text', row = 2, default = true },
+            { controlType = 'Checkbox', setting = 'showTexture', text = 'Show Texture', row = 2, default = true }
         }
     },
     square = {
         display = 'Square',
-        defaults = {
-            Color = { r = 0, g = 1, b = 0, a = 1 },
-            Position = 'CENTER',
-            iconSize = 25,
-            xOffset = 0,
-            yOffset = 0,
-            textSize = 1,
-            showText = false,
-            showCooldown = false
-        },
         controls = {
             { controlType = 'SpellSelector', setting = 'Spell', row = 1 },
-            { controlType = 'Dropdown', dropdownType = 'iconPosition', setting = 'Position', row = 1 },
-            { controlType = 'Slider', sliderType = 'iconSize', setting = 'iconSize', row = 1 },
-            { controlType = 'Slider', sliderType = 'textSize', setting = 'textSize', row = 1 },
-            { controlType = 'Slider', sliderType = 'xOffset', setting = 'xOffset', row = 2 },
-            { controlType = 'Slider', sliderType = 'yOffset', setting = 'yOffset', row = 2 },
-            { controlType = 'ColorPicker', setting = 'Color', row = 2 },
-            { controlType = 'Checkbox', setting = 'showText', text = 'Show Text', row = 2 },
-            { controlType = 'Checkbox', setting = 'showCooldown', text = 'Show Cooldown', row = 2 }
+            { controlType = 'Dropdown', dropdownType = 'iconPosition', setting = 'Position', row = 1, default = 'CENTER' },
+            { controlType = 'Slider', sliderType = 'iconSize', setting = 'iconSize', row = 1, default = 25 },
+            { controlType = 'Slider', sliderType = 'textSize', setting = 'textSize', row = 1, default = 1 },
+            { controlType = 'Slider', sliderType = 'xOffset', setting = 'xOffset', row = 2, default = 0 },
+            { controlType = 'Slider', sliderType = 'yOffset', setting = 'yOffset', row = 2, default = 0 },
+            { controlType = 'ColorPicker', setting = 'Color', row = 2, default = { r = 0, g = 1, b = 0, a = 1 } },
+            { controlType = 'Checkbox', setting = 'showText', text = 'Show Text', row = 2, default = false },
+            { controlType = 'Checkbox', setting = 'showCooldown', text = 'Show Cooldown', row = 2, default = false }
         }
     },
     bar = {
         display = 'Bar',
-        defaults = {
-            Color = { r = 0, g = 1, b = 0, a = 1 },
-            Position = 'TOPRIGHT',
-            Scale = 'Full',
-            Orientation = 'Horizontal',
-            barSize = 15,
-            Offset = 0
-        },
         controls = {
             { controlType = 'SpellSelector', setting = 'Spell', row = 1 },
-            { controlType = 'ColorPicker', setting = 'Color', row = 1 },
-            { controlType = 'Dropdown', dropdownType = 'barPosition', setting = 'Position', row = 1 },
-            { controlType = 'Slider', sliderType = 'barSize', setting = 'barSize', row = 1 },
-            { controlType = 'Dropdown', dropdownType = 'barOrientation', setting = 'Orientation', row = 1 },
-            { controlType = 'Dropdown', dropdownType = 'barScale', setting = 'Scale', row = 2 },
-            { controlType = 'Slider', sliderType = 'offset', setting = 'Offset', row = 2 }
+            { controlType = 'ColorPicker', setting = 'Color', row = 1, default = { r = 0, g = 1, b = 0, a = 1 } },
+            { controlType = 'Dropdown', dropdownType = 'barPosition', setting = 'Position', row = 1, default = 'TOPRIGHT' },
+            { controlType = 'Slider', sliderType = 'barSize', setting = 'barSize', row = 1, default = 15 },
+            { controlType = 'Dropdown', dropdownType = 'barOrientation', setting = 'Orientation', row = 1, default = 'Horizontal' },
+            { controlType = 'Dropdown', dropdownType = 'barScale', setting = 'Scale', row = 2, default = 'Full' },
+            { controlType = 'Slider', sliderType = 'offset', setting = 'Offset', row = 2, default = 0 }
         }
     },
     border = {
         display = 'Border',
-        defaults = {
-            Color = { r = 0, g = 1, b = 0, a = 1 },
-            borderWidth = 3
-        },
         controls = {
             { controlType = 'SpellSelector', setting = 'Spell', row = 1 },
-            { controlType = 'ColorPicker', setting = 'Color', row = 1 },
-            { controlType = 'Slider', sliderType = 'borderWidth', setting = 'borderWidth', row = 2 }
+            { controlType = 'ColorPicker', setting = 'Color', row = 1, default = { r = 0, g = 1, b = 0, a = 1 } },
+            { controlType = 'Slider', sliderType = 'borderWidth', setting = 'borderWidth', row = 2, default = 3 }
         }
     },
     healthColor = {
         display = 'Health Bar Color',
-        defaults = {
-            Color = { r = 0, g = 1, b = 0, a = 1 }
-        },
         controls = {
             { controlType = 'SpellSelector', setting = 'Spell', row = 1 },
-            { controlType = 'ColorPicker', setting = 'Color', row = 1 }
+            { controlType = 'ColorPicker', setting = 'Color', row = 1, default = { r = 0, g = 1, b = 0, a = 1 } }
         }
     }
 }
@@ -322,10 +288,18 @@ Data.settings = {
         func = 'ColorNames'
     },
     {
+        key = 'barTexture',
+        type = 'texture',
+        text = 'Bar Texture',
+        default = 'Default',
+        tooltip = 'Changes the texture of the health bars on the default raid frames',
+        func = 'SetBarTexture'
+    },
+    {
         key = 'extFrames',
         type = 'checkbox',
         text = 'Use Frame Addons',
-        default = false,
+        default = true,
         tooltip = 'Add Advanced Raid Frames indicators on top of other active frame addons instead of the default frames.',
         func = 'Setup'
     }
@@ -346,8 +320,18 @@ Data.ignoredFrames = {
     '^PlayerFrame$'
 }
 
+Data.barTextures = {
+    ["Default"] = 7539072,
+    ["Blizzard Raid"] = [[Interface\RaidFrame\Raid-Bar-Hp-Fill]],
+    ["Blizzard Flat"] = [[Interface\Buttons\WHITE8X8]],
+    ["Smooth"]        = 137012,
+}
+
 --Initializer list is used when we generate the menu, so we can parent some options to others
 Data.initializerList = {}
 --Player spec is checked constantly through the run to make sure we're using appropriate data
 Data.playerSpec = nil
 Data.auraSignatures = {}
+
+--When using external frames we securehook a recoloring on them to maintain our colors, this list lets us keep track of the ones already hooked
+Data.hookedFrames = {}

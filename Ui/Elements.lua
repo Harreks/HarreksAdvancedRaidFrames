@@ -88,44 +88,28 @@ function Ui.CreateIndicatorOptions(type, spec, savedSettings)
     containerFrame.deleteButton = deleteButton
     containerFrame:AnchorElements()
 
-    -- This is a bit stupid *shrug* should rework it along with the whole indicators
-    -- At least is a fix to that bug i guess?
     containerFrame.LoadSavedSettings = function(self, saved)
         local data = saved or (self.savedSetting and self.savedSetting.spec and self.savedSetting.index and SavedIndicators[self.savedSetting.spec] and SavedIndicators[self.savedSetting.spec][self.savedSetting.index])
         if not data then return end
+        self.isLoading = true
         for _, control in ipairs(self.elements) do
+            local settingKey = control.indicatorSetting
             if control.type == 'SpellSelector' then
                 control.selectedOption = data.Spell
                 control:GenerateMenu()
-            elseif control.type == 'ColorPicker' then
-                if data.Color then
-                    local c = data.Color
-                    control.Color:SetVertexColor(c.r, c.g, c.b, c.a)
-                end
-            elseif control.type == 'Dropdown' then
-                if control.dropdownType == 'iconPosition' and data.Position then
-                    control.selectedOption = data.Position
-                    control:GenerateMenu()
-                elseif control.dropdownType == 'barPosition' and data.Position then
-                    control.selectedOption = data.Position
-                    control:GenerateMenu()
-                elseif control.dropdownType == 'barScale' and data.Scale then
-                    control.selectedOption = data.Scale
-                    control:GenerateMenu()
-                elseif control.dropdownType == 'barOrientation' and data.Orientation then
-                    control.selectedOption = data.Orientation
-                    control:GenerateMenu()
-                end
-            elseif control.type == 'Slider' then
-                if data[control.sliderType] ~= nil then
-                    control:SetValue(data[control.sliderType])
-                end
-            elseif control.type == 'Checkbox' then
-                if data[control.setting] ~= nil then
-                    control:SetChecked(data[control.setting])
-                end
+            elseif control.type == 'ColorPicker' and data[settingKey] then
+                local c = data[settingKey]
+                control.Color:SetVertexColor(c.r, c.g, c.b, c.a)
+            elseif control.type == 'Dropdown' and data[settingKey] then
+                control.selectedOption = data[settingKey]
+                control:GenerateMenu()
+            elseif control.type == 'Slider' and data[settingKey] ~= nil then
+                control:SetValue(data[settingKey])
+            elseif control.type == 'Checkbox' and data[settingKey] ~= nil then
+                control:SetChecked(data[settingKey])
             end
         end
+        self.isLoading = false
         self:AnchorElements()
     end
 

@@ -104,6 +104,7 @@ Ui.ContainerFramePool = CreateFramePool('Frame', nil, 'InsetFrameTemplate3',
 
         --We update the saved data on the container when the children change
         frame.UpdateOptionsData = function(self)
+            if self.isLoading then return end
             local savedSetting = self.savedSetting
             if savedSetting.spec and savedSetting.index and SavedIndicators[savedSetting.spec][savedSetting.index] then
                 local dataTable = SavedIndicators[savedSetting.spec][savedSetting.index]
@@ -219,17 +220,19 @@ Ui.SpellSelectorFramePool = CreateFramePool('DropdownButton', nil, "WowStyle1Dro
             if frame.spec then
                 for _, spellData in pairs(Data.specInfo[frame.spec].auras) do
                     if not frame.selectedOption then frame.selectedOption = spellData.name end
-                    root:CreateRadio(
-                        spellData.name,
-                        function() return frame.selectedOption and frame.selectedOption == spellData.name end,
-                        function()
-                            frame.selectedOption = spellData.name
-                            local parent = frame:GetParent()
-                            if parent then
-                                parent:UpdateOptionsData()
+                    if not spellData.hide then
+                        root:CreateRadio(
+                            spellData.name,
+                            function() return frame.selectedOption and frame.selectedOption == spellData.name end,
+                            function()
+                                frame.selectedOption = spellData.name
+                                local parent = frame:GetParent()
+                                if parent then
+                                    parent:UpdateOptionsData()
+                                end
                             end
-                        end
-                    )
+                        )
+                    end
                 end
             end
         end)
@@ -318,7 +321,6 @@ Ui.SliderPool = CreateFramePool('Slider', nil, 'MinimalSliderWithSteppersTemplat
         frame:ClearAllPoints()
         frame:SetParent()
         frame.Slider:SetValue(0)
-        frame:SetMinMaxValues(0, 0)
         frame.indicatorSetting = nil
         frame.layoutRow = nil
         frame.Text:SetText()
@@ -650,32 +652,43 @@ Ui.HealthColorIndicatorPool = CreateFramePool('Frame', nil, nil,
         frame.type = 'HealthColor'
         frame.UpdateIndicator = function(self, auraInfo)
             local overlay = self:GetParent()
-            local unitList = Util.GetRelevantList()
+            local unitList = Data.unitList
             local unit = overlay.unit
             local elements = unitList[unit]
             if elements then
                 local unitFrame = overlay:GetParent()
-                if unitFrame and unitFrame.healthBar and unitFrame.healthBar.GetStatusBarTexture then
-                    local texture = unitFrame.healthBar:GetStatusBarTexture()
-                    local isDefault = unitFrame == _G[elements.frame]
-                    if auraInfo.active then
-                        if isDefault then
+                if unitFrame then
+                    local texture = Util.GetFrameHealthTexture(unitFrame)
+                    if texture then
+                        local isDefault = unitFrame == _G[elements.frame]
+                        if not isDefault and not texture._HARF_Hooked then
+                            texture._HARF_SetVertexColor = texture.SetVertexColor
+                            texture.SetVertexColor = Util.CustomSetVertexColor
+                            texture._HARF_Hooked = true
+                        end
+                        if auraInfo.active then
                             elements.isColored = true
                             elements.recolor = self.color
-                        end
-                        if not self.oldColor then
-                            local oldR, oldG, oldB = texture:GetVertexColor()
-                            self.oldColor = { r = oldR, g = oldG, b = oldB }
-                        end
-                        texture:SetVertexColor(self.color.r, self.color.g, self.color.b)
-                    else
-                        if isDefault then
+                            if not self.oldColor then
+                                local oldR, oldG, oldB = texture:GetVertexColor()
+                                self.oldColor = { r = oldR, g = oldG, b = oldB }
+                            end
+                            if isDefault then
+                                texture:SetVertexColor(self.color.r, self.color.g, self.color.b)
+                            else
+                                texture:_HARF_SetVertexColor(self.color.r, self.color.g, self.color.b)
+                            end
+                        else
                             elements.isColored = false
                             elements.recolor = nil
-                        end
-                        if self.oldColor then
-                            texture:SetVertexColor(self.oldColor.r, self.oldColor.g, self.oldColor.b)
-                            self.oldColor = nil
+                            if self.oldColor then
+                                if isDefault then
+                                    texture:SetVertexColor(self.oldColor.r, self.oldColor.g, self.oldColor.b)
+                                else
+                                    texture:_HARF_SetVertexColor(self.oldColor.r, self.oldColor.g, self.oldColor.b)
+                                end
+                                self.oldColor = nil
+                            end
                         end
                     end
                 end

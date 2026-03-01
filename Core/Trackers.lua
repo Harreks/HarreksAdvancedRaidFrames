@@ -10,19 +10,35 @@ function Core.InstallTrackers()
     --The aura trackers are per-unit, this is the most efficient way because the events only ever fire for valid units
     --So even if we install trackers for raid40, they would simply never activate on a 5man party
     --We also completely avoid all events that are not from group members this way
-    for groupType, units in pairs(Data.unitList) do
-        for unit, _ in pairs(units) do
-            local elements = Data.unitList[groupType][unit]
-            if not elements.tracker then
-                local tracker = CreateFrame('Frame')
-                tracker:SetScript('OnEvent', function(_, _, unitId, auraUpdateInfo)
-                    if Data.playerSpec then
-                        Core.UpdateAuraStatus(unitId, auraUpdateInfo)
+    for unit, elements in pairs(Data.unitList) do
+        if not elements.tracker then
+            local tracker = CreateFrame('Frame')
+            tracker.unit = unit
+            tracker.lastUpdate = 0
+            tracker.active = false
+            --The visible check is a function that runs on active trackers if there has not been any events in the last second
+            --If there hasn't it confirms that the unit is still valid and if it isn't it sends an update to hide all indicators
+            tracker.VisibleCheck = function(self)
+                if self.active and (GetTime() - self.lastUpdate) > 1 then
+                    if not UnitIsVisible(self.unit) or not UnitIsConnected(self.unit) then
+                        self.active = false
+                        self:SetScript('OnUpdate', nil)
+                        Util.ResetUnitAuraData(self.unit)
                     end
-                end)
-                tracker:RegisterUnitEvent('UNIT_AURA', unit)
-                elements.tracker = tracker
+                end
             end
+            tracker:SetScript('OnEvent', function(self, _, unitId, auraUpdateInfo)
+                if Data.playerSpec then
+                    if not self.active then
+                        self.active = true
+                        self:SetScript('OnUpdate', self.VisibleCheck)
+                    end
+                    self.lastUpdate = GetTime()
+                    Core.UpdateAuraStatus(unitId, auraUpdateInfo)
+                end
+            end)
+            tracker:RegisterUnitEvent('UNIT_AURA', unit)
+            elements.tracker = tracker
         end
     end
 

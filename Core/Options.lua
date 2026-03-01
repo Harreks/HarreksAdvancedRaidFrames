@@ -35,14 +35,15 @@ end
 
 --Toggles mouse interaction on raid frame icons, pass true for enabled and false for disabled, third param is the elements of the edited frame
 function Core.ToggleAurasMouseInteraction(value, _, elements)
+    local enableMouse = not value -- If clickThroughBuffs is true enableMouse is false
     for _, buff in ipairs(elements.buffs) do
-        Util.ChangeFrameMouseInteraction(buff, value)
+        Util.ChangeFrameMouseInteraction(buff, enableMouse)
     end
     for _, debuff in ipairs(elements.debuffs) do
-        Util.ChangeFrameMouseInteraction(debuff, value)
+        Util.ChangeFrameMouseInteraction(debuff, enableMouse)
     end
-    Util.ChangeFrameMouseInteraction(elements.centerIcon, value)
-    Util.ChangeFrameMouseInteraction(elements.defensive, value)
+    Util.ChangeFrameMouseInteraction(elements.centerIcon, enableMouse)
+    Util.ChangeFrameMouseInteraction(elements.defensive, enableMouse)
 end
 
 --Controls visibility on debuff icons, takes how many debuffs are to be shown and the element list of the frame to be modified
@@ -51,12 +52,12 @@ function Core.ToggleDebuffIcons(amount, _, elements)
         if i <= amount then
             Util.ToggleTransparency(elements.debuffs[i], true)
             if _G[elements.debuffs[i]] and not _G[elements.debuffs[i]]:IsMouseEnabled() and not Options.clickThroughBuffs then
-                Util.ChangeFrameMouseInteraction(elements.buffs[i], true)
+                Util.ChangeFrameMouseInteraction(elements.debuffs[i], true)
             end
         else
             Util.ToggleTransparency(elements.debuffs[i], false)
             if _G[elements.debuffs[i]] and _G[elements.debuffs[i]]:IsMouseEnabled() then
-                Util.ChangeFrameMouseInteraction(elements.buffs[i], false)
+                Util.ChangeFrameMouseInteraction(elements.debuffs[i], false)
             end
         end
     end
@@ -130,19 +131,30 @@ function Core.ColorNames(value, unit, elements)
     end
 end
 
+--Sets the texture on the default frames' health bars
+function Core.SetBarTexture(value, _, elements)
+    if Data.barTextures[value] then
+        if _G[elements.frame] and _G[elements.frame].healthBar then
+            local healthBar = _G[elements.frame].healthBar
+            healthBar:GetStatusBarTexture():SetTexture(Data.barTextures[value])
+        end
+    end
+end
+
 function Core.ModifySettings(modifiedSettingFunction, newValue)
     if not InCombatLockdown() then
-        local unitList = Util.GetRelevantList()
+        local unitList = Data.unitList
         local functionsToRun = {}
         if modifiedSettingFunction and type(Core[modifiedSettingFunction]) == 'function' then
             table.insert(functionsToRun, { func = Core[modifiedSettingFunction], val = newValue } )
         else
             table.insert(functionsToRun, { func = Core.ToggleBuffIcons, val = Options.buffIcons } )
             table.insert(functionsToRun, { func = Core.ToggleDebuffIcons, val = Options.debuffIcons } )
-            table.insert(functionsToRun, { func = Core.ToggleAurasMouseInteraction, val = not Options.clickThroughBuffs } )
+            table.insert(functionsToRun, { func = Core.ToggleAurasMouseInteraction, val = Options.clickThroughBuffs } )
             table.insert(functionsToRun, { func = Core.SetGroupFrameTransparency, val = Options.frameTransparency } )
             table.insert(functionsToRun, { func = Core.ScaleNames, val = Options.nameScale } )
             table.insert(functionsToRun, { func = Core.ColorNames, val = Options.colorNames } )
+            table.insert(functionsToRun, { func = Core.SetBarTexture, val = Options.barTexture } )
         end
 
         Util.MapOutUnits()

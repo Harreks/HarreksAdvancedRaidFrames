@@ -101,7 +101,7 @@ function Ui.CreateOptionsElement(data, parent)
         Data.initializerList[data.key] = initializer
         parent.layout:AddInitializer(initializer)
     else
-        if not Options[data.key] then Options[data.key] = data.default end
+        if Options[data.key] == nil then Options[data.key] = data.default end
         local input = Settings.RegisterAddOnSetting(parent.category, data.key, data.key, Options, type(data.default), data.text, data.default)
         input:SetValueChangedCallback(function(setting, value)
             local settingKey = setting:GetVariable()
@@ -145,6 +145,9 @@ function Ui.CreateOptionsElement(data, parent)
         elseif data.type == "color" then
             initializer = Settings.CreateColorSwatch(parent.category, input, data.tooltip)
             Data.initializerList[data.key] = initializer
+        elseif data.type == "texture" then
+            initializer = Settings.CreateDropdown(parent.category, input, Util.GetTextureDropdown, data.tooltip)
+            Data.initializerList[data.key] = initializer
         end
     end
     if initializer and data.parent then
@@ -171,10 +174,22 @@ function Ui.CreateOptionsPanel(optionsTable)
     Data.addonSettingsCategory = category.ID
     SLASH_HARREKSADVANCEDRAIDFRAMES1 = "/harf"
     SlashCmdList.HARREKSADVANCEDRAIDFRAMES = function(msg)
-        if msg and msg == 'des' then
-            Settings.OpenToCategory(designerSubCategory.ID)
+        if msg ~= '' then
+            if msg == 'des' then
+                if InCombatLockdown() then
+                    print('|cnNORMAL_FONT_COLOR:AdvancedRaidFrames:|r Settings can\'t be opened in combat.')
+                else
+                    Settings.OpenToCategory(designerSubCategory.ID)
+                end
+            elseif msg == 'reset' then
+                Util.DisplayResetPopup()
+            end
         else
-            Settings.OpenToCategory(category.ID)
+            if InCombatLockdown() then
+                print('|cnNORMAL_FONT_COLOR:AdvancedRaidFrames:|r Settings can\'t be opened in combat.')
+            else
+                Settings.OpenToCategory(category.ID)
+            end
         end
     end
 end

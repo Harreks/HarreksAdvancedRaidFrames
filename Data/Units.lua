@@ -27,22 +27,18 @@ Data.defaultUnitData = {
     centerIcon = nil,
     name = nil,
     isColored = false,
-    defensive = { type = 'defensive', frame = nil }
+    defensive = { type = 'defensive', frame = nil },
+    extFrames = {},
+    extIndicatorOverlays = {}
 }
 
 --Build a list of units to store data for each group member
 Data.unitList = {
-    party = {
-        player = CopyTable(Data.defaultUnitData)
-    },
-    raid = {}
+    player = CopyTable(Data.defaultUnitData)
 }
 for i = 1, 30 do
-    local partyMember, raidMember
-    if i <= 4 then
-        partyMember = 'party' .. i
-        Data.unitList.party[partyMember] = CopyTable(Data.defaultUnitData)
+    if i < 5 then
+        Data.unitList['party' .. i] = CopyTable(Data.defaultUnitData)
     end
-    raidMember = 'raid' .. i
-    Data.unitList.raid[raidMember] = CopyTable(Data.defaultUnitData)
+    Data.unitList['raid' .. i] = CopyTable(Data.defaultUnitData)
 end

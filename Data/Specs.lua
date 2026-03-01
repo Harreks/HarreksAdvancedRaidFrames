@@ -162,7 +162,7 @@ Data.specInfo = {
         auras = {
             [61295] = { name = 'Riptide', signature = '1:1:0:1' },
             [974] = { name = 'EarthShield', signature = '1:1:0:1' },
-            [383648] = { name = 'EarthShield', signature = '1:1:0:1' }
+            [383648] = { name = 'EarthShield', signature = '1:1:0:1', hide = true }
         },
         casts = {
             [61295] = { 'Riptide' },
@@ -182,6 +182,7 @@ Data.specInfo = {
             --[432502] = { name = 'SacredWeapon', signature = '0:1:0:0', secret = true },
             [432502] = { name = 'HolyArmaments', signature = '0:1:0:0', secret = true }, --Both armaments look the same, we combine them to make my life easier
             [6940] = { name = 'BlessingOfSacrifice', signature = '1:1:1:0', secret = true },
+            [1044] = { name = 'BlessingOfFreedom', signature = '1:0:0:1', secret = true },
             [200025] = { name = 'BeaconOfVirtue', signature = '1:0:0:0', secret = true },
             [1244893] = { name = 'BeaconOfTheSavior', signature = '' },
             [431381] = { name = 'Dawnlight', signature = '0:1:0:0', secret = true }

@@ -82,18 +82,13 @@ function Core.UpdateAuraStatus(unit, updateInfo)
                 end
             end
         end
-    end
 
-    --Hit a refresh of the indicators if at least one aura has changed
-    if next(updatedAuras) then
-        local unitList = Util.GetRelevantList()
-        local elements = unitList[unit]
-        if elements and (elements.indicatorOverlay or elements.extIndicatorOverlay) then
-            local unitAuras = Data.state.auras[unit]
+        --Hit a refresh of the indicators if at least one aura has changed
+        if next(updatedAuras) then
             local updatedAuraData = {}
             for buffName, instanceId in pairs(updatedAuras) do
                 local aura = {}
-                if unitAuras[instanceId] then
+                if currentUnitAuras[instanceId] then
                     aura.active = true
                     aura.duration = C_UnitAuras.GetAuraDuration(unit, instanceId)
                     aura.data = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, instanceId)
@@ -102,12 +97,7 @@ function Core.UpdateAuraStatus(unit, updateInfo)
                 end
                 updatedAuraData[buffName] = aura
             end
-            if elements.indicatorOverlay then
-                elements.indicatorOverlay:UpdateIndicators(updatedAuraData)
-            end
-            if elements.extIndicatorOverlay then
-                elements.extIndicatorOverlay:UpdateIndicators(updatedAuraData)
-            end
+            Util.UpdateIndicatorsForUnit(unit, updatedAuraData)
         end
     end
 end

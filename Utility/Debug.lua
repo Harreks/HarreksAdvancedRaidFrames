@@ -31,3 +31,21 @@ function Util.DumpData(data)
         DevTools_Dump(data)
     end
 end
+
+function Util.GetTableSize(t)
+    local count = 0
+    local function countRecursive(tbl)
+        if type(tbl) ~= "table" then return end
+        for k, v in pairs(tbl) do
+            count = count + 1 -- Count the entry itself
+            -- Estimate primitive sizes (very rough approximation)
+            if type(k) == "string" then count = count + (#k / 1024) end
+            if type(v) == "string" then count = count + (#v / 1024) end
+            if type(v) == "table" then
+                countRecursive(v)
+            end
+        end
+    end
+    countRecursive(t)
+    print(string.format("Table weight: ~%.2f KB", count))
+end

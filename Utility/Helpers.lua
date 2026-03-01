@@ -60,11 +60,6 @@ function Util.ToggleTransparency(frameString, shouldShow)
     end
 end
 
---Return the list of frames depending on raid or party
-function Util.GetRelevantList()
-    return IsInRaid() and Data.unitList.raid or Data.unitList.party
-end
-
 --Yes i know what "equal" means. We check if time1 is *close* to time2
 function Util.AreTimestampsEqual(time1, time2, delay)
     local castDelay = delay or 0.1
@@ -197,24 +192,23 @@ function Util.MapOutUnits()
     Util.UpdatePlayerSpec()
 
     --Remove all current data on the unit lists
-    for groupType, units in pairs(Data.unitList) do
-        for unit, _ in pairs(units) do
-            local elements = Data.unitList[groupType][unit]
-            elements.frame = nil
-            elements.extFrame = nil
-            elements.centerIcon = nil
-            elements.isColored = false
-            elements.defensive.frame = nil
-            elements.name = nil
-            wipe(elements.buffs)
-            wipe(elements.debuffs)
-            if elements.indicatorOverlay then
-                elements.indicatorOverlay:Delete()
-                elements.indicatorOverlay = nil
-            end
-            if elements.extIndicatorOverlay then
-                elements.extIndicatorOverlay:Delete()
-                elements.extIndicatorOverlay = nil
+    for _, elements in pairs(Data.unitList) do
+        elements.frame = nil
+        elements.centerIcon = nil
+        elements.isColored = false
+        elements.defensive.frame = nil
+        elements.name = nil
+        wipe(elements.buffs)
+        wipe(elements.debuffs)
+        wipe(elements.extFrames)
+        if elements.indicatorOverlay then
+            elements.indicatorOverlay:Delete()
+            elements.indicatorOverlay = nil
+        end
+        if next(elements.extIndicatorOverlays) then
+            for index, overlay in ipairs(elements.extIndicatorOverlays) do
+                overlay:Delete()
+                elements.extIndicatorOverlays[index] = nil
             end
         end
     end
@@ -222,13 +216,13 @@ function Util.MapOutUnits()
     --If we are using external frames, call a cache refresh
     if Options.extFrames then
         local LGF = LibStub('LibGetFrame-1.0')
-        LGF:ScanForUnitFrames()
         Data.updatingExternalFrames = true
+        LGF:ScanForUnitFrames()
     end
 
     --We check the frames for the party or raid to find where each unit is
     local currentGroupType = IsInRaid() and 'raid' or 'party'
-    local unitList = Util.GetRelevantList()
+    local unitList = Data.unitList
     local frameList = Data.frameList[currentGroupType]
     for _, frameString in ipairs(frameList) do
         local frame = _G[frameString]
@@ -267,22 +261,19 @@ function Util.MapOutUnits()
 end
 
 function Util.GetExternalFrames()
-    local LGF = LibStub('LibGetFrame-1.0')
-    for groupType, units in pairs(Data.unitList) do
-        for unit, _ in pairs(units) do
-            local elements = Data.unitList[groupType][unit]
-            local extFrame = LGF.GetUnitFrame(unit, { ignoreFrames = Data.ignoredFrames })
-            if extFrame then
-                elements.extFrame = extFrame
-                if elements.extIndicatorOverlay then
-                    elements.extIndicatorOverlay:Delete()
-                    elements.extIndicatorOverlay = nil
+    if SavedIndicators[Data.playerSpec] and #SavedIndicators[Data.playerSpec] > 0 then
+        local LGF = LibStub('LibGetFrame-1.0')
+        for unit, elements in pairs(Data.unitList) do
+            local extFrames = LGF.GetUnitFrame(unit, { ignoreFrames = Data.ignoredFrames, returnAll = true })
+            if extFrames then
+                for _, extFrame in pairs(extFrames) do
+                    table.insert(elements.extFrames, extFrame)
+                    local indicatorOverlay = Ui.CreateIndicatorOverlay(SavedIndicators[Data.playerSpec])
+                    indicatorOverlay.unit = unit
+                    indicatorOverlay:AttachToFrame(extFrame)
+                    indicatorOverlay:Show()
+                    table.insert(elements.extIndicatorOverlays, indicatorOverlay)
                 end
-                local indicatorOverlay = Ui.CreateIndicatorOverlay(SavedIndicators[Data.playerSpec])
-                indicatorOverlay.unit = unit
-                indicatorOverlay:AttachToFrame(extFrame)
-                indicatorOverlay:Show()
-                elements.extIndicatorOverlay = indicatorOverlay
             end
         end
     end

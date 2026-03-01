@@ -25,19 +25,24 @@ function Util.NormalizeSavedIndicators()
                 if type(indicatorData) == 'table' and indicatorData.Type then
 
                     local typeData = Data.indicatorTypes[indicatorData.Type]
-                    if typeData and typeData.defaults then
-                        for key, defaultValue in pairs(typeData.defaults) do
-                            if indicatorData[key] == nil then
-                                if type(defaultValue) == 'table' then
-                                    indicatorData[key] = CopyTable(defaultValue)
-                                else
-                                    indicatorData[key] = defaultValue
+                    if typeData and typeData.controls then
+                        -- Check against controls setting instead of defaults table
+                        local defaultKeys = {}
+                        for _, control in ipairs(typeData.controls) do
+                            if control.setting and control.default ~= nil then
+                                defaultKeys[control.setting] = true
+                                if indicatorData[control.setting] == nil then
+                                    if type(control.default) == 'table' then
+                                        indicatorData[control.setting] = CopyTable(control.default)
+                                    else
+                                        indicatorData[control.setting] = control.default
+                                    end
                                 end
                             end
                         end
 
                         for key, _ in pairs(indicatorData) do
-                            if key ~= 'Type' and key ~= 'Spell' and typeData.defaults[key] == nil then
+                            if key ~= 'Type' and key ~= 'Spell' and not defaultKeys[key] then
                                 indicatorData[key] = nil
                             end
                         end
@@ -138,12 +143,14 @@ end
 function Util.GetDefaultSettingsForIndicator(indicatorType)
     local data = { Type = indicatorType }
     local typeData = Data.indicatorTypes[indicatorType]
-    if typeData and typeData.defaults then
-        for key, value in pairs(typeData.defaults) do
-            if type(value) == 'table' then
-                data[key] = CopyTable(value)
-            else
-                data[key] = value
+    if typeData and typeData.controls then
+        for _, control in ipairs(typeData.controls) do
+            if control.setting and control.default ~= nil then
+                if type(control.default) == 'table' then
+                    data[control.setting] = CopyTable(control.default)
+                else
+                    data[control.setting] = control.default
+                end
             end
         end
     end
@@ -233,9 +240,86 @@ function Util.DisplayEncodingPopup(type, content)
     end
 end
 
+--This is a small popup window with links to socials
+function Util.DisplayResetPopup()
+    if not StaticPopupDialogs['HARF_RESET'] then
+        StaticPopupDialogs['HARF_RESET'] = {
+            text = '|cnNORMAL_FONT_COLOR:AdvancedRaidFrames|r\nAre you sure you want to reset your data? this will delete your indicators.',
+            button1 = ACCEPT,
+            button2 = CLOSE,
+            OnAccept = function()
+                HARFDB = nil
+                C_UI.Reload()
+            end
+        }
+    end
+    StaticPopup_Show('HARF_RESET')
+end
+
+function Util.CustomSetVertexColor(self, r, g, b, a)
+    local healthBar = self:GetParent()
+    if healthBar then
+        local unitFrame = healthBar:GetParent()
+        if unitFrame and unitFrame.unit then
+            local unitList = Data.unitList
+            local elements = unitList[unitFrame.unit]
+            if not elements.isColored then
+                self:_HARF_SetVertexColor(r, g, b, a)
+            end
+        end
+    end
+end
+
+function Util.ResetUnitAuraData(unit)
+    local emptyAuraData = {}
+    for _, auraData in pairs(Data.specInfo[Data.playerSpec].auras) do
+        emptyAuraData[auraData.name] = { active = false }
+    end
+    Util.UpdateIndicatorsForUnit(unit, emptyAuraData)
+end
+
+function Util.UpdateIndicatorsForUnit(unit, auraData)
+    local elements = Data.unitList[unit]
+    if elements.indicatorOverlay then
+        elements.indicatorOverlay:UpdateIndicators(auraData)
+    end
+    if next(elements.extIndicatorOverlays) then
+        for _, overlay in ipairs(elements.extIndicatorOverlays) do
+            overlay:UpdateIndicators(auraData)
+        end
+    end
+end
+
+--Different frames contain their texture in different ways
+function Util.GetFrameHealthTexture(frame)
+    if frame then
+        --This works on default and Danders
+        if frame.healthBar and frame.healthBar.GetStatusBarTexture then
+            return frame.healthBar:GetStatusBarTexture()
+        end
+        --Grid2 has its health bars inside an array, this isn't super well tested
+        if frame['health-bar'] then
+            return frame['health-bar'].myTextures[1]:GetStatusBarTexture()
+        end
+    end
+end
+
+function Util.GetTextureDropdown()
+    local container = Settings.CreateControlTextContainer()
+    local sortedNames = {}
+    for name in pairs(Data.barTextures) do table.insert(sortedNames, name) end
+    table.sort(sortedNames)
+    for _, name in ipairs(sortedNames) do
+        local texturePath = Data.barTextures[name]
+        local displayLabel = "|T" .. texturePath .. ":14:100|t " .. name
+        container:Add(name, displayLabel)
+    end
+    return container:GetData()
+end
+
 --This recolors the default frames if blizzard tries to color them back beforehand
 hooksecurefunc("CompactUnitFrame_UpdateHealthColor", function(frame)
-    local unitList = Util.GetRelevantList()
+    local unitList = Data.unitList
     if frame.unit and unitList[frame.unit] and frame == _G[unitList[frame.unit].frame] and unitList[frame.unit].isColored then
         local color = unitList[frame.unit].recolor
         local texture = frame.healthBar:GetStatusBarTexture()

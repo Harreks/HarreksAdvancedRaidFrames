@@ -97,6 +97,7 @@ Data.specInfo = {
             [1253593] = { name = 'VoidShield', signature = '' },
             [41635] = { name = 'PrayerOfMending', signature = '0:1:0:1' },
             [10060] = { name = 'PowerInfusion', signature = '1:0:0:1', secret = true },
+            [21562] = { name = 'PowerWordFortitude', signature = '1:0:0:1', hide = true}
         },
         casts = {
             [17] = { 'Atonement', 'PowerWordShield', 'PrayerOfMending' }, --PW: Shield
@@ -120,6 +121,7 @@ Data.specInfo = {
             [47788] = { name = 'GuardianSpirit', signature = '1:1:1:0', secret = true },
             [41635] = { name = 'PrayerOfMending', signature = '0:1:0:1' },
             [10060] = { name = 'PowerInfusion', signature = '1:0:0:1', secret = true },
+            [21562] = { name = 'PowerWordFortitude', signature = '1:0:0:1', hide = true}
         },
         casts = {
             [2061] = { 'Renew' }, --Flash Heal

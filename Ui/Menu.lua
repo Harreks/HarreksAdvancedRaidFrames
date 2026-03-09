@@ -3,7 +3,8 @@ local Data = NS.Data
 local Ui = NS.Ui
 local Util = NS.Util
 local Core = NS.Core
-local L = NS.L
+local Debug = NS.Debug
+local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
 function Ui.GetOptionsIntroPanel()
@@ -100,6 +101,52 @@ function Ui.CreateOptionsElement(data, parent)
         initializer =  Settings.CreateElementInitializer("SettingButtonControlTemplate", buttonData)
         Data.initializerList[data.key] = initializer
         parent.layout:AddInitializer(initializer)
+    elseif data.type == "checkbox-dropdown" or data.type == "checkbox-texture" then
+        if Options[data.key] == nil then Options[data.key] = data.default end
+        local cbInput = Settings.RegisterAddOnSetting(parent.category, data.key, data.key, Options, type(data.default), data.text, data.default)
+        if Options[data.ddKey] == nil then Options[data.ddKey] = data.ddDefault end
+        local ddInput = Settings.RegisterAddOnSetting(parent.category, data.ddKey, data.ddKey, Options, type(data.ddDefault), data.ddText or "", data.ddDefault)
+
+        local function callback(setting, value)
+            local settingKey = setting:GetVariable()
+            local func
+            for _, opt in ipairs(Data.settings) do
+                if opt.key == settingKey then
+                    func = opt.func
+                    break
+                end
+                if opt.ddKey == settingKey then
+                    func = opt.ddFunc
+                end
+            end
+            if func then
+                if func == 'Setup' then
+                    Core.ModifySettings()
+                else
+                    Core.ModifySettings(func, value)
+                end
+            end
+        end
+        cbInput:SetValueChangedCallback(callback)
+        ddInput:SetValueChangedCallback(callback)
+
+        local getOptionsFunc
+        if data.type == "checkbox-texture" then
+            getOptionsFunc = Util.GetTextureDropdown
+        else
+            getOptionsFunc = function()
+                local container = Settings.CreateControlTextContainer()
+                for _, item in ipairs(data.items) do
+                    container:Add(item.value, item.text)
+                end
+                return container:GetData()
+            end
+        end
+
+        initializer = CreateSettingsCheckboxDropdownInitializer(cbInput, data.text, data.tooltip, ddInput, getOptionsFunc, data.ddText or "", data.ddTooltip)
+        parent.layout:AddInitializer(initializer)
+        Data.initializerList[data.key] = initializer
+        if data.ddKey then Data.initializerList[data.ddKey] = initializer end
     else
         if Options[data.key] == nil then Options[data.key] = data.default end
         local input = Settings.RegisterAddOnSetting(parent.category, data.key, data.key, Options, type(data.default), data.text, data.default)

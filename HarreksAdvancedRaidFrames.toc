@@ -1,7 +1,7 @@
 ## Interface: 120001
 ## Title: Harreks Advanced Raid Frames
 ## Author: Harrek
-## Version: 2.2.2
+## Version: 2.2.3
 ## Notes: Functionality enhancement for party and raid frames
 ## IconTexture: Interface/Addons/HarreksAdvancedRaidFrames/Assets/harrek-logo.png
 ## Category: Unit Frames
@@ -28,7 +28,8 @@ Ui/Menu.lua
 
 Utility/Helpers.lua
 Utility/Visuals.lua
-Utility/Debug.lua
+
+Debug/Prints.lua
 
 Core/Engines.lua
 Core/Options.lua

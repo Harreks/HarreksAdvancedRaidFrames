@@ -2,7 +2,8 @@ local _, NS = ...
 local Data = NS.Data
 local Ui = NS.Ui
 local Util = NS.Util
-local API = NS.API
+local Core = NS.Core
+local Debug = NS.Debug
 local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
@@ -271,11 +272,13 @@ function Util.CustomSetVertexColor(self, r, g, b, a)
 end
 
 function Util.ResetUnitAuraData(unit)
-    local emptyAuraData = {}
-    for _, auraData in pairs(Data.specInfo[Data.playerSpec].auras) do
-        emptyAuraData[auraData.name] = { active = false }
+    if Data.playerSpec then
+        local emptyAuraData = {}
+        for _, auraData in pairs(Data.specInfo[Data.playerSpec].auras) do
+            emptyAuraData[auraData.name] = { active = false }
+        end
+        Util.UpdateIndicatorsForUnit(unit, emptyAuraData)
     end
-    Util.UpdateIndicatorsForUnit(unit, emptyAuraData)
 end
 
 function Util.UpdateIndicatorsForUnit(unit, auraData)
@@ -304,17 +307,40 @@ function Util.GetFrameHealthTexture(frame)
     end
 end
 
+function Util.SetStatusbarTextureOrAtlas(textureObject, selectedVisual)
+    if selectedVisual.type == 'T' then
+        textureObject:SetStatusBarTexture(selectedVisual.path)
+    else
+        textureObject:SetStatusBarAtlas(selectedVisual.path)
+    end
+end
+
 function Util.GetTextureDropdown()
     local container = Settings.CreateControlTextContainer()
     local sortedNames = {}
     for name in pairs(Data.barTextures) do table.insert(sortedNames, name) end
     table.sort(sortedNames)
     for _, name in ipairs(sortedNames) do
-        local texturePath = Data.barTextures[name]
-        local displayLabel = "|T" .. texturePath .. ":14:100|t " .. name
+        local texture = Data.barTextures[name]
+        local displayLabel
+        if texture.type == 'T' then
+            displayLabel = "|T" .. texture.path .. ":14:100|t " .. name
+        else
+            displayLabel = "|A:" .. texture.path .. ":14:100|a " .. name
+        end
         container:Add(name, displayLabel)
     end
     return container:GetData()
+end
+
+function Util.UpdateOvershields(unit)
+    local elements = Data.unitList[unit]
+    if elements and elements.overshield then
+        local absorbs = UnitGetTotalAbsorbs(unit)
+        local maxHealth = UnitHealthMax(unit)
+        elements.overshield:SetMinMaxValues(0, maxHealth)
+        elements.overshield:SetValue(absorbs)
+    end
 end
 
 --This recolors the default frames if blizzard tries to color them back beforehand
@@ -324,5 +350,22 @@ hooksecurefunc("CompactUnitFrame_UpdateHealthColor", function(frame)
         local color = unitList[frame.unit].recolor
         local texture = frame.healthBar:GetStatusBarTexture()
         texture:SetVertexColor(color.r, color.g, color.b)
+    end
+end)
+
+--This recolors the names on the default frames if blizzard tries to color them back
+hooksecurefunc("CompactUnitFrame_UpdateName", function(frame)
+    local unitList = Data.unitList
+    if Options.colorNames and frame.unit and unitList[frame.unit] and frame == _G[unitList[frame.unit].frame] then
+        local nameFrame = _G[unitList[frame.unit].name]
+        if nameFrame then
+            local _, class = UnitClass(frame.unit)
+            if class then
+                local color = RAID_CLASS_COLORS[class]
+                if color then
+                    nameFrame:SetTextColor(color.r, color.g, color.b)
+                end
+            end
+        end
     end
 end)

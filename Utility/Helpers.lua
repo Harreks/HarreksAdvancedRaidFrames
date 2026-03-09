@@ -3,6 +3,7 @@ local Data = NS.Data
 local Ui = NS.Ui
 local Util = NS.Util
 local Core = NS.Core
+local Debug = NS.Debug
 local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
@@ -78,15 +79,14 @@ function Util.GetSpotlightNames()
         table.insert(spotlightNameList, { text = name })
     end
 
-    if IsInRaid() then
-        local groupSize = GetNumGroupMembers() or 0
-        for i = 1, groupSize do
-            local unit = 'raid' .. i
-            if UnitExists(unit) and not UnitIsUnit(unit, 'player') then
-                local unitName = UnitName(unit)
-                if unitName and unitName ~= '' and not selectedNames[unitName] then
-                    table.insert(spotlightNameList, { text = unitName })
-                end
+    local groupSize = GetNumGroupMembers() or 0
+    local groupType = IsInRaid() and 'raid' or 'party'
+    for i = 1, groupSize do
+        local unit = groupType .. i
+        if UnitExists(unit) and not UnitIsUnit(unit, 'player') then
+            local unitName = UnitName(unit)
+            if unitName and unitName ~= '' and not selectedNames[unitName] then
+                table.insert(spotlightNameList, { text = unitName })
             end
         end
     end
@@ -95,24 +95,21 @@ function Util.GetSpotlightNames()
 end
 
 --Use the spotlight name list to map out where each frame is supposed to go
-function Util.MapSpotlightAnchors()
+function Util.MapSpotlightGroups()
     --Reset the current lists
-    wipe(Data.spotlightAnchors.spotlights)
-    wipe(Data.spotlightAnchors.defaults)
+    wipe(Data.spotlightFrames)
     local units = Options.spotlight.names
-    local frames = Data.frameList.raid --Spotlight only works in raid
+    local frames = Util.GetActiveFrameList()
     local seenUnits = {}
     for _, frameString in ipairs(frames) do
         local currentFrame = _G[frameString]
         if currentFrame and currentFrame.unit then
             local unit = currentFrame.unit
-            if unit ~= 'player' and not seenUnits[unit] then --The player can't be spotlight
+            if not UnitIsUnit(unit, 'player') and not seenUnits[unit] then --The player can't be spotlight
                 seenUnits[unit] = true
                 local unitName = UnitName(unit)
                 if unitName and units[unitName] then
-                    table.insert(Data.spotlightAnchors.spotlights, frameString)
-                else
-                    table.insert(Data.spotlightAnchors.defaults, frameString)
+                    Data.spotlightFrames[frameString] = true
                 end
             end
         end
@@ -122,54 +119,45 @@ end
 --Use the mapped spotlight anchors to attach the frames where they are supposed to go
 function Util.ReanchorSpotlights()
     local spotlightFrame = Ui.GetSpotlightFrame()
-    if not spotlightFrame then
-        return
-    end
-
-    for index, frameString in ipairs(Data.spotlightAnchors.spotlights) do
-        local frame = _G[frameString]
-        if frame then
-            frame:ClearAllPoints()
-            --The first frame goes attached directly to the spotlight anchor
-            if index == 1 then
-                frame:SetPoint('TOP', spotlightFrame, 'TOP')
-            --Other frames go attached to the previous one in the list
-            else
-                local previousFrame = _G[Data.spotlightAnchors.spotlights[index - 1]]
-                if previousFrame then
-                    local childPoint, parentPoint
-                    if Options.spotlight.grow == 'right' then
-                        childPoint, parentPoint = 'LEFT', 'RIGHT'
+    if spotlightFrame then
+        local frameList = Util.GetActiveFrameList()
+        local firstSpotlight, previousSpotlight, spotlightCount = false, nil, 0
+        for index, frameString in ipairs(frameList) do
+            local frame = _G[frameString]
+            if frame then
+                if Data.spotlightFrames[frameString] then
+                    for i = #frameList, index, -1 do
+                        local currentFrame = _G[frameList[i]]
+                        local nextFrame = _G[frameList[i-1]]
+                        if currentFrame and nextFrame then
+                            local _, _, _, xOff, yOff = nextFrame:GetPoint()
+                            currentFrame:ClearAllPoints()
+                            currentFrame:SetPoint('TOPLEFT', xOff, yOff)
+                        end
+                    end
+                    frame:ClearAllPoints()
+                    if not firstSpotlight then
+                        firstSpotlight = frame
+                        frame:SetPoint('TOP', spotlightFrame, 'TOP')
                     else
-                        childPoint, parentPoint = 'TOP', 'BOTTOM'
+                        local childPoint, parentFrame, parentPoint
+                        if Options.spotlight.grow == 'right' then
+                            if spotlightCount == Options.spotlight.groupSize then
+                                childPoint, parentFrame, parentPoint = 'TOP', firstSpotlight, 'BOTTOM'
+                            else
+                                childPoint, parentFrame, parentPoint = 'LEFT', previousSpotlight, 'RIGHT'
+                            end
+                        else
+                            if spotlightCount == Options.spotlight.groupSize then
+                                childPoint, parentFrame, parentPoint = 'LEFT', firstSpotlight, 'RIGHT'
+                            else
+                                childPoint, parentFrame, parentPoint = 'TOP', previousSpotlight, 'BOTTOM'
+                            end
+                        end
+                        frame:SetPoint(childPoint, parentFrame, parentPoint)
                     end
-                    frame:SetPoint(childPoint, previousFrame, parentPoint)
-                else
-                    frame:SetPoint('TOP', spotlightFrame, 'TOP')
-                end
-            end
-        end
-    end
-    --Similar logic for the frames that remain in the default position
-    --This currently has a bug if the user has 'separate tanks' turned on, because the tanks' targets and targetoftarget also use frames but of different size
-    for index, frameString in ipairs(Data.spotlightAnchors.defaults) do
-        local frame = _G[frameString]
-        if frame then
-            frame:ClearAllPoints()
-            if index == 1 then
-                frame:SetPoint('TOPLEFT', 'CompactRaidFrameContainer', 'TOPLEFT')
-            else
-                --This 5 is a magic number that assumes people have 5 frames before breaking into a new row (needs updating)
-                if (index - 1) % 5 == 0 then
-                    local previousFrame = _G[Data.spotlightAnchors.defaults[index - 5]]
-                    if previousFrame then
-                        frame:SetPoint('TOP', previousFrame, 'BOTTOM')
-                    end
-                else
-                    local previousFrame = _G[Data.spotlightAnchors.defaults[index - 1]]
-                    if previousFrame then
-                        frame:SetPoint('LEFT', previousFrame, 'RIGHT')
-                    end
+                    previousSpotlight = frame
+                    spotlightCount = spotlightCount + 1
                 end
             end
         end
@@ -221,9 +209,8 @@ function Util.MapOutUnits()
     end
 
     --We check the frames for the party or raid to find where each unit is
-    local currentGroupType = IsInRaid() and 'raid' or 'party'
     local unitList = Data.unitList
-    local frameList = Data.frameList[currentGroupType]
+    local frameList = Util.GetActiveFrameList()
     for _, frameString in ipairs(frameList) do
         local frame = _G[frameString]
         if frame and frame.unit then
@@ -231,6 +218,7 @@ function Util.MapOutUnits()
             if unitElements then
                 unitElements.frame = frameString
                 unitElements.centerIcon = frameString .. 'CenterStatusIcon'
+                unitElements.roleIcon = frameString .. 'RoleIcon'
                 unitElements.defensive.frame = frameString
                 unitElements.name = frameString .. 'Name'
                 for i = 1, 6 do
@@ -246,6 +234,10 @@ function Util.MapOutUnits()
                     indicatorOverlay:AttachToFrame(frame)
                     indicatorOverlay:Show()
                     unitElements.indicatorOverlay = indicatorOverlay
+                end
+                --Reset overshields just in case
+                if unitElements.overshield then
+                    Util.UpdateOvershields(frame.unit)
                 end
             end
         end
@@ -324,4 +316,25 @@ function Util.DecodeIndicators(string)
             print('|cnNORMAL_FONT_COLOR:AdvancedRaidFrames:|r Error importing indicators.')
         end
     end
+end
+
+function Util.IsSpotlightActive()
+    local enabledOption = Options.enableSpotlight
+    if enabledOption == 3 then return true end
+    if IsInRaid() and enabledOption == 1 then return true end
+    if IsInGroup() and enabledOption == 2 then return true end
+    return false
+end
+
+function Util.GetActiveFrameList()
+    if IsInRaid() then
+        if CompactRaidFrame1 and CompactRaidFrame1.unit then
+            return Data.frameList.raidCombined
+        else
+            return Data.frameList.raidGroups
+        end
+    elseif IsInGroup() then
+        return Data.frameList.party
+    end
+    return {}
 end

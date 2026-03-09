@@ -4,10 +4,10 @@ NS.Core.InstallTrackers()
 
 --[[
 TODO:
-- remove or change center defensive icon
+
+- Add data dump to debug
 - second color at low timer for square, bar recolor and border
-- overshields
-- fix name recolors not re-attaching
-- add rows slider to spotlight
-- retest spotlight
+- LibGetFrame getting playerframe from EnhancedQoL, not getting it from Vuhdo
+- Add option to track duration or stacks on icons
+- make dispellable debuffs bigger on the frame
 ]]

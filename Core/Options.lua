@@ -3,18 +3,9 @@ local Data = NS.Data
 local Ui = NS.Ui
 local Util = NS.Util
 local Core = NS.Core
-local API = NS.API
+local Debug = NS.Debug
 local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
-
-function Core.ToggleMinimapIcon(value, _, _)
-    local LibDBIcon = LibStub('LibDBIcon-1.0')
-    if value then
-        LibDBIcon:Show('HARF')
-    else
-        LibDBIcon:Hide('HARF')
-    end
-end
 
 --Controls visibility on buff icons, takes how many buffs are to be shown and the element list of the frame to be modified
 function Core.ToggleBuffIcons(amount, _, elements)
@@ -75,69 +66,112 @@ function Core.ScaleNames(value, _, elements)
     if _G[elements.name] then
         _G[elements.name]:SetScale(value)
     end
-    if elements.customName then
-        elements.customName:SetScale(value)
-            if _G[elements.name] then
-            local width = _G[elements.name]:GetWidth()
-            if not issecretvalue(width) then
-                elements.customName:SetWidth(width)
-            end
-        end
-    end
 end
 
 --Class coloring for names, value is true for class colored and false for defaults. takes frameString of the frame to modify and its elements
 function Core.ColorNames(value, unit, elements)
-    if _G[elements.frame] and _G[elements.frame].unit then
-        local frame = _G[elements.frame]
+    if _G[elements.name] then
         local nameFrame = _G[elements.name]
-        local customName
-        if not elements.customName then
-            customName = frame:CreateFontString(nil, 'OVERLAY', 'GameFontHighlightSmall')
-            local font, size, flags = nameFrame:GetFont()
-            customName:SetScale(nameFrame:GetScale())
-            customName:SetFont(font, size, flags)
-            customName:SetWordWrap(false)
-            local nameWidth = nameFrame:GetWidth()
-            if not issecretvalue(nameWidth) then
-                customName:SetWidth(nameWidth)
+        if nameFrame and value then
+            local _, class = UnitClass(unit)
+            if class then
+                local color = RAID_CLASS_COLORS[class]
+                if color then
+                    nameFrame:SetTextColor(color.r, color.g, color.b)
+                end
             end
-            if string.find(elements.frame, 'Raid') then
-                customName:SetJustifyH('CENTER')
-                customName:SetPoint('CENTER', nameFrame, 'CENTER')
-            else
-                customName:SetJustifyH('LEFT')
-                customName:SetPoint('TOPLEFT', nameFrame, 'TOPLEFT')
-            end
-            elements.customName = customName
-        else
-            customName = elements.customName
-        end
-        customName:SetText(GetUnitName(unit, true))
-        local _, class = UnitClass(unit)
-        if class then
-            local color = RAID_CLASS_COLORS[class]
-            if color then
-                customName:SetTextColor(color.r, color.g, color.b)
-            end
-        end
-        if value then
-            nameFrame:SetAlpha(0)
-            customName:SetAlpha(1)
-        else
-            nameFrame:SetAlpha(1)
-            customName:SetAlpha(0)
         end
     end
 end
 
+--This setting is a bit wonky because enabling or disabling doesn't alter the textures immediately
+--Enabling the check enables the dropdown which changes the texture when an option is picked
+--And disabling the check means the texture replacement is never ran so it doesn't interfere with other addons
+--But this setting could be expanded to make it work in real time. Tho i don't expect it to be a huge problem
+function Core.EnableBarTexture(value, _, elements)
+end
+
 --Sets the texture on the default frames' health bars
 function Core.SetBarTexture(value, _, elements)
-    if Data.barTextures[value] then
+    if Options.barTextureEnabled then
         if _G[elements.frame] and _G[elements.frame].healthBar then
             local healthBar = _G[elements.frame].healthBar
-            healthBar:GetStatusBarTexture():SetTexture(Data.barTextures[value])
+            local texture = Data.barTextures[value]
+            if texture.type == 'T' then
+                healthBar:GetStatusBarTexture():SetTexture(texture.path)
+            else
+                healthBar:GetStatusBarTexture():SetAtlas(texture.path)
+            end
         end
+    end
+end
+
+function Core.ShowOvershields(value, unit, elements)
+    if value then
+        if not elements.overshield then
+            local frame = _G[elements.frame]
+            if frame and frame.healthBar then
+                local overshield = CreateFrame('StatusBar', nil, frame)
+                overshield:SetAlpha(0.8)
+                overshield:SetAllPoints(frame.healthBar)
+                overshield:SetFrameLevel(frame.healthBar:GetFrameLevel())
+                overshield:SetReverseFill(true)
+                Util.SetStatusbarTextureOrAtlas(overshield, Data.barTextures[Options.overshieldsTexture])
+
+                local overshieldTexture = overshield:GetStatusBarTexture()
+                overshieldTexture:SetDrawLayer("BORDER")
+
+                local mask = overshield:CreateMaskTexture()
+                mask:SetTexture("Interface/TargetingFrame/UI-StatusBar", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+                mask:SetAllPoints(frame.healthBar:GetStatusBarTexture())
+                overshieldTexture:AddMaskTexture(mask)
+
+                elements.overshield = overshield
+            end
+        end
+        if elements.overshield then
+            elements.overshield:Show()
+            elements.tracker:RegisterUnitEvent('UNIT_ABSORB_AMOUNT_CHANGED', unit)
+            Util.UpdateOvershields(unit)
+        end
+    else
+        if elements.overshield then
+            elements.overshield:Hide()
+        end
+        elements.tracker:UnregisterEvent('UNIT_ABSORB_AMOUNT_CHANGED')
+    end
+end
+
+function Core.OvershieldsTexture(value, _, elements)
+    if elements.overshield and Data.barTextures[value] then
+        Util.SetStatusbarTextureOrAtlas(elements.overshield, Data.barTextures[value])
+    end
+end
+
+function Core.ToggleRoleIcon(value, _, elements)
+    if _G[elements.roleIcon] then
+        _G[elements.roleIcon]:SetAlpha(value and 1 or 0)
+    end
+end
+
+function Core.ToggleCenterDefensive(value, _, elements)
+    if _G[elements.frame] and _G[elements.frame].CenterDefensiveBuff then
+        _G[elements.frame].CenterDefensiveBuff:SetAlpha(value and 1 or 0)
+    end
+end
+
+function Core.ReanchorCenterDefensive(value, _, elements)
+    if _G[elements.frame] and _G[elements.frame].CenterDefensiveBuff then
+        local defensiveIcon = _G[elements.frame].CenterDefensiveBuff
+        local frame = defensiveIcon:GetParent()
+        defensiveIcon:ClearAllPoints()
+        defensiveIcon:SetPoint(value, frame, value)
+    end
+end
+
+function Core.ResizeCenterDefensive(value, _, elements)
+    if _G[elements.frame] and _G[elements.frame].CenterDefensiveBuff then
+        _G[elements.frame].CenterDefensiveBuff:SetScale(value)
     end
 end
 
@@ -148,13 +182,14 @@ function Core.ModifySettings(modifiedSettingFunction, newValue)
         if modifiedSettingFunction and type(Core[modifiedSettingFunction]) == 'function' then
             table.insert(functionsToRun, { func = Core[modifiedSettingFunction], val = newValue } )
         else
-            table.insert(functionsToRun, { func = Core.ToggleBuffIcons, val = Options.buffIcons } )
-            table.insert(functionsToRun, { func = Core.ToggleDebuffIcons, val = Options.debuffIcons } )
-            table.insert(functionsToRun, { func = Core.ToggleAurasMouseInteraction, val = Options.clickThroughBuffs } )
-            table.insert(functionsToRun, { func = Core.SetGroupFrameTransparency, val = Options.frameTransparency } )
-            table.insert(functionsToRun, { func = Core.ScaleNames, val = Options.nameScale } )
-            table.insert(functionsToRun, { func = Core.ColorNames, val = Options.colorNames } )
-            table.insert(functionsToRun, { func = Core.SetBarTexture, val = Options.barTexture } )
+            for _, option in ipairs(Data.settings) do
+                if option.key and option.func and Core[option.func] then
+                    table.insert(functionsToRun, { func = Core[option.func], val = Options[option.key] })
+                end
+                if option.ddKey and option.ddFunc and Core[option.ddFunc] then
+                    table.insert(functionsToRun, { func = Core[option.ddFunc], val = Options[option.ddKey] })
+                end
+            end
         end
 
         Util.MapOutUnits()
@@ -165,8 +200,8 @@ function Core.ModifySettings(modifiedSettingFunction, newValue)
             end
         end
 
-        if IsInRaid() and Options.spotlight.names then
-            Util.MapSpotlightAnchors()
+        if Util.IsSpotlightActive() and Options.spotlight.names then
+            Util.MapSpotlightGroups()
             Util.ReanchorSpotlights()
         end
     end

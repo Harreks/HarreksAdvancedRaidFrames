@@ -1,7 +1,11 @@
 local _, NS = ...
 local Data = NS.Data
+local Ui = NS.Ui
 local Util = NS.Util
 local Core = NS.Core
+local Debug = NS.Debug
+local SavedIndicators = HARFDB.savedIndicators
+local Options = HARFDB.options
 
 --Try to match an aura with a buff name, some are non-secret others we need to check deeper
 function Core.MatchAuraInfo(unit, aura)

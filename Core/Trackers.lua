@@ -3,6 +3,7 @@ local Data = NS.Data
 local Ui = NS.Ui
 local Util = NS.Util
 local Core = NS.Core
+local Debug = NS.Debug
 local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
@@ -27,17 +28,22 @@ function Core.InstallTrackers()
                     end
                 end
             end
-            tracker:SetScript('OnEvent', function(self, _, unitId, auraUpdateInfo)
-                if Data.playerSpec then
+            tracker:SetScript('OnEvent', function(self, event, unitId, auraUpdateInfo)
+                if event == 'UNIT_AURA' and Data.playerSpec then
                     if not self.active then
                         self.active = true
                         self:SetScript('OnUpdate', self.VisibleCheck)
                     end
                     self.lastUpdate = GetTime()
                     Core.UpdateAuraStatus(unitId, auraUpdateInfo)
+                elseif event == 'UNIT_ABSORB_AMOUNT_CHANGED' then
+                    Util.UpdateOvershields(unitId)
                 end
             end)
             tracker:RegisterUnitEvent('UNIT_AURA', unit)
+            if Options.showOvershields then
+                tracker:RegisterUnitEvent('UNIT_ABSORB_AMOUNT_CHANGED', unit)
+            end
             elements.tracker = tracker
         end
     end
@@ -73,7 +79,6 @@ function Core.InstallTrackers()
 
         stateTracker:SetScript('OnEvent', function(self, event, unitTarget)
             if event == 'PLAYER_LOGIN' then
-                Util.DebugData(Data.unitList, 'Units')
                 Util.UpdatePlayerSpec()
                 if not Options.editingSpec or not Data.specInfo[Options.editingSpec] then
                     Options.editingSpec = Data.playerSpec
@@ -97,14 +102,18 @@ function Core.InstallTrackers()
                     end
                 end)
 
+                --TODO: The whole spotlight settings should be moved to a different file
                 LEM:RegisterCallback('layout', function()
                     if not Options.spotlight then
                         Options.spotlight = {
                             pos = { p = 'CENTER', x = 0, y = 0 },
+                            groupSize = 5,
                             names = {},
                             grow = 'right'
                         }
                     end
+                    --TODO: in the future run option validations on init
+                    if not Options.spotlight.groupSize then Options.spotlight.groupSize = 5 end
                     Core.ModifySettings()
                     spotlightFrame:SetPoint(Options.spotlight.pos.p, Options.spotlight.pos.x, Options.spotlight.pos.y)
                 end)
@@ -133,7 +142,7 @@ function Core.InstallTrackers()
                             else
                                 Options.spotlight.names[value] = true
                             end
-                            Util.MapSpotlightAnchors()
+                            Util.MapSpotlightGroups()
                         end,
                         values = Util.GetSpotlightNames
                     },
@@ -152,6 +161,21 @@ function Core.InstallTrackers()
                             { text = 'Right', value = 'right' },
                             { text = 'Bottom', value = 'bottom' }
                         }
+                    },
+                    {
+                        name = 'Max Group Size',
+                        kind = LEM.SettingType.Slider,
+                        default = 5,
+                        desc = 'Select the maximum amount of units before the spotlight breaks into a new line',
+                        get = function(_)
+                            return Options.spotlight.groupSize
+                        end,
+                        set = function(_, value)
+                            Options.spotlight.groupSize = value
+                        end,
+                        minValue = 2,
+                        maxValue = 10,
+                        valueStep = 1
                     }
                 })
 

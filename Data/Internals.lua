@@ -3,16 +3,12 @@ local Data = NS.Data
 local Ui = NS.Ui
 local Util = NS.Util
 local Core = NS.Core
-local API = NS.API
-local L = NS.L
+local Debug = NS.Debug
 local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
 --When we re-order frames for the spotlight we save what they are anchored to
-Data.spotlightAnchors = {
-    spotlights = {},
-    defaults = {},
-}
+Data.spotlightFrames = {}
 
 --This handles a list of the current auras you have applied on each unit, your casts, and some extras for more complex tracking
 Data.state = {
@@ -76,6 +72,7 @@ Data.textures = {
     BlessingOfProtection = 135964,
     HolyBulwark = 5927636,
     SacredWeapon = 5927637,
+    HolyArmaments = 5927637,
     BlessingOfSacrifice = 135966,
     BeaconOfVirtue = 1030094,
     BeaconOfTheSavior = 7514188
@@ -231,6 +228,11 @@ Data.sliderPresets = {
 --This is the data table for the default frames options of the addons
 Data.settings = {
     {
+        key = 'iconsHeader',
+        type = 'header',
+        text = 'Icons'
+    },
+    {
         key = 'clickThroughBuffs',
         type = 'checkbox',
         text = 'Click Through Aura Icons',
@@ -241,18 +243,18 @@ Data.settings = {
     {
         key = 'buffIcons',
         type = 'slider',
-        text = 'Buff Icons',
+        text = 'Show Buff Icons',
         min = 0,
         max = 6,
         step = 1,
-        default = 6,
+        default = 0,
         tooltip = 'Changes the maximum amount of buff icons on the default frames.',
         func = 'ToggleBuffIcons'
     },
     {
         key = 'debuffIcons',
         type = 'slider',
-        text = 'Debuff Icons',
+        text = 'Show Debuff Icons',
         min = 0,
         max = 3,
         step = 1,
@@ -261,12 +263,85 @@ Data.settings = {
         func = 'ToggleDebuffIcons'
     },
     {
+        key = 'showDefensiveIcon',
+        ddKey = 'defensivePosition',
+        type = 'checkbox-dropdown',
+        text = 'Center Defensive Icon',
+        default = true,
+        ddDefault = 'CENTER',
+        items = {
+            { value = 'CENTER', text = 'Center' },
+            { value = 'TOPLEFT', text = 'Top Left' },
+            { value = 'TOP', text = 'Top' },
+            { value = 'TOPRIGHT', text = 'Top Right' },
+            { value = 'RIGHT', text = 'Right' },
+            { value = 'BOTTOMRIGHT', text = 'Bottom Right' },
+            { value = 'BOTTOM', text = 'Bottom' },
+            { value = 'BOTTOMLEFT', text = 'Bottom Left' },
+            { value = 'LEFT', text = 'Left' },
+        },
+        tooltip = 'Control the icon that shows defensive usage on the default frames.',
+        func = 'ToggleCenterDefensive',
+        ddFunc = 'ReanchorCenterDefensive'
+    },
+    {
+        key = 'defensiveIconScale',
+        type = 'slider',
+        text = 'Center Defensive Scale',
+        min = 0.5,
+        max = 1.5,
+        step = 0.1,
+        default = 1,
+        tooltip = 'Size of the center defensive icon.',
+        func = 'ResizeCenterDefensive'
+    },
+    {
+        key = 'roleIcon',
+        type = 'checkbox',
+        text = 'Show Role Icon',
+        default = true,
+        tooltip = 'Show the role icon next to the name on the default frames.',
+        func = 'ToggleRoleIcon'
+    },
+    {
+        key = 'barHeader',
+        type = 'header',
+        text = 'Health Bar'
+    },
+    {
         key = 'frameTransparency',
         type = 'checkbox',
         text = 'Frame Transparency',
         default = false,
         tooltip = 'Disabling frame transparency keeps the frame fully solid even when out of range.',
         func = 'SetGroupFrameTransparency'
+    },
+    {
+        key = 'barTextureEnabled',
+        ddKey = 'barTexture',
+        type = 'checkbox-texture',
+        text = 'Bar Texture',
+        default = false,
+        ddDefault = 'Default',
+        tooltip = 'Changes the texture of the health bars on the default raid frames',
+        func = 'EnableBarTexture',
+        ddFunc = 'SetBarTexture'
+    },
+    {
+        key = 'showOvershields',
+        ddKey = 'overshieldsTexture',
+        type = 'checkbox-texture',
+        text = 'Overshields',
+        default = true,
+        ddDefault = 'Shields',
+        tooltip = 'Shows shields that go above the players max hp.',
+        func = 'ShowOvershields',
+        ddFunc = 'OvershieldsTexture'
+    },
+    {
+        key = 'namesHeader',
+        type = 'header',
+        text = 'Names'
     },
     {
         key = 'nameScale',
@@ -288,20 +363,30 @@ Data.settings = {
         func = 'ColorNames'
     },
     {
-        key = 'barTexture',
-        type = 'texture',
-        text = 'Bar Texture',
-        default = 'Default',
-        tooltip = 'Changes the texture of the health bars on the default raid frames',
-        func = 'SetBarTexture'
+        key = 'miscHeader',
+        type = 'header',
+        text = 'Misc.'
     },
     {
         key = 'extFrames',
         type = 'checkbox',
         text = 'Use Frame Addons',
         default = true,
-        tooltip = 'Add Advanced Raid Frames indicators on top of other active frame addons instead of the default frames.',
+        tooltip = 'Add Advanced Raid Frames indicators on top of other active frame addons.',
         func = 'Setup'
+    },
+    {
+        key = 'enableSpotlight',
+        type = 'dropdown',
+        text = 'Enable Spotlight',
+        default = 0,
+        tooltip = 'Enable the Spotlight feature to separate specific players into their own groups.',
+        items = {
+            { value = 0, text = 'Disabled' },
+            { value = 1, text = 'In Raid' },
+            { value = 2, text = 'In Party' },
+            { value = 3, text = 'Always' }
+        }
     }
 }
 
@@ -321,11 +406,18 @@ Data.ignoredFrames = {
 }
 
 Data.barTextures = {
-    ["Default"] = 7539072,
-    ["Blizzard Raid"] = [[Interface\RaidFrame\Raid-Bar-Hp-Fill]],
-    ["Blizzard Flat"] = [[Interface\Buttons\WHITE8X8]],
-    ["Smooth"]        = 137012,
+    ["Default"] = { type = 'T', path = 7539072 },
+    ["Blizzard Raid"] = { type = 'T', path = 'Interface/RaidFrame/Raid-Bar-Hp-Fill' },
+    ["Blizzard Flat"] = { type = 'T', path = 'Interface/Buttons/WHITE8X8' },
+    ["Smooth"] = { type = 'T', path = 137012 },
+    ["Shields"] = { type = 'T', path = 'interface/raidframe/raidframeshieldoverlay' },
+    ["Lunar"] = { type = 'A', path = '_Druid-LunarBar' },
+    ["Torghast"] = { type = 'A', path = 'jailerstower-scorebar-fill-normal' },
+    ["Insanity"] = { type = 'A', path = '_Priest-InsanityBar' },
+    ["Empower"] = { type = 'A', path = 'ui-castingbar-disabled-tier4-empower' }
 }
+
+Data.textureChanged = false
 
 --Initializer list is used when we generate the menu, so we can parent some options to others
 Data.initializerList = {}

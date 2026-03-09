@@ -307,11 +307,17 @@ function Util.GetFrameHealthTexture(frame)
     end
 end
 
+--TODO: expand this function to work on both bars and direct textures
 function Util.SetStatusbarTextureOrAtlas(textureObject, selectedVisual)
     if selectedVisual.type == 'T' then
         textureObject:SetStatusBarTexture(selectedVisual.path)
     else
-        textureObject:SetStatusBarAtlas(selectedVisual.path)
+        if type(textureObject.SetStatusBarAtlas) == 'function' then
+            textureObject:SetStatusBarAtlas(selectedVisual.path)
+        else
+            if not textureObject:GetStatusBarTexture() then textureObject:SetStatusBarTexture("") end
+            textureObject:GetStatusBarTexture():SetAtlas(selectedVisual.path)
+        end
     end
 end
 

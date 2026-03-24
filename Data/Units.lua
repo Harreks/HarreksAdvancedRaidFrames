@@ -9,7 +9,7 @@ local Options = HARFDB.options
 
 --List of the names of all the default raid frames
 Data.frameList = { party = {}, raidCombined = {}, raidGroups = {} }
-for i = 1, 30 do
+for i = 1, 40 do
     if i <= 5 then
         table.insert(Data.frameList.party, 'CompactPartyFrameMember' .. i)
     end
@@ -37,7 +37,7 @@ Data.defaultUnitData = {
 Data.unitList = {
     player = CopyTable(Data.defaultUnitData)
 }
-for i = 1, 30 do
+for i = 1, 40 do
     if i < 5 then
         Data.unitList['party' .. i] = CopyTable(Data.defaultUnitData)
     end

@@ -73,7 +73,6 @@ function Core.InstallTrackers()
         local stateTracker = CreateFrame('Frame')
         stateTracker:RegisterEvent('PLAYER_LOGIN')
         stateTracker:RegisterEvent('GROUP_ROSTER_UPDATE')
-        stateTracker:RegisterEvent('PLAYER_SPECIALIZATION_CHANGED')
         stateTracker:RegisterEvent('ACTIVE_PLAYER_SPECIALIZATION_CHANGED')
         stateTracker:RegisterEvent('ACTIVE_TALENT_GROUP_CHANGED')
 
@@ -189,8 +188,6 @@ function Core.InstallTrackers()
             elseif event == 'GROUP_ROSTER_UPDATE' then
                 Core.ModifySettings()
             elseif event == 'ACTIVE_PLAYER_SPECIALIZATION_CHANGED' or event == 'ACTIVE_TALENT_GROUP_CHANGED' then
-                Util.HandlePlayerSpecializationChanged()
-            elseif event == 'PLAYER_SPECIALIZATION_CHANGED' and unitTarget and UnitIsUnit(unitTarget, 'player') then
                 Util.HandlePlayerSpecializationChanged()
             end
         end)

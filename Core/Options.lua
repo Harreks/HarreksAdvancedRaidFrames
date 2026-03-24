@@ -175,6 +175,22 @@ function Core.ResizeCenterDefensive(value, _, elements)
     end
 end
 
+function Core.ToggleGroupTitles(value)
+    for i = 1, 8 do
+        local titleText = _G['CompactRaidGroup' .. i .. 'Title']
+        if titleText then
+            titleText:SetAlpha(value and 1 or 0)
+        end
+    end
+end
+
+function Core.ScaleRaidFrameContainer(value)
+    local container = _G['CompactRaidFrameContainer']
+    if container then
+        container:SetScale(value)
+    end
+end
+
 function Core.ModifySettings(modifiedSettingFunction, newValue)
     if not InCombatLockdown() then
         local unitList = Data.unitList

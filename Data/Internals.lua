@@ -376,6 +376,25 @@ Data.settings = {
         func = 'Setup'
     },
     {
+        key = 'toggleGroupTitles',
+        type = 'checkbox',
+        text = 'Show Group Titles',
+        default = true,
+        tooltip = 'Toggle the display of the group title when using separate groups in raids.',
+        func = 'ToggleGroupTitles'
+    },
+    {
+        key = 'raidFrameContainerScale',
+        type = 'slider',
+        text = 'Raid Container Scale',
+        min = 0.4,
+        max = 2,
+        step = 0.1,
+        default = 1,
+        tooltip = 'Changes the size of the raid frames container.',
+        func = 'ScaleRaidFrameContainer'
+    },
+    {
         key = 'enableSpotlight',
         type = 'dropdown',
         text = 'Enable Spotlight',
@@ -387,7 +406,18 @@ Data.settings = {
             { value = 2, text = 'In Party' },
             { value = 3, text = 'Always' }
         }
-    }
+    },
+    {
+        key = 'spotlightFrameScale',
+        type = 'slider',
+        text = 'Spotlight Frame Scale',
+        min = 0.4,
+        max = 2,
+        step = 0.1,
+        default = 1,
+        tooltip = 'Changes the size of the unit frames in the spotlight.',
+        func = 'Setup'
+    },
 }
 
 --This is a list of external frames we ignore for libGetFrame

@@ -293,6 +293,21 @@ function Util.UpdateIndicatorsForUnit(unit, auraData)
     end
 end
 
+function Util.RefreshIndicatorsWithSavedData(unit)
+    local currentUnitAuras = Data.state.auras[unit]
+    if currentUnitAuras then
+        local updatedAuraData = {}
+        for instanceId, buffName in pairs(currentUnitAuras) do
+            local aura = {}
+            aura.active = true
+            aura.duration = C_UnitAuras.GetAuraDuration(unit, instanceId)
+            aura.data = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, instanceId)
+            updatedAuraData[buffName] = aura
+        end
+        Util.UpdateIndicatorsForUnit(unit, updatedAuraData)
+    end
+end
+
 --Different frames contain their texture in different ways
 function Util.GetFrameHealthTexture(frame)
     if frame then
@@ -307,7 +322,7 @@ function Util.GetFrameHealthTexture(frame)
     end
 end
 
---TODO: expand this function to work on both bars and direct textures
+--TODO: rework and expand this function to work on both bars and direct textures, then add all the other bars to it
 function Util.SetStatusbarTextureOrAtlas(textureObject, selectedVisual)
     if selectedVisual.type == 'T' then
         textureObject:SetStatusBarTexture(selectedVisual.path)
@@ -349,6 +364,13 @@ function Util.UpdateOvershields(unit)
     end
 end
 
+function Util.GetClassColorForUnit(unit)
+    local unitClass = UnitClassBase(unit)
+    if unitClass then
+        return C_ClassColor.GetClassColor(unitClass)
+    end
+end
+
 --This recolors the default frames if blizzard tries to color them back beforehand
 hooksecurefunc("CompactUnitFrame_UpdateHealthColor", function(frame)
     local unitList = Data.unitList
@@ -374,4 +396,12 @@ hooksecurefunc("CompactUnitFrame_UpdateName", function(frame)
             end
         end
     end
+end)
+
+hooksecurefunc(CompactRaidFrameContainer, "LayoutFrames", function()
+    Core.ModifySettings()
+end)
+
+hooksecurefunc(CompactPartyFrame, "UpdateLayout", function()
+    Core.ModifySettings()
 end)

@@ -76,7 +76,14 @@ function Util.GetSpotlightNames()
     local selectedNames = spotlight.names or {}
     local spotlightNameList = {}
     for name, _ in pairs(selectedNames) do
-        table.insert(spotlightNameList, { text = name })
+        local classColor = Util.GetClassColorForUnit(name)
+        local coloredName
+        if classColor then
+            coloredName = '|c' .. classColor:GenerateHexColor() .. name .. '|r'
+        else
+            coloredName = name
+        end
+        table.insert(spotlightNameList, { text = coloredName, value = name })
     end
 
     local groupSize = GetNumGroupMembers() or 0
@@ -85,8 +92,11 @@ function Util.GetSpotlightNames()
         local unit = groupType .. i
         if UnitExists(unit) and not UnitIsUnit(unit, 'player') then
             local unitName = UnitName(unit)
+            local classColor = Util.GetClassColorForUnit(unit)
             if unitName and unitName ~= '' and not selectedNames[unitName] then
-                table.insert(spotlightNameList, { text = unitName })
+                local coloredName = unitName
+                if classColor then coloredName = '|c' .. classColor:GenerateHexColor() .. unitName .. '|r' end
+                table.insert(spotlightNameList, { text = coloredName, value = unitName })
             end
         end
     end
@@ -105,7 +115,8 @@ function Util.MapSpotlightGroups()
         local currentFrame = _G[frameString]
         if currentFrame and currentFrame.unit then
             local unit = currentFrame.unit
-            if not UnitIsUnit(unit, 'player') and not seenUnits[unit] then --The player can't be spotlight
+            local isPlayer = UnitIsUnit(unit, 'player') --This is protection to having compound unit tokens in your raid frames
+            if not issecretvalue(isPlayer) and not isPlayer and not seenUnits[unit] then --The player can't be spotlight
                 seenUnits[unit] = true
                 local unitName = UnitName(unit)
                 if unitName and units[unitName] then
@@ -125,39 +136,46 @@ function Util.ReanchorSpotlights()
         for index, frameString in ipairs(frameList) do
             local frame = _G[frameString]
             if frame then
-                if Data.spotlightFrames[frameString] then
-                    for i = #frameList, index, -1 do
-                        local currentFrame = _G[frameList[i]]
-                        local nextFrame = _G[frameList[i-1]]
-                        if currentFrame and nextFrame then
-                            local _, _, _, xOff, yOff = nextFrame:GetPoint()
-                            currentFrame:ClearAllPoints()
-                            currentFrame:SetPoint('TOPLEFT', xOff, yOff)
-                        end
-                    end
-                    frame:ClearAllPoints()
-                    if not firstSpotlight then
-                        firstSpotlight = frame
-                        frame:SetPoint('TOP', spotlightFrame, 'TOP')
-                    else
-                        local childPoint, parentFrame, parentPoint
-                        if Options.spotlight.grow == 'right' then
-                            if spotlightCount == Options.spotlight.groupSize then
-                                childPoint, parentFrame, parentPoint = 'TOP', firstSpotlight, 'BOTTOM'
-                            else
-                                childPoint, parentFrame, parentPoint = 'LEFT', previousSpotlight, 'RIGHT'
+                local point = frame:GetPoint()
+                if point == 'TOPLEFT' then
+                    frame:SetScale(1)
+                    if Data.spotlightFrames[frameString] then
+                        for i = #frameList, index, -1 do
+                            local currentFrame = _G[frameList[i]]
+                            local nextFrame = _G[frameList[i-1]]
+                            if currentFrame and nextFrame then
+                                local _, _, _, xOff, yOff = nextFrame:GetPoint()
+                                currentFrame:ClearAllPoints()
+                                currentFrame:SetPoint('TOPLEFT', xOff, yOff)
                             end
+                        end
+                        frame:ClearAllPoints()
+                        if not firstSpotlight then
+                            firstSpotlight = frame
+                            frame:SetPoint('TOP', spotlightFrame, 'TOP')
                         else
-                            if spotlightCount == Options.spotlight.groupSize then
-                                childPoint, parentFrame, parentPoint = 'LEFT', firstSpotlight, 'RIGHT'
+                            local childPoint, parentFrame, parentPoint
+                            if Options.spotlight.grow == 'right' then
+                                if spotlightCount == Options.spotlight.groupSize then
+                                    childPoint, parentFrame, parentPoint = 'TOP', firstSpotlight, 'BOTTOM'
+                                else
+                                    childPoint, parentFrame, parentPoint = 'LEFT', previousSpotlight, 'RIGHT'
+                                end
                             else
-                                childPoint, parentFrame, parentPoint = 'TOP', previousSpotlight, 'BOTTOM'
+                                if spotlightCount == Options.spotlight.groupSize then
+                                    childPoint, parentFrame, parentPoint = 'LEFT', firstSpotlight, 'RIGHT'
+                                else
+                                    childPoint, parentFrame, parentPoint = 'TOP', previousSpotlight, 'BOTTOM'
+                                end
                             end
+                            frame:SetPoint(childPoint, parentFrame, parentPoint)
+                            frame:SetScale(Options.spotlightFrameScale)
                         end
-                        frame:SetPoint(childPoint, parentFrame, parentPoint)
+                        previousSpotlight = frame
+                        spotlightCount = spotlightCount + 1
                     end
-                    previousSpotlight = frame
-                    spotlightCount = spotlightCount + 1
+                else
+                    frame:SetScale(Options.spotlightFrameScale)
                 end
             end
         end
@@ -176,6 +194,10 @@ end
 
 --Update unit data of current group members
 function Util.MapOutUnits()
+    --Turbo fuck this thing it deserves to die in hell
+    if C_CVar.GetCVar('raidOptionDisplayMainTankAndAssist') then
+        C_CVar.SetCVar('raidOptionDisplayMainTankAndAssist', 0)
+    end
     --Refresh some player data too
     Util.UpdatePlayerSpec()
 
@@ -234,6 +256,7 @@ function Util.MapOutUnits()
                     indicatorOverlay:AttachToFrame(frame)
                     indicatorOverlay:Show()
                     unitElements.indicatorOverlay = indicatorOverlay
+                    Util.RefreshIndicatorsWithSavedData(frame.unit)
                 end
                 --Reset overshields just in case
                 if unitElements.overshield then
@@ -265,6 +288,7 @@ function Util.GetExternalFrames()
                     indicatorOverlay:AttachToFrame(extFrame)
                     indicatorOverlay:Show()
                     table.insert(elements.extIndicatorOverlays, indicatorOverlay)
+                    Util.RefreshIndicatorsWithSavedData(unit)
                 end
             end
         end

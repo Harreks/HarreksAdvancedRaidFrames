@@ -9,16 +9,18 @@ local Options = HARFDB.options
 
 --Controls visibility on buff icons, takes how many buffs are to be shown and the element list of the frame to be modified
 function Core.ToggleBuffIcons(amount, _, elements)
-    for i = 1, 6 do
-        if i <= amount then
-            Util.ToggleTransparency(elements.buffs[i], true)
-            if _G[elements.buffs[i]] and not _G[elements.buffs[i]]:IsMouseEnabled() and not Options.clickThroughBuffs then
-                Util.ChangeFrameMouseInteraction(elements.buffs[i], true)
-            end
-        else
-            Util.ToggleTransparency(elements.buffs[i], false)
-            if _G[elements.buffs[i]] and _G[elements.buffs[i]]:IsMouseEnabled() then
-                Util.ChangeFrameMouseInteraction(elements.buffs[i], false)
+    if amount then
+        for i = 1, 6 do
+            if i <= amount then
+                Util.ToggleTransparency(elements.buffs[i], true)
+                if _G[elements.buffs[i]] and not _G[elements.buffs[i]]:IsMouseEnabled() and not Options.clickThroughBuffs then
+                    Util.ChangeFrameMouseInteraction(elements.buffs[i], true)
+                end
+            else
+                Util.ToggleTransparency(elements.buffs[i], false)
+                if _G[elements.buffs[i]] and _G[elements.buffs[i]]:IsMouseEnabled() then
+                    Util.ChangeFrameMouseInteraction(elements.buffs[i], false)
+                end
             end
         end
     end
@@ -186,13 +188,15 @@ end
 
 function Core.ScaleRaidFrameContainer(value)
     local container = _G['CompactRaidFrameContainer']
-    if container then
+    if container and value then
         container:SetScale(value)
     end
 end
 
 function Core.ModifySettings(modifiedSettingFunction, newValue)
-    if not InCombatLockdown() then
+    local timeSinceLastModify = GetTime() - Data.lastModify
+    if timeSinceLastModify > 0.1 and not InCombatLockdown() then
+        Data.lastModify = GetTime()
         local unitList = Data.unitList
         local functionsToRun = {}
         if modifiedSettingFunction and type(Core[modifiedSettingFunction]) == 'function' then
@@ -218,7 +222,7 @@ function Core.ModifySettings(modifiedSettingFunction, newValue)
 
         if Util.IsSpotlightActive() and Options.spotlight.names then
             Util.MapSpotlightGroups()
-            Util.ReanchorSpotlights()
+            C_Timer.After(0.1, Util.ReanchorSpotlights)
         end
     end
 end

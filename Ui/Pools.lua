@@ -476,7 +476,7 @@ Ui.IconIndicatorPool = CreateFramePool('Frame', nil, nil,
             self:Show()
         end
         frame.UpdateIndicator = function(self, auraInfo)
-            if auraInfo.active then
+            if auraInfo.active and auraInfo.data then
                 self.texture:SetTexture(auraInfo.data.icon)
                 self.cooldown:SetCooldownFromDurationObject(auraInfo.duration)
                 self:Show()
@@ -513,7 +513,7 @@ Ui.SquareIndicatorPool = CreateFramePool('Frame', nil, nil,
         frame.type = 'SquareIndicator'
         frame.spell = nil
         frame.UpdateIndicator = function(self, auraInfo)
-            if auraInfo.active then
+            if auraInfo.active and auraInfo.data then
                 if self.showCooldown then
                     self.cooldown:SetCooldownFromDurationObject(auraInfo.duration)
                     self.cooldown:Show()
@@ -563,7 +563,7 @@ Ui.BarIndicatorPool = CreateFramePool('StatusBar', nil, nil,
         frame.previewTimer = nil
         frame.spell = nil
         frame.UpdateIndicator = function(self, auraInfo)
-            if auraInfo.active then
+            if auraInfo.active and auraInfo.data then
                 self:SetTimerDuration(auraInfo.duration, Enum.StatusBarInterpolation.Immediate, Enum.StatusBarTimerDirection.RemainingTime)
                 self:Show()
             else
@@ -615,7 +615,7 @@ Ui.BorderIndicatorPool = CreateFramePool('Frame', nil, 'BackdropTemplate',
         frame:SetBackdropColor(0, 0, 0, 0)
         frame:Hide()
         frame.UpdateIndicator = function(self, auraInfo)
-            if auraInfo.active then
+            if auraInfo.active and auraInfo.data then
                 self:SetBackdropBorderColor(self.color.r, self.color.g, self.color.b)
                 self:Show()
             else
@@ -666,7 +666,7 @@ Ui.HealthColorIndicatorPool = CreateFramePool('Frame', nil, nil,
                             texture.SetVertexColor = Util.CustomSetVertexColor
                             texture._HARF_Hooked = true
                         end
-                        if auraInfo.active then
+                        if auraInfo.active and auraInfo.data then
                             elements.isColored = true
                             elements.recolor = self.color
                             if not self.oldColor then

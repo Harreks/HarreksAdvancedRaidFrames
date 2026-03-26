@@ -51,7 +51,8 @@ Data.specInfo = {
             [410263] = { name = 'InfernosBlessing', signature = '0:1:0:0' },
             [410686] = { name = 'SymbioticBloom', signature = '0:1:0:0' },
             [395152] = { name = 'EbonMight', signature = '1:1:0:0' },
-            [361021] = { name = 'SensePower', signature = '0:1:0:0', secret = true },
+            [395296] = { name = 'EbonMight', signature = '0:1:0:0', hide = true},
+            [361022] = { name = 'SensePower', signature = '0:1:0:0', secret = true },
         },
         casts = {
             [409311] = { 'Prescience' },

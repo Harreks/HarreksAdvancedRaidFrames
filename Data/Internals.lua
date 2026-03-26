@@ -8,7 +8,7 @@ local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
 --When we re-order frames for the spotlight we save what they are anchored to
-Data.spotlightFrames = {}
+Data.spotlightFrames = { selected = {}, normal = {}, positions = {} }
 
 --This handles a list of the current auras you have applied on each unit, your casts, and some extras for more complex tracking
 Data.state = {
@@ -396,16 +396,10 @@ Data.settings = {
     },
     {
         key = 'enableSpotlight',
-        type = 'dropdown',
+        type = 'checkbox',
         text = 'Enable Spotlight',
-        default = 0,
+        default = false,
         tooltip = 'Enable the Spotlight feature to separate specific players into their own groups.',
-        items = {
-            { value = 0, text = 'Disabled' },
-            { value = 1, text = 'In Raid' },
-            { value = 2, text = 'In Party' },
-            { value = 3, text = 'Always' }
-        }
     },
     {
         key = 'spotlightFrameScale',
@@ -448,7 +442,8 @@ Data.barTextures = {
 }
 
 Data.textureChanged = false
-
+Data.lastModify = 0
+Data.settingSpotlights = false
 --Initializer list is used when we generate the menu, so we can parent some options to others
 Data.initializerList = {}
 --Player spec is checked constantly through the run to make sure we're using appropriate data

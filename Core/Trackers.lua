@@ -96,9 +96,7 @@ function Core.InstallTrackers()
 
                 LEM:RegisterCallback('exit', function()
                     spotlightFrame:SetAlpha(0)
-                    if IsInRaid() and not InCombatLockdown() and Options.spotlight.names then
-                        Util.ReanchorSpotlights()
-                    end
+                    Core.ModifySettings()
                 end)
 
                 --TODO: The whole spotlight settings should be moved to a different file

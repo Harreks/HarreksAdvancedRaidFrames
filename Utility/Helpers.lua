@@ -107,21 +107,24 @@ end
 --Use the spotlight name list to map out where each frame is supposed to go
 function Util.MapSpotlightGroups()
     --Reset the current lists
-    wipe(Data.spotlightFrames)
+    wipe(Data.spotlightFrames.selected)
+    wipe(Data.spotlightFrames.normal)
+    wipe(Data.spotlightFrames.positions)
     local units = Options.spotlight.names
     local frames = Util.GetActiveFrameList()
-    local seenUnits = {}
     for _, frameString in ipairs(frames) do
         local currentFrame = _G[frameString]
         if currentFrame and currentFrame.unit then
             local unit = currentFrame.unit
-            local isPlayer = UnitIsUnit(unit, 'player') --This is protection to having compound unit tokens in your raid frames
-            if not issecretvalue(isPlayer) and not isPlayer and not seenUnits[unit] then --The player can't be spotlight
-                seenUnits[unit] = true
-                local unitName = UnitName(unit)
-                if unitName and units[unitName] then
-                    Data.spotlightFrames[frameString] = true
+            local unitName = UnitName(unit)
+            if unitName then
+                if units[unitName] then
+                    table.insert(Data.spotlightFrames.selected, frameString)
+                else
+                    table.insert(Data.spotlightFrames.normal, frameString)
                 end
+                local point, parent, relPoint, xOff, yOff = currentFrame:GetPoint()
+                table.insert(Data.spotlightFrames.positions, { point = point, parent = parent, relPoint = relPoint, xOff = xOff, yOff = yOff })
             end
         end
     end
@@ -131,52 +134,35 @@ end
 function Util.ReanchorSpotlights()
     local spotlightFrame = Ui.GetSpotlightFrame()
     if spotlightFrame then
-        local frameList = Util.GetActiveFrameList()
-        local firstSpotlight, previousSpotlight, spotlightCount = false, nil, 0
-        for index, frameString in ipairs(frameList) do
+        for index, frameString in ipairs(Data.spotlightFrames.normal) do
             local frame = _G[frameString]
-            if frame then
-                local point = frame:GetPoint()
-                if point == 'TOPLEFT' then
-                    frame:SetScale(1)
-                    if Data.spotlightFrames[frameString] then
-                        for i = #frameList, index, -1 do
-                            local currentFrame = _G[frameList[i]]
-                            local nextFrame = _G[frameList[i-1]]
-                            if currentFrame and nextFrame then
-                                local _, _, _, xOff, yOff = nextFrame:GetPoint()
-                                currentFrame:ClearAllPoints()
-                                currentFrame:SetPoint('TOPLEFT', xOff, yOff)
-                            end
-                        end
-                        frame:ClearAllPoints()
-                        if not firstSpotlight then
-                            firstSpotlight = frame
-                            frame:SetPoint('TOP', spotlightFrame, 'TOP')
-                        else
-                            local childPoint, parentFrame, parentPoint
-                            if Options.spotlight.grow == 'right' then
-                                if spotlightCount == Options.spotlight.groupSize then
-                                    childPoint, parentFrame, parentPoint = 'TOP', firstSpotlight, 'BOTTOM'
-                                else
-                                    childPoint, parentFrame, parentPoint = 'LEFT', previousSpotlight, 'RIGHT'
-                                end
-                            else
-                                if spotlightCount == Options.spotlight.groupSize then
-                                    childPoint, parentFrame, parentPoint = 'LEFT', firstSpotlight, 'RIGHT'
-                                else
-                                    childPoint, parentFrame, parentPoint = 'TOP', previousSpotlight, 'BOTTOM'
-                                end
-                            end
-                            frame:SetPoint(childPoint, parentFrame, parentPoint)
-                            frame:SetScale(Options.spotlightFrameScale)
-                        end
-                        previousSpotlight = frame
-                        spotlightCount = spotlightCount + 1
+            frame:SetScale(1)
+            local posData = Data.spotlightFrames.positions[index]
+            frame:ClearAllPoints()
+            frame:SetPoint(posData.point, posData.parent, posData.relPoint, posData.xOff, posData.yOff)
+        end
+        for index, frameString in ipairs(Data.spotlightFrames.selected) do
+            local frame = _G[frameString]
+            frame:SetScale(Options.spotlightFrameScale)
+            frame:ClearAllPoints()
+            if index == 1 then
+                frame:SetPoint('TOP', spotlightFrame, 'TOP')
+            else
+                local childPoint, parentPoint, anchorTo = nil, nil, nil
+                if Options.spotlight.grow == 'right' then
+                    if index + 1 == Options.spotlight.groupSize then
+                        childPoint, parentPoint, anchorTo = 'TOP', 'BOTTOM', _G[Data.spotlightFrames.selected[1]]
+                    else
+                        childPoint, parentPoint, anchorTo = 'LEFT', 'RIGHT', _G[Data.spotlightFrames.selected[index - 1]]
                     end
                 else
-                    frame:SetScale(Options.spotlightFrameScale)
+                    if index + 1 == Options.spotlight.groupSize then
+                        childPoint, parentPoint, anchorTo = 'LEFT', 'RIGHT', _G[Data.spotlightFrames.selected[1]]
+                    else
+                        childPoint, parentPoint, anchorTo = 'TOP', 'BOTTOM', _G[Data.spotlightFrames.selected[index - 1]]
+                    end
                 end
+                frame:SetPoint(childPoint, anchorTo, parentPoint)
             end
         end
     end
@@ -341,12 +327,8 @@ function Util.DecodeIndicators(string)
         end
     end
 end
-
 function Util.IsSpotlightActive()
-    local enabledOption = Options.enableSpotlight
-    if enabledOption == 3 then return true end
-    if IsInRaid() and enabledOption == 1 then return true end
-    if IsInGroup() and enabledOption == 2 then return true end
+    if IsInRaid() and Options.enableSpotlight then return true end
     return false
 end
 

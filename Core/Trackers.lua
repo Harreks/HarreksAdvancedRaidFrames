@@ -85,7 +85,7 @@ function Core.InstallTrackers()
 
                 local spotlightFrame = Ui.GetSpotlightFrame()
 
-                Ui.CreateOptionsPanel(Data.settings)
+                Ui.CreateOptions()
 
                 Core.ModifySettings()
 

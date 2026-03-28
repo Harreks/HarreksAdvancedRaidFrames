@@ -429,17 +429,8 @@ Data.ignoredFrames = {
     '^PlayerFrame$'
 }
 
-Data.barTextures = {
-    ["Default"] = { type = 'T', path = 7539072 },
-    ["Blizzard Raid"] = { type = 'T', path = 'Interface/RaidFrame/Raid-Bar-Hp-Fill' },
-    ["Blizzard Flat"] = { type = 'T', path = 'Interface/Buttons/WHITE8X8' },
-    ["Smooth"] = { type = 'T', path = 137012 },
-    ["Shields"] = { type = 'T', path = 'interface/raidframe/raidframeshieldoverlay' },
-    ["Lunar"] = { type = 'A', path = '_Druid-LunarBar' },
-    ["Torghast"] = { type = 'A', path = 'jailerstower-scorebar-fill-normal' },
-    ["Insanity"] = { type = 'A', path = '_Priest-InsanityBar' },
-    ["Empower"] = { type = 'A', path = 'ui-castingbar-disabled-tier4-empower' }
-}
+local LAMB = NS.LibAdvancedMenuBuilder
+Data.barTextures = LAMB.barTextures
 
 Data.textureChanged = false
 Data.lastModify = 0

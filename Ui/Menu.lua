@@ -69,154 +69,24 @@ If you have any questions, feedback, or bug reports please come by the Spiritblo
     return Ui.OptionsIntroPanel
 end
 
-function Ui.CreateOptionsElement(data, parent)
-    local initializer = nil
-    if data.type == "header" then
-        initializer = Settings.CreateElementInitializer("SettingsListSectionHeaderTemplate", { name = data.text })
-        parent.layout:AddInitializer(initializer)
-        Data.initializerList[data.key] = initializer
-        return
-    elseif data.type == "button" then
-        local buttonClick = data.func
-        if type(buttonClick) == 'string' then
-            local functionName = buttonClick
-            buttonClick = function()
-                local resolvedFunc = Core[functionName]
-                if type(resolvedFunc) == 'function' then
-                    resolvedFunc()
-                end
+function Ui.CreateOptions()
+    local settingsTable = CopyTable(Data.settings)
+    for _, data in ipairs(settingsTable) do
+        if data.func and type(data.func) == 'string' then
+            if data.func ~= 'Setup' then
+                data.funcArgs = { functionToRun = data.func }
             end
-        end
-
-        local buttonData = {
-            name = data.text,
-            buttonText = data.content,
-            buttonClick = buttonClick,
-            OnButtonClick = buttonClick,
-            click = buttonClick,
-            tooltip = data.tooltip,
-            newTagID = nil,
-            gameDataFunc = nil
-        }
-        initializer =  Settings.CreateElementInitializer("SettingButtonControlTemplate", buttonData)
-        Data.initializerList[data.key] = initializer
-        parent.layout:AddInitializer(initializer)
-    elseif data.type == "checkbox-dropdown" or data.type == "checkbox-texture" then
-        if Options[data.key] == nil then Options[data.key] = data.default end
-        local cbInput = Settings.RegisterAddOnSetting(parent.category, data.key, data.key, Options, type(data.default), data.text, data.default)
-        if Options[data.ddKey] == nil then Options[data.ddKey] = data.ddDefault end
-        local ddInput = Settings.RegisterAddOnSetting(parent.category, data.ddKey, data.ddKey, Options, type(data.ddDefault), data.ddText or "", data.ddDefault)
-
-        local function callback(setting, value)
-            local settingKey = setting:GetVariable()
-            local func
-            for _, opt in ipairs(Data.settings) do
-                if opt.key == settingKey then
-                    func = opt.func
-                    break
-                end
-                if opt.ddKey == settingKey then
-                    func = opt.ddFunc
-                end
-            end
-            if func then
-                if func == 'Setup' then
-                    Core.ModifySettings()
-                else
-                    Core.ModifySettings(func, value)
-                end
-            end
-        end
-        cbInput:SetValueChangedCallback(callback)
-        ddInput:SetValueChangedCallback(callback)
-
-        local getOptionsFunc
-        if data.type == "checkbox-texture" then
-            getOptionsFunc = Util.GetTextureDropdown
-        else
-            getOptionsFunc = function()
-                local container = Settings.CreateControlTextContainer()
-                for _, item in ipairs(data.items) do
-                    container:Add(item.value, item.text)
-                end
-                return container:GetData()
-            end
-        end
-
-        initializer = CreateSettingsCheckboxDropdownInitializer(cbInput, data.text, data.tooltip, ddInput, getOptionsFunc, data.ddText or "", data.ddTooltip)
-        parent.layout:AddInitializer(initializer)
-        Data.initializerList[data.key] = initializer
-        if data.ddKey then Data.initializerList[data.ddKey] = initializer end
-    else
-        if Options[data.key] == nil then Options[data.key] = data.default end
-        local input = Settings.RegisterAddOnSetting(parent.category, data.key, data.key, Options, type(data.default), data.text, data.default)
-        input:SetValueChangedCallback(function(setting, value)
-            local settingKey = setting:GetVariable()
-            if data.readOnly and Options[settingKey] ~= data.default then
-                Options[settingKey] = data.default
-            else
-                local func
-                for _, opt in ipairs(Data.settings) do
-                    if opt.key == settingKey then
-                        func = opt.func
-                        break
-                    end
-                end
-                if func then
-                    if func == 'Setup' then
-                        Core.ModifySettings()
-                    else
-                        Core.ModifySettings(func, value)
-                    end
-                end
-            end
-        end)
-        if data.type == "checkbox" then
-            initializer = Settings.CreateCheckbox(parent.category, input, data.tooltip)
-            Data.initializerList[data.key] = initializer
-        elseif data.type == "dropdown" then
-            local function GetOptions()
-                local container = Settings.CreateControlTextContainer()
-                for _, item in ipairs(data.items) do
-                    container:Add(item.value, item.text)
-                end
-                return container:GetData()
-            end
-            initializer = Settings.CreateDropdown(parent.category, input, GetOptions, data.tooltip)
-            Data.initializerList[data.key] = initializer
-        elseif data.type == "slider" then
-            local options = Settings.CreateSliderOptions(data.min, data.max, data.step)
-            options:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right, Util.FormatForDisplay);
-            initializer = Settings.CreateSlider(parent.category, input, options, data.tooltip)
-            Data.initializerList[data.key] = initializer
-        elseif data.type == "color" then
-            initializer = Settings.CreateColorSwatch(parent.category, input, data.tooltip)
-            Data.initializerList[data.key] = initializer
-        elseif data.type == "texture" then
-            initializer = Settings.CreateDropdown(parent.category, input, Util.GetTextureDropdown, data.tooltip)
-            Data.initializerList[data.key] = initializer
+            data.func = Core.ModifySettings
         end
     end
-    if initializer and data.parent then
-        initializer:SetParentInitializer(Data.initializerList[data.parent], function() return Options[data.parent] end)
-    end
-end
 
-function Ui.CreateOptionsPanel(optionsTable)
+    local LAMB = NS.LibAdvancedMenuBuilder
     local optionsIntroPanel = Ui.GetOptionsIntroPanel()
-    local category = Settings.RegisterCanvasLayoutCategory(optionsIntroPanel, 'Advanced Raid Frames')
-    Settings.RegisterAddOnCategory(category)
-
-    local defaultOptionsSubcategory, defaultOptionsLayout = Settings.RegisterVerticalLayoutSubcategory(category, 'Options')
-    Settings.RegisterAddOnCategory(defaultOptionsSubcategory)
-
-    for _, data in ipairs(optionsTable) do
-        Ui.CreateOptionsElement(data, { category = defaultOptionsSubcategory, layout = defaultOptionsLayout })
-    end
-
+    local HaUI = HarreksAdvancedUI or {}
+    local category = LAMB.CreateOptionsPanel(optionsIntroPanel, nil, 'Advanced Raid Frames', 'canvas', HaUI.settingsCategory)
+    LAMB.CreateOptionsPanel(settingsTable, Options, 'Options', 'vertical', category)
     local designer = Ui.GetDesignerFrame()
-    local designerSubCategory = Settings.RegisterCanvasLayoutSubcategory(category, designer, 'Designer')
-    Settings.RegisterAddOnCategory(designerSubCategory)
+    local designerCategory = LAMB.CreateOptionsPanel(designer, nil, 'Designer', 'canvas', category)
 
     Data.addonSettingsCategory = category.ID
     SLASH_HARREKSADVANCEDRAIDFRAMES1 = "/harf"
@@ -226,7 +96,7 @@ function Ui.CreateOptionsPanel(optionsTable)
                 if InCombatLockdown() then
                     print('|cnNORMAL_FONT_COLOR:AdvancedRaidFrames:|r Settings can\'t be opened in combat.')
                 else
-                    Settings.OpenToCategory(designerSubCategory.ID)
+                    Settings.OpenToCategory(designerCategory.ID)
                 end
             elseif msg == 'reset' then
                 Util.DisplayResetPopup()

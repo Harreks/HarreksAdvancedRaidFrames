@@ -6,11 +6,14 @@
 ## IconTexture: Interface/Addons/HarreksAdvancedRaidFrames/Assets/harrek-logo.png
 ## Category: Unit Frames
 ## SavedVariables: HARFDB
+## OptionalDeps: HarreksAdvancedUI
+## Group: HarreksAdvancedUI
 ## AddonCompartmentFunc: AdvancedRaidFrames_CompartmentClick
 ## LoadSavedVariablesFirst: 1
 
 Libraries/LibStub.lua
 Libraries/LibEditMode/namespaced.lua
+Libraries/LibAdvancedMenuBuilder/LibAdvancedMenuBuilder.lua
 Libraries/LibEditMode/embed.xml
 Libraries/LibGetFrame/CallbackHandler-1.0.lua
 Libraries/LibGetFrame/LibGetFrame-1.0.lua

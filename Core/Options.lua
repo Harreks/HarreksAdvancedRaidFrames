@@ -193,12 +193,13 @@ function Core.ScaleRaidFrameContainer(value)
     end
 end
 
-function Core.ModifySettings(modifiedSettingFunction, newValue)
+function Core.ModifySettings(newValue, functionArgs)
     local timeSinceLastModify = GetTime() - Data.lastModify
     if timeSinceLastModify > 0.1 and not InCombatLockdown() then
         Data.lastModify = GetTime()
         local unitList = Data.unitList
         local functionsToRun = {}
+        local modifiedSettingFunction = functionArgs and functionArgs.functionToRun
         if modifiedSettingFunction and type(Core[modifiedSettingFunction]) == 'function' then
             table.insert(functionsToRun, { func = Core[modifiedSettingFunction], val = newValue } )
         else

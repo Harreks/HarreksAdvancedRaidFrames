@@ -28,9 +28,8 @@ function Util.GetAuraSignatures(spec)
 end
 
 --Function to format decimals out for display
-function Util.FormatForDisplay(number)
-    return math.floor(number * 10 + 0.5) / 10
-end
+local LAMB = NS.LibAdvancedMenuBuilder
+Util.FormatForDisplay = LAMB.FormatForDisplay
 
 --Takes a string, checks global table for frame with that name and changes mouse interaction on it
 function Util.ChangeFrameMouseInteraction(frameString, value)

@@ -83,11 +83,10 @@ function Core.InstallTrackers()
                     Options.editingSpec = Data.playerSpec
                 end
 
-                local spotlightFrame = Ui.GetSpotlightFrame()
-
                 Ui.CreateOptions()
-
                 Core.ModifySettings()
+
+                local spotlightFrame = Ui.GetSpotlightFrame()
 
                 local LEM = NS.LibEditMode
                 LEM:RegisterCallback('enter', function()
@@ -139,7 +138,7 @@ function Core.InstallTrackers()
                             else
                                 Options.spotlight.names[value] = true
                             end
-                            Util.MapSpotlightGroups()
+                            Util.UpdateSpotlightFrames()
                         end,
                         values = Util.GetSpotlightNames
                     },

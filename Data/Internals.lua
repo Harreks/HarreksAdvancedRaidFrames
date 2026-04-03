@@ -8,7 +8,7 @@ local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
 --When we re-order frames for the spotlight we save what they are anchored to
-Data.spotlightFrames = { selected = {}, normal = {}, positions = {} }
+Data.spotlightFrames = {}
 
 --This handles a list of the current auras you have applied on each unit, your casts, and some extras for more complex tracking
 Data.state = {
@@ -431,8 +431,7 @@ Data.ignoredFrames = {
 
 local LAMB = NS.LibAdvancedMenuBuilder
 Data.barTextures = LAMB.barTextures
-
-Data.textureChanged = false
+Data.registeredFrameStyle = false
 Data.lastModify = 0
 Data.settingSpotlights = false
 --Initializer list is used when we generate the menu, so we can parent some options to others
@@ -441,5 +440,9 @@ Data.initializerList = {}
 Data.playerSpec = nil
 Data.auraSignatures = {}
 
---When using external frames we securehook a recoloring on them to maintain our colors, this list lets us keep track of the ones already hooked
-Data.hookedFrames = {}
+Data.hpStatusOptions = {
+    losthealth = '[missinghp]',
+    health = '[curhp]',
+    perc = '[perhp]%',
+    none = ''
+}

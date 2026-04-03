@@ -371,6 +371,68 @@ function Util.GetClassColorForUnit(unit)
     end
 end
 
+function Util.GetDefaultFrameVisuals()
+    local frameList = Util.GetActiveFrameList()
+    local defaultFrame = _G[frameList[1]]
+    if defaultFrame then
+        --Collect data from the default frame
+        local frameStyle = {}
+        local width, height = defaultFrame:GetSize()
+        frameStyle.width = width
+        frameStyle.height = height
+        frameStyle.scale = Options.spotlightFrameScale
+        frameStyle.useClassColor = C_CVar.GetCVar('raidFramesDisplayClassColor')
+        frameStyle.barColor = C_CVar.GetCVar('raidFramesHealthBarColor')
+        frameStyle.barBgColor = C_CVar.GetCVar('raidFramesHealthBarColorBG')
+        if Options.barTextureEnabled then
+            local textureData = Data.barTextures[Options.barTexture]
+            if textureData.type == 'T' then
+                frameStyle.texture = textureData.path
+            else
+                frameStyle.texture = ''
+                frameStyle.atlas = textureData.path
+            end
+        else
+            frameStyle.texture = Data.barTextures['Default']
+        end
+        --Name
+        frameStyle.nameScale = Options.nameScale
+        local nameFrame = _G[frameList[1] .. 'Name']
+        local point, _, relativePoint, xOff, yOff = nameFrame:GetPoint()
+        frameStyle.namePoint = point
+        frameStyle.nameRelativePoint = relativePoint
+        frameStyle.nameXOffset = xOff
+        frameStyle.nameYOffset = yOff
+        frameStyle.nameWidth = nameFrame:GetWidth()
+        return frameStyle
+    end
+end
+
+function Util.ApplyFrameStyle(customFrame, frameStyle, unitId)
+    if frameStyle then
+        --Apply the visuals to the custom frame
+        customFrame:SetSize(frameStyle.width, frameStyle.height)
+        customFrame:SetScale(frameStyle.scale)
+        customFrame.health:SetStatusBarTexture(frameStyle.texture)
+        if frameStyle.atlas then
+            customFrame.health:SetStatusBarAtlas(frameStyle.atlas)
+        end
+        if frameStyle.useClassColor then
+            local classColor = Util.GetClassColorForUnit(unitId)
+            customFrame.health:SetStatusBarColor(classColor.r, classColor.g, classColor.b, 1)
+        else
+            local r, g, b, a = CreateColorFromHexString(frameStyle.barColor):GetRGBA()
+            customFrame.health:SetStatusBarColor(r, g, b, a)
+        end
+        local bgR, bgG, bgB, bgA = CreateColorFromHexString(frameStyle.barBgColor):GetRGBA()
+        customFrame.health.bg:SetColorTexture(bgR, bgG, bgB, bgA)
+        customFrame.name:SetPoint(frameStyle.namePoint, customFrame, frameStyle.nameRelativePoint, frameStyle.nameXOffset, frameStyle.nameYOffset)
+        customFrame.name:SetWordWrap(false)
+        customFrame.name:SetWidth(frameStyle.nameWidth)
+        customFrame.name:SetScale(frameStyle.nameScale)
+    end
+end
+
 --This recolors the default frames if blizzard tries to color them back beforehand
 hooksecurefunc("CompactUnitFrame_UpdateHealthColor", function(frame)
     local unitList = Data.unitList

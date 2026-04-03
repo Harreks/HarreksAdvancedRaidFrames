@@ -222,8 +222,7 @@ function Core.ModifySettings(newValue, functionArgs)
         end
 
         if Util.IsSpotlightActive() and Options.spotlight.names then
-            Util.MapSpotlightGroups()
-            C_Timer.After(0.1, Util.ReanchorSpotlights)
+            Util.UpdateSpotlightFrames()
         end
     end
 end

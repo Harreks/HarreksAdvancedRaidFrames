@@ -219,3 +219,95 @@ function Ui.GetSpotlightFrame()
     end
     return Ui.SpotlightFrame
 end
+
+function Ui.RegisterFrameStyle()
+    local oUF = NS.oUF
+    oUF:RegisterStyle('AdvancedSpotlightStyle', function(self)
+        self:RegisterForClicks('AnyUp')
+        self:SetScript('OnEnter', UnitFrame_OnEnter)
+        self:SetScript('OnLeave', UnitFrame_OnLeave)
+
+        self.bg = self:CreateTexture(nil, 'BACKGROUND')
+        self.bg:SetAllPoints(self)
+        self.bg:SetColorTexture(0, 0, 0, 0.5)
+
+        local health = CreateFrame('StatusBar', nil, self)
+        health:SetPoint('TOPLEFT')
+        health:SetPoint('BOTTOMRIGHT')
+        health.colorClass = true
+        health.colorDisconnected = true
+        health.colorReaction = true
+        health.bg = health:CreateTexture(nil, 'BORDER')
+        health.bg:SetAllPoints(health)
+        health.bg:SetColorTexture(0.1, 0.1, 0.1)
+        self.health = health
+
+        local name = health:CreateFontString(nil, 'OVERLAY', 'GameFontHighlightSmall')
+        self:Tag(name, '[name]')
+        self.name = name
+
+        local healthText = health:CreateFontString(nil, 'ARTWORK', 'GameFontDisable')
+        local healthDisplayOption = C_CVar.GetCVar('raidFramesHealthText')
+        healthText:SetPoint('CENTER', self, 'CENTER')
+        healthText:SetFontHeight(19.3)
+        self:Tag(healthText, Data.hpStatusOptions[healthDisplayOption])
+        self.healthText = healthText
+
+        Util.ApplyFrameStyle(self)
+    end)
+    oUF:SetActiveStyle('AdvancedSpotlightStyle')
+    oUF.DisableBlizzard = function() end
+end
+
+function Ui.CreateSpotlights(unitList)
+    local oUF = NS.oUF
+    if not Data.registeredFrameStyle then
+        Ui.RegisterFrameStyle()
+        Data.registeredFrameStyle = true
+    end
+    local spotlightFrame = Ui.GetSpotlightFrame()
+    local spotlightFrames = Data.spotlightFrames
+    local frameStyle = Util.GetDefaultFrameVisuals()
+    for i, unitId in ipairs(unitList) do
+        local frame = spotlightFrames[i]
+        if not frame then
+            frame = oUF:Spawn(unitId)
+            spotlightFrames[i] = frame
+        end
+
+        frame:ClearAllPoints()
+        Util.ApplyFrameStyle(frame, frameStyle, unitId)
+        frame:SetAttribute('unit', unitId)
+
+        if i == 1 then
+            frame:SetPoint('TOP', spotlightFrame, 'TOP')
+        else
+            local childPoint, parentPoint, anchorTo = nil, nil, nil
+            if Options.spotlight.grow == 'right' then
+                if i + 1 == Options.spotlight.groupSize then
+                    childPoint, parentPoint, anchorTo = 'TOP', 'BOTTOM', spotlightFrames[1]
+                else
+                    childPoint, parentPoint, anchorTo = 'LEFT', 'RIGHT', spotlightFrames[i-1]
+                end
+            else
+                if i + 1 == Options.spotlight.groupSize then
+                    childPoint, parentPoint, anchorTo = 'LEFT', 'RIGHT', spotlightFrames[1]
+                else
+                    childPoint, parentPoint, anchorTo = 'TOP', 'BOTTOM', spotlightFrames[i-1]
+                end
+            end
+            frame:SetPoint(childPoint, anchorTo, parentPoint)
+        end
+        frame:Show()
+        frame:UpdateAllElements("ForceUpdate")
+    end
+
+    for i = #unitList + 1, #spotlightFrames do
+        local frame = spotlightFrames[i]
+        if frame then
+            frame:ClearAllPoints()
+            frame:SetAttribute('unit', nil)
+            frame:Hide()
+        end
+    end
+end

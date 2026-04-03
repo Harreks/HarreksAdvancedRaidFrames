@@ -103,68 +103,22 @@ function Util.GetSpotlightNames()
     return spotlightNameList
 end
 
---Use the spotlight name list to map out where each frame is supposed to go
-function Util.MapSpotlightGroups()
-    --Reset the current lists
-    wipe(Data.spotlightFrames.selected)
-    wipe(Data.spotlightFrames.normal)
-    wipe(Data.spotlightFrames.positions)
-    local units = Options.spotlight.names
-    local frames = Util.GetActiveFrameList()
-    for _, frameString in ipairs(frames) do
-        local currentFrame = _G[frameString]
-        if currentFrame and currentFrame.unit then
-            local unit = currentFrame.unit
+-- Update the spotlight frames by scanning group members and generating custom frames
+function Util.UpdateSpotlightFrames()
+    local spotlightNameList = Options.spotlight.names
+    local spotlightUnitList = {}
+    local groupSize = GetNumGroupMembers() or 0
+    local groupType = IsInRaid() and 'raid' or 'party'
+    for i = 1, groupSize do
+        local unit = groupType .. i
+        if UnitExists(unit) and not UnitIsUnit(unit, 'player') then
             local unitName = UnitName(unit)
-            if unitName then
-                if units[unitName] then
-                    table.insert(Data.spotlightFrames.selected, frameString)
-                else
-                    table.insert(Data.spotlightFrames.normal, frameString)
-                end
-                local point, parent, relPoint, xOff, yOff = currentFrame:GetPoint()
-                table.insert(Data.spotlightFrames.positions, { point = point, parent = parent, relPoint = relPoint, xOff = xOff, yOff = yOff })
+            if unitName and spotlightNameList[unitName] then
+                table.insert(spotlightUnitList, unit)
             end
         end
     end
-end
-
---Use the mapped spotlight anchors to attach the frames where they are supposed to go
-function Util.ReanchorSpotlights()
-    local spotlightFrame = Ui.GetSpotlightFrame()
-    if spotlightFrame then
-        for index, frameString in ipairs(Data.spotlightFrames.normal) do
-            local frame = _G[frameString]
-            frame:SetScale(1)
-            local posData = Data.spotlightFrames.positions[index]
-            frame:ClearAllPoints()
-            frame:SetPoint(posData.point, posData.parent, posData.relPoint, posData.xOff, posData.yOff)
-        end
-        for index, frameString in ipairs(Data.spotlightFrames.selected) do
-            local frame = _G[frameString]
-            frame:SetScale(Options.spotlightFrameScale)
-            frame:ClearAllPoints()
-            if index == 1 then
-                frame:SetPoint('TOP', spotlightFrame, 'TOP')
-            else
-                local childPoint, parentPoint, anchorTo = nil, nil, nil
-                if Options.spotlight.grow == 'right' then
-                    if index + 1 == Options.spotlight.groupSize then
-                        childPoint, parentPoint, anchorTo = 'TOP', 'BOTTOM', _G[Data.spotlightFrames.selected[1]]
-                    else
-                        childPoint, parentPoint, anchorTo = 'LEFT', 'RIGHT', _G[Data.spotlightFrames.selected[index - 1]]
-                    end
-                else
-                    if index + 1 == Options.spotlight.groupSize then
-                        childPoint, parentPoint, anchorTo = 'LEFT', 'RIGHT', _G[Data.spotlightFrames.selected[1]]
-                    else
-                        childPoint, parentPoint, anchorTo = 'TOP', 'BOTTOM', _G[Data.spotlightFrames.selected[index - 1]]
-                    end
-                end
-                frame:SetPoint(childPoint, anchorTo, parentPoint)
-            end
-        end
-    end
+    Ui.CreateSpotlights(spotlightUnitList)
 end
 
 function Util.HandlePlayerSpecializationChanged()
@@ -182,6 +136,9 @@ function Util.MapOutUnits()
     --Turbo fuck this thing it deserves to die in hell
     if C_CVar.GetCVar('raidOptionDisplayMainTankAndAssist') then
         C_CVar.SetCVar('raidOptionDisplayMainTankAndAssist', 0)
+    end
+    if C_CVar.GetCVar('raidOptionDisplayPets') then
+        C_CVar.SetCVar('raidOptionDisplayPets', 0)
     end
     --Refresh some player data too
     Util.UpdatePlayerSpec()

@@ -278,6 +278,7 @@ function Util.ResetUnitAuraData(unit)
             emptyAuraData[auraData.name] = { active = false }
         end
         Util.UpdateIndicatorsForUnit(unit, emptyAuraData)
+        Core.UpdateAuraStatus(unit, { isFullUpdate = true })
     end
 end
 
@@ -318,6 +319,10 @@ function Util.GetFrameHealthTexture(frame)
         --Grid2 has its health bars inside an array, this isn't super well tested
         if frame['health-bar'] then
             return frame['health-bar'].myTextures[1]:GetStatusBarTexture()
+        end
+        --Generic oUF (used for the spotlights)
+        if frame.Health then
+            return frame.Health:GetStatusBarTexture()
         end
     end
 end
@@ -373,7 +378,7 @@ end
 
 function Util.GetDefaultFrameVisuals()
     local frameList = Util.GetActiveFrameList()
-    local defaultFrame = _G[frameList[1]]
+    local defaultFrame =  _G[frameList[1]]
     if defaultFrame then
         --Collect data from the default frame
         local frameStyle = {}
@@ -381,7 +386,7 @@ function Util.GetDefaultFrameVisuals()
         frameStyle.width = width
         frameStyle.height = height
         frameStyle.scale = Options.spotlightFrameScale
-        frameStyle.useClassColor = C_CVar.GetCVar('raidFramesDisplayClassColor')
+        frameStyle.useClassColor = C_CVar.GetCVarBool('raidFramesDisplayClassColor')
         frameStyle.barColor = C_CVar.GetCVar('raidFramesHealthBarColor')
         frameStyle.barBgColor = C_CVar.GetCVar('raidFramesHealthBarColorBG')
         if Options.barTextureEnabled then
@@ -413,19 +418,14 @@ function Util.ApplyFrameStyle(customFrame, frameStyle, unitId)
         --Apply the visuals to the custom frame
         customFrame:SetSize(frameStyle.width, frameStyle.height)
         customFrame:SetScale(frameStyle.scale)
-        customFrame.health:SetStatusBarTexture(frameStyle.texture)
+        customFrame.Health:SetStatusBarTexture(frameStyle.texture)
         if frameStyle.atlas then
-            customFrame.health:SetStatusBarAtlas(frameStyle.atlas)
+            customFrame.Health:SetStatusBarAtlas(frameStyle.atlas)
         end
-        if frameStyle.useClassColor then
-            local classColor = Util.GetClassColorForUnit(unitId)
-            customFrame.health:SetStatusBarColor(classColor.r, classColor.g, classColor.b, 1)
-        else
-            local r, g, b, a = CreateColorFromHexString(frameStyle.barColor):GetRGBA()
-            customFrame.health:SetStatusBarColor(r, g, b, a)
-        end
+        customFrame.Health.colorClass = frameStyle.useClassColor
+
         local bgR, bgG, bgB, bgA = CreateColorFromHexString(frameStyle.barBgColor):GetRGBA()
-        customFrame.health.bg:SetColorTexture(bgR, bgG, bgB, bgA)
+        customFrame.Health.bg:SetColorTexture(bgR, bgG, bgB, bgA)
         customFrame.name:SetPoint(frameStyle.namePoint, customFrame, frameStyle.nameRelativePoint, frameStyle.nameXOffset, frameStyle.nameYOffset)
         customFrame.name:SetWordWrap(false)
         customFrame.name:SetWidth(frameStyle.nameWidth)

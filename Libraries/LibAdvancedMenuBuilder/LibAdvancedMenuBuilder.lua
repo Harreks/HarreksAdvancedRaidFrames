@@ -40,10 +40,9 @@ end
 function LAMB.CreateOptionsElement(data, optionsTable, parent)
     local initializer = nil
     if data.type == "header" then
-        initializer = Settings.CreateElementInitializer("SettingsListSectionHeaderTemplate", { name = data.text })
+        initializer = CreateSettingsListSectionHeaderInitializer(data.text, data.tooltip)
         parent.layout:AddInitializer(initializer)
         initializerList[data.key] = initializer
-        return
     elseif data.type == "button" then
         local buttonData = {
             name = data.text,

@@ -29,7 +29,7 @@ function Core.InstallTrackers()
                 end
             end
             tracker:SetScript('OnEvent', function(self, event, unitId, auraUpdateInfo)
-                if event == 'UNIT_AURA' and Data.playerSpec then
+                if event == 'UNIT_AURA' and Data.playerSpec and Util.IsValidUnitForAuraCheck(unitId) then
                     if not self.active then
                         self.active = true
                         self:SetScript('OnUpdate', self.VisibleCheck)
@@ -71,13 +71,17 @@ function Core.InstallTrackers()
     --State tracker to initialize settings and keep them updated
     if not Core.StateTracker then
         local stateTracker = CreateFrame('Frame')
+        stateTracker:RegisterEvent('ADDON_LOADED')
         stateTracker:RegisterEvent('PLAYER_LOGIN')
+        stateTracker:RegisterEvent('PLAYER_ENTERING_WORLD')
         stateTracker:RegisterEvent('GROUP_ROSTER_UPDATE')
         stateTracker:RegisterEvent('ACTIVE_PLAYER_SPECIALIZATION_CHANGED')
         stateTracker:RegisterEvent('ACTIVE_TALENT_GROUP_CHANGED')
 
-        stateTracker:SetScript('OnEvent', function(self, event, unitTarget)
-            if event == 'PLAYER_LOGIN' then
+        stateTracker:SetScript('OnEvent', function(self, event, addonName)
+            if event == 'ADDON_LOADED' and addonName == 'HarreksAdvancedRaidFrames' then
+                Debug.DebugData(Data.state, 'State')
+                Debug.DebugData(Data.unitList, 'Units')
                 Util.UpdatePlayerSpec()
                 if not Options.editingSpec or not Data.specInfo[Options.editingSpec] then
                     Options.editingSpec = Data.playerSpec
@@ -182,8 +186,13 @@ function Core.InstallTrackers()
                         Util.GetExternalFrames()
                     end
                 end)
-            elseif event == 'GROUP_ROSTER_UPDATE' then
-                Core.ModifySettings()
+            elseif event == 'PLAYER_LOGIN' or event == 'GROUP_ROSTER_UPDATE' then
+                C_Timer.After(0.2, Core.ModifySettings)
+            elseif event == 'PLAYER_ENTERING_WORLD' then
+                local activeAuraData = Data.state.auras
+                for unit, _ in pairs(activeAuraData) do
+                    Util.ResetUnitAuraData(unit)
+                end
             elseif event == 'ACTIVE_PLAYER_SPECIALIZATION_CHANGED' or event == 'ACTIVE_TALENT_GROUP_CHANGED' then
                 Util.HandlePlayerSpecializationChanged()
             end

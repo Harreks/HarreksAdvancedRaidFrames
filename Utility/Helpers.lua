@@ -133,13 +133,6 @@ end
 
 --Update unit data of current group members
 function Util.MapOutUnits()
-    --Turbo fuck this thing it deserves to die in hell
-    if C_CVar.GetCVar('raidOptionDisplayMainTankAndAssist') then
-        C_CVar.SetCVar('raidOptionDisplayMainTankAndAssist', 0)
-    end
-    if C_CVar.GetCVar('raidOptionDisplayPets') then
-        C_CVar.SetCVar('raidOptionDisplayPets', 0)
-    end
     --Refresh some player data too
     Util.UpdatePlayerSpec()
 
@@ -220,17 +213,20 @@ end
 function Util.GetExternalFrames()
     if SavedIndicators[Data.playerSpec] and #SavedIndicators[Data.playerSpec] > 0 then
         local LGF = LibStub('LibGetFrame-1.0')
+        local unitList = Data.unitList
         for unit, elements in pairs(Data.unitList) do
-            local extFrames = LGF.GetUnitFrame(unit, { ignoreFrames = Data.ignoredFrames, returnAll = true })
-            if extFrames then
-                for _, extFrame in pairs(extFrames) do
-                    table.insert(elements.extFrames, extFrame)
-                    local indicatorOverlay = Ui.CreateIndicatorOverlay(SavedIndicators[Data.playerSpec])
-                    indicatorOverlay.unit = unit
-                    indicatorOverlay:AttachToFrame(extFrame)
-                    indicatorOverlay:Show()
-                    table.insert(elements.extIndicatorOverlays, indicatorOverlay)
-                    Util.RefreshIndicatorsWithSavedData(unit)
+            if unitList[unit] then
+                local extFrames = LGF.GetUnitFrame(unit, { ignoreFrames = Data.ignoredFrames, returnAll = true })
+                if extFrames then
+                    for _, extFrame in pairs(extFrames) do
+                        table.insert(elements.extFrames, extFrame)
+                        local indicatorOverlay = Ui.CreateIndicatorOverlay(SavedIndicators[Data.playerSpec])
+                        indicatorOverlay.unit = unit
+                        indicatorOverlay:AttachToFrame(extFrame)
+                        indicatorOverlay:Show()
+                        table.insert(elements.extIndicatorOverlays, indicatorOverlay)
+                        Util.RefreshIndicatorsWithSavedData(unit)
+                    end
                 end
             end
         end
@@ -290,7 +286,8 @@ end
 
 function Util.GetActiveFrameList()
     if IsInRaid() then
-        if CompactRaidFrame1 and CompactRaidFrame1.unit then
+        local displayType = EditModeManagerFrame:GetSettingValue(Enum.EditModeSystem.UnitFrame, Enum.EditModeUnitFrameSystemIndices.Raid, Enum.EditModeUnitFrameSetting.RaidGroupDisplayType)
+        if displayType == 2 or displayType == 3 then
             return Data.frameList.raidCombined
         else
             return Data.frameList.raidGroups
@@ -299,4 +296,16 @@ function Util.GetActiveFrameList()
         return Data.frameList.party
     end
     return {}
+end
+
+function Util.IsValidUnitForAuraCheck(unit)
+    if IsInRaid() then
+        if string.match(unit, "^raid%d+$") then
+            return true
+        else
+            return false
+        end
+    else
+        return true
+    end
 end

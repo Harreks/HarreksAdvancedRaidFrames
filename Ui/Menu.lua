@@ -7,6 +7,7 @@ local Debug = NS.Debug
 local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
+--This is deprecated
 function Ui.GetOptionsIntroPanel()
     if not Ui.OptionsIntroPanel then
         local optionsIntroPanel = CreateFrame('Frame')
@@ -29,7 +30,7 @@ function Ui.GetOptionsIntroPanel()
         introText:SetJustifyH('CENTER')
         introText:SetScale(1.15)
         introText:SetWordWrap(true)
-        local text = [[Advanced Raid Frames is a simple and straightforward way to enhance the default party and raid frames. The main focus is functionality and the goal is to avoid all the fluff and the need to navigate through a lot of different menus. You should find it incredibly simple to set up but still powerful enough to do anything you might need to properly play the game.
+        local text = [[Advanced Raid Frames is a simple and straightforward way to enhance your party and raid frames. The main focus is functionality and the goal is to avoid all the fluff and the need to navigate through a lot of different menus. You should find it incredibly simple to set up but still powerful enough to do anything you might need to properly play the game.
 
 If you have any questions, feedback, or bug reports please come by the SpiritbloomPro discord and let me know. The project is constantly evolving and improving and that is made possible thanks to you.
 
@@ -81,29 +82,29 @@ function Ui.CreateOptions()
     end
 
     local LAMB = NS.LibAdvancedMenuBuilder
-    local optionsIntroPanel = Ui.GetOptionsIntroPanel()
-    local HaUI = HarreksAdvancedUI or {}
-    local category = LAMB.CreateOptionsPanel(optionsIntroPanel, nil, 'Advanced Raid Frames', 'canvas', HaUI.settingsCategory)
-    LAMB.CreateOptionsPanel(settingsTable, Options, 'Options', 'vertical', category)
+    local HAUS = HarreksAdvancedUiSuite
+    local parent = HAUS and HAUS.settingsCategory or nil
+    local category = LAMB.CreateOptionsPanel(settingsTable, Options, 'Advanced Raid Frames ' .. NS.Version, 'vertical', parent)
     local designer = Ui.GetDesignerFrame()
     local designerCategory = LAMB.CreateOptionsPanel(designer, nil, 'Designer', 'canvas', category)
+
+    --If the container exists, register harf as a component
+    if HAUS then
+        HAUS.RegisterComponent('HarreksAdvancedRaidFrames', NS.Version, category.ID)
+    end
 
     Data.addonSettingsCategory = category.ID
     SLASH_HARREKSADVANCEDRAIDFRAMES1 = "/harf"
     SlashCmdList.HARREKSADVANCEDRAIDFRAMES = function(msg)
-        if msg ~= '' then
-            if msg == 'des' then
-                if InCombatLockdown() then
-                    print('|cnNORMAL_FONT_COLOR:AdvancedRaidFrames:|r Settings can\'t be opened in combat.')
-                else
-                    Settings.OpenToCategory(designerCategory.ID)
-                end
-            elseif msg == 'reset' then
-                Util.DisplayResetPopup()
-            end
+        if InCombatLockdown() then
+            print('|cnNORMAL_FONT_COLOR:AdvancedRaidFrames:|r Settings can\'t be opened in combat.')
         else
-            if InCombatLockdown() then
-                print('|cnNORMAL_FONT_COLOR:AdvancedRaidFrames:|r Settings can\'t be opened in combat.')
+            if msg ~= '' then
+                if msg == 'des' then
+                    Settings.OpenToCategory(designerCategory.ID)
+                elseif msg == 'reset' then
+                    Util.DisplayResetPopup()
+                end
             else
                 Settings.OpenToCategory(category.ID)
             end

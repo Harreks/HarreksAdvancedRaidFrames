@@ -42,7 +42,7 @@ function Core.UpdateAuraStatus(unit, updateInfo)
         local currentUnitAuras = state.auras[unit]
 
         --Init this unit state
-        if not currentUnitAuras then
+        if not currentUnitAuras or updateInfo.isFullUpdate then
             currentUnitAuras = {}
             state.auras[unit] = currentUnitAuras
             local auras = C_UnitAuras.GetUnitAuras(unit, 'PLAYER|HELPFUL')

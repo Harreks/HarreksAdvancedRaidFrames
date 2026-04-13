@@ -12,21 +12,21 @@ function Core.MatchAuraInfo(unit, aura)
     --If aura is not secret, return the internal name
     local specInfo = Data.specInfo[Data.playerSpec]
     if canaccesstable(aura) and not issecretvalue(aura.spellId) then
-        if specInfo.auras[aura.spellId] then
+        if specInfo.auras[aura.spellId] and Util.AuraPassesFilter(unit, aura.auraInstanceID, 'PLAYER|HELPFUL') then
             return specInfo.auras[aura.spellId].name
         end
     end
 
     --If its secret we check if its a player aura and compose the signature
-    local passesRaid = not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|RAID')
-    local passesRic = not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|RAID_IN_COMBAT')
+    local passesRaid = Util.AuraPassesFilter(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|RAID')
+    local passesRic = Util.AuraPassesFilter(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|RAID_IN_COMBAT')
 
     if not (passesRaid or passesRic) then
         return nil
     end
 
-    local passesExt = not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|EXTERNAL_DEFENSIVE')
-    local passesDisp = not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|RAID_PLAYER_DISPELLABLE')
+    local passesExt = Util.AuraPassesFilter(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|EXTERNAL_DEFENSIVE')
+    local passesDisp = Util.AuraPassesFilter(unit, aura.auraInstanceID, 'PLAYER|HELPFUL|RAID_PLAYER_DISPELLABLE')
 
     local auraSignatures = Util.GetAuraSignatures(Data.playerSpec)
     local signature = Util.MakeAuraSignature(passesRaid, passesRic, passesExt, passesDisp)
@@ -68,7 +68,7 @@ function Core.UpdateAuraStatus(unit, updateInfo)
 
         if updateInfo.addedAuras then
             for _, aura in ipairs(updateInfo.addedAuras) do
-                if Util.IsAuraFromPlayer(unit, aura.auraInstanceID) then
+                if Util.AuraPassesFilter(unit, aura.auraInstanceID, 'PLAYER|HELPFUL') then
                     local matchedAura = Core.MatchAuraInfo(unit, aura)
                     if matchedAura then
                         currentUnitAuras[aura.auraInstanceID] = matchedAura

@@ -65,6 +65,7 @@ Data.textures = {
     --rSham
     Riptide = 252995,
     EarthShield = 136089,
+    EarthlivingWeapon = 237578,
     --hPal
     BeaconOfFaith = 1030095,
     EternalFlame = 135433,
@@ -82,56 +83,76 @@ Data.textures = {
 Data.indicatorTypes = {
     icon = {
         display = 'Icon',
+        sections = {
+            'Icon',
+            'Position',
+            'Text'
+        },
         controls = {
-            { controlType = 'SpellSelector', setting = 'Spell', row = 1 },
-            { controlType = 'Dropdown', dropdownType = 'iconPosition', setting = 'Position', row = 1, default = 'CENTER' },
-            { controlType = 'Slider', sliderType = 'iconSize', setting = 'iconSize', row = 1, default = 25 },
-            { controlType = 'Slider', sliderType = 'textSize', setting = 'textSize', row = 1, default = 1 },
-            { controlType = 'Slider', sliderType = 'xOffset', setting = 'xOffset', row = 2, default = 0 },
-            { controlType = 'Slider', sliderType = 'yOffset', setting = 'yOffset', row = 2, default = 0 },
-            { controlType = 'Checkbox', setting = 'showText', text = 'Show Text', row = 2, default = true },
-            { controlType = 'Checkbox', setting = 'showTexture', text = 'Show Texture', row = 2, default = true }
+            { controlType = 'SpellSelector', setting = 'Spell', section = 'Icon' },
+            { controlType = 'Dropdown', dropdownType = 'iconPosition', setting = 'Position', section = 'Position', default = 'CENTER' },
+            { controlType = 'Slider', sliderType = 'iconSize', setting = 'iconSize', section = 'Icon', default = 25 },
+            { controlType = 'Slider', sliderType = 'textSize', setting = 'textSize', section = 'Text', default = 1 },
+            { controlType = 'Slider', sliderType = 'xOffset', setting = 'xOffset', section = 'Position', default = 0 },
+            { controlType = 'Slider', sliderType = 'yOffset', setting = 'yOffset', section = 'Position', default = 0 },
+            { controlType = 'Checkbox', setting = 'showText', text = 'Show Text', section = 'Text', default = true },
+            { controlType = 'Checkbox', setting = 'showTexture', text = 'Show Texture', section = 'Icon', default = true }
         }
     },
     square = {
         display = 'Square',
+        sections = {
+            'Icon',
+            'Position',
+            'Text'
+        },
         controls = {
-            { controlType = 'SpellSelector', setting = 'Spell', row = 1 },
-            { controlType = 'Dropdown', dropdownType = 'iconPosition', setting = 'Position', row = 1, default = 'CENTER' },
-            { controlType = 'Slider', sliderType = 'iconSize', setting = 'iconSize', row = 1, default = 25 },
-            { controlType = 'Slider', sliderType = 'textSize', setting = 'textSize', row = 1, default = 1 },
-            { controlType = 'Slider', sliderType = 'xOffset', setting = 'xOffset', row = 2, default = 0 },
-            { controlType = 'Slider', sliderType = 'yOffset', setting = 'yOffset', row = 2, default = 0 },
-            { controlType = 'ColorPicker', setting = 'Color', row = 2, default = { r = 0, g = 1, b = 0, a = 1 } },
-            { controlType = 'Checkbox', setting = 'showText', text = 'Show Text', row = 2, default = false },
-            { controlType = 'Checkbox', setting = 'showCooldown', text = 'Show Cooldown', row = 2, default = false }
+            { controlType = 'SpellSelector', setting = 'Spell', section = 'Icon' },
+            { controlType = 'Dropdown', dropdownType = 'iconPosition', setting = 'Position', section = 'Position', default = 'CENTER' },
+            { controlType = 'Slider', sliderType = 'iconSize', setting = 'iconSize', section = 'Icon', default = 25 },
+            { controlType = 'Slider', sliderType = 'textSize', setting = 'textSize', section = 'Text', default = 1 },
+            { controlType = 'Slider', sliderType = 'xOffset', setting = 'xOffset', section = 'Position', default = 0 },
+            { controlType = 'Slider', sliderType = 'yOffset', setting = 'yOffset', section = 'Position', default = 0 },
+            { controlType = 'ColorPicker', setting = 'Color', section = 'Icon', default = { r = 0, g = 1, b = 0, a = 1 } },
+            { controlType = 'Checkbox', setting = 'showText', text = 'Show Text', section = 'Text', default = false },
+            { controlType = 'Checkbox', setting = 'showCooldown', text = 'Show Cooldown', section = 'Text', default = false }
         }
     },
     bar = {
         display = 'Bar',
+        sections = {
+            'Display',
+            'Position'
+        },
         controls = {
-            { controlType = 'SpellSelector', setting = 'Spell', row = 1 },
-            { controlType = 'ColorPicker', setting = 'Color', row = 1, default = { r = 0, g = 1, b = 0, a = 1 } },
-            { controlType = 'Dropdown', dropdownType = 'barPosition', setting = 'Position', row = 1, default = 'TOPRIGHT' },
-            { controlType = 'Slider', sliderType = 'barSize', setting = 'barSize', row = 1, default = 15 },
-            { controlType = 'Dropdown', dropdownType = 'barOrientation', setting = 'Orientation', row = 1, default = 'Horizontal' },
-            { controlType = 'Dropdown', dropdownType = 'barScale', setting = 'Scale', row = 2, default = 'Full' },
-            { controlType = 'Slider', sliderType = 'offset', setting = 'Offset', row = 2, default = 0 }
+            { controlType = 'SpellSelector', setting = 'Spell', section = 'Display' },
+            { controlType = 'ColorPicker', setting = 'Color', section = 'Display', default = { r = 0, g = 1, b = 0, a = 1 } },
+            { controlType = 'Dropdown', dropdownType = 'barPosition', setting = 'Position', section = 'Position', default = 'TOPRIGHT' },
+            { controlType = 'Slider', sliderType = 'barSize', setting = 'barSize', section = 'Display', default = 15 },
+            { controlType = 'Dropdown', dropdownType = 'barOrientation', setting = 'Orientation', section = 'Position', default = 'Horizontal' },
+            { controlType = 'Dropdown', dropdownType = 'barScale', setting = 'Scale', section = 'Display', default = 'Full' },
+            { controlType = 'Slider', sliderType = 'offset', setting = 'Offset', section = 'Position', default = 0 }
         }
     },
     border = {
         display = 'Border',
+        sections = {
+            'Display'
+        },
         controls = {
-            { controlType = 'SpellSelector', setting = 'Spell', row = 1 },
-            { controlType = 'ColorPicker', setting = 'Color', row = 1, default = { r = 0, g = 1, b = 0, a = 1 } },
-            { controlType = 'Slider', sliderType = 'borderWidth', setting = 'borderWidth', row = 2, default = 3 }
+            { controlType = 'SpellSelector', setting = 'Spell', section = 'Display' },
+            { controlType = 'ColorPicker', setting = 'Color', section = 'Display', default = { r = 0, g = 1, b = 0, a = 1 } },
+            { controlType = 'Slider', sliderType = 'borderWidth', setting = 'borderWidth', section = 'Display', default = 3 }
         }
     },
     healthColor = {
         display = 'Health Bar Color',
+        sections = {
+            'Display'
+        },
         controls = {
-            { controlType = 'SpellSelector', setting = 'Spell', row = 1 },
-            { controlType = 'ColorPicker', setting = 'Color', row = 1, default = { r = 0, g = 1, b = 0, a = 1 } }
+            { controlType = 'SpellSelector', setting = 'Spell', section = 'Display' },
+            { controlType = 'ColorPicker', setting = 'Color', section = 'Display', default = { r = 0, g = 1, b = 0, a = 1 } }
         }
     }
 }
@@ -433,6 +454,7 @@ local LAMB = NS.LibAdvancedMenuBuilder
 Data.barTextures = LAMB.barTextures
 Data.registeredFrameStyle = false
 Data.lastModify = 0
+Data.optionSections = {}
 Data.settingSpotlights = false
 --Initializer list is used when we generate the menu, so we can parent some options to others
 Data.initializerList = {}

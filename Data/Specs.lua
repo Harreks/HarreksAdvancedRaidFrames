@@ -165,7 +165,8 @@ Data.specInfo = {
         auras = {
             [61295] = { name = 'Riptide', signature = '1:1:0:1' },
             [974] = { name = 'EarthShield', signature = '1:1:0:1' },
-            [383648] = { name = 'EarthShield', signature = '1:1:0:1', hide = true }
+            [383648] = { name = 'EarthShield', signature = '1:1:0:1', hide = true },
+            [382024] = { name = 'EarthlivingWeapon', signature = '0:0:0:0' }
         },
         casts = {
             [61295] = { 'Riptide' },

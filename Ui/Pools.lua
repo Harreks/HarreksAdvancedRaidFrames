@@ -19,6 +19,10 @@ Ui.ContainerFramePool = CreateFramePool('Frame', nil, 'InsetFrameTemplate3',
     end, false,
     function(frame)
         frame.elements = {}
+        frame.sections = {
+            buttons = {},
+            elements = {}
+        }
         frame.deleteButton = nil
         frame.savedSetting = { spec = nil, index = nil }
         frame.index = nil
@@ -46,41 +50,86 @@ Ui.ContainerFramePool = CreateFramePool('Frame', nil, 'InsetFrameTemplate3',
                 self.text:SetText(text)
             end
         end
+        frame.ClearSections = function(self)
+            for _, button in ipairs(self.sections.buttons) do
+                button:Release()
+            end
+            for _, section in pairs(self.sections.elements) do
+                if section.container then
+                    section.container:Release()
+                end
+            end
+            wipe(self.sections.buttons)
+            wipe(self.sections.elements)
+        end
+        frame.DisplaySection = function(self, section)
+            Data.optionSections[self.savedSetting.spec][self.savedSetting.index] = section
+            for _, element in ipairs(self.elements) do
+                if section == element.section then
+                    element:Show()
+                else
+                    element:Hide()
+                end
+            end
+        end
         frame.AnchorElements = function(self)
-            local rowAnchors = {}
+            self:ClearSections()
+            local sectionElements = self.sections.elements
+            local activeSection
+            if Data.optionSections[self.savedSetting.spec] and Data.optionSections[self.savedSetting.spec][self.savedSetting.index] then
+                activeSection = Data.optionSections[self.savedSetting.spec][self.savedSetting.index]
+            else
+                if not Data.optionSections[self.savedSetting.spec] then Data.optionSections[self.savedSetting.spec] = {} end
+                activeSection = self.elements[1].section
+                Data.optionSections[self.savedSetting.spec][self.savedSetting.index] = activeSection
+            end
+
             for _, element in ipairs(self.elements) do
                 element:ClearAllPoints()
                 element:SetParent(self)
                 local parent, point, rel, xOff, yOff
-                local currentRow = element.layoutRow or 1
-                if not rowAnchors[currentRow] then
-                    parent = self
-                    if currentRow == 1 then
-                        point = 'LEFT'
-                        rel = 'LEFT'
-                        xOff = 13
-                        yOff = 10
-                    else
-                        point = 'BOTTOMLEFT'
-                        rel = 'BOTTOMLEFT'
-                        xOff = 13
-                        yOff = 20 - ((currentRow - 2) * 30)
-                    end
-                    rowAnchors[currentRow] = element
+                local currentSection = element.section
+                --If the section of the current control doesn't exist, initialize it
+                if not sectionElements[currentSection] then
+                    local sectionContainer = Ui.ControlSectionContainerPool:Acquire()
+                    sectionContainer:AttachToParent(self)
+                    sectionElements[currentSection] = {
+                        container = sectionContainer,
+                        elements = {}
+                    }
+                    local sectionButton = Ui.ControlSectionButtonPool:Acquire()
+                    sectionButton:Initialize(self, currentSection)
+                    table.insert(self.sections.buttons, sectionButton)
+
+                    parent = sectionContainer
+                    point = 'LEFT'
+                    rel = 'LEFT'
+                    xOff = 13
+                    yOff = 5
+                    table.insert(sectionElements[currentSection].elements, element)
                 else
-                    parent = rowAnchors[currentRow]
+                    local currentSectionElements = sectionElements[currentSection].elements
+                    parent = currentSectionElements[#currentSectionElements]
                     point = 'LEFT'
                     rel = 'RIGHT'
                     xOff = 10
                     yOff = 0
-                    if rowAnchors[currentRow].type == 'Checkbox' then
+                    if currentSectionElements[#currentSectionElements].type == 'Checkbox' then
                         xOff = 60
                     end
-                    rowAnchors[currentRow] = element
+                    table.insert(sectionElements[currentSection].elements, element)
                 end
 
                 element:SetPoint(point, parent, rel, xOff, yOff)
-                element:Show()
+                element:SetShown(activeSection == currentSection and true or false)
+            end
+            for index, button in ipairs(self.sections.buttons) do
+                if index == 1 then
+                    button:SetPoint('LEFT', self, 'LEFT', 10, 10)
+                else
+                    button:SetPoint('LEFT', self.sections.buttons[index - 1], 'RIGHT')
+                end
+                button:Show()
             end
             self.deleteButton:ClearAllPoints()
             self.deleteButton:SetParent(self)
@@ -97,6 +146,7 @@ Ui.ContainerFramePool = CreateFramePool('Frame', nil, 'InsetFrameTemplate3',
                 self.deleteButton = nil
             end
             wipe(self.elements)
+            self:ClearSections()
         end
         frame.Release = function(self)
             Ui.ContainerFramePool:Release(self)
@@ -149,6 +199,55 @@ Ui.ContainerFramePool = CreateFramePool('Frame', nil, 'InsetFrameTemplate3',
     end
 )
 
+--Empty container for the indicator controls of one section
+Ui.ControlSectionContainerPool = CreateFramePool('Frame', nil, nil,
+    function(_, frame)
+        frame:Hide()
+        frame:ClearAllPoints()
+        frame:SetParent()
+        frame.section = nil
+    end, false,
+    function(frame)
+        frame.AttachToParent = function(self, parent)
+            self:SetParent(parent)
+            self:SetPoint('TOPLEFT', parent, 'LEFT')
+            self:SetPoint('BOTTOMRIGHT', parent, 'BOTTOMRIGHT')
+        end
+        frame.Release = function(self)
+            Ui.ControlSectionContainerPool:Release(self)
+        end
+    end
+)
+
+--Buttons to swap between the control sections
+Ui.ControlSectionButtonPool = CreateFramePool('Button', nil, 'UIPanelButtonTemplate',
+    function(_, frame)
+        frame:Hide()
+        frame:ClearAllPoints()
+        frame.section = ''
+        frame:SetText('')
+        frame:SetParent()
+    end, false,
+    function(frame)
+        frame:SetSize(100, 25)
+        frame.section = ''
+        frame.Initialize = function(self, parent, text)
+            self:SetParent(parent)
+            self:SetText(text)
+            frame.section = text
+        end
+        frame:SetScript('OnClick', function(self)
+            local parent = self:GetParent()
+            if parent then
+                parent:DisplaySection(self.section)
+            end
+        end)
+        frame.Release = function(self)
+            Ui.ControlSectionButtonPool:Release(self)
+        end
+    end
+)
+
 --Color picker pool
 Ui.ColorPickerFramePool = CreateFramePool('Button', nil, 'ColorSwatchTemplate',
     function(_, frame)
@@ -156,7 +255,7 @@ Ui.ColorPickerFramePool = CreateFramePool('Button', nil, 'ColorSwatchTemplate',
         frame:ClearAllPoints()
         frame:SetParent()
         frame.indicatorSetting = nil
-        frame.layoutRow = nil
+        frame.section = nil
         frame.Color:SetVertexColor(0, 1, 0, 1)
     end, false,
     function(frame)
@@ -204,7 +303,7 @@ Ui.SpellSelectorFramePool = CreateFramePool('DropdownButton', nil, "WowStyle1Dro
         frame.spec = nil
         frame.selectedOption = nil
         frame.indicatorSetting = nil
-        frame.layoutRow = nil
+        frame.section = nil
         frame:Hide()
         frame:ClearAllPoints()
         frame:SetParent()
@@ -251,7 +350,7 @@ Ui.DropdownSelectorPool = CreateFramePool('DropdownButton', nil, "WowStyle1Dropd
         frame.allOptions = {}
         frame.dropdownType = nil
         frame.indicatorSetting = nil
-        frame.layoutRow = nil
+        frame.section = nil
         frame:Hide()
         frame:ClearAllPoints()
         frame:SetParent()
@@ -322,7 +421,7 @@ Ui.SliderPool = CreateFramePool('Slider', nil, 'MinimalSliderWithSteppersTemplat
         frame:SetParent()
         frame.Slider:SetValue(0)
         frame.indicatorSetting = nil
-        frame.layoutRow = nil
+        frame.section = nil
         frame.Text:SetText()
     end, false,
     function(frame)
@@ -370,7 +469,7 @@ Ui.CheckboxPool = CreateFramePool('CheckButton', nil, 'InterfaceOptionsCheckButt
         frame:SetParent()
         frame.setting = nil
         frame.indicatorSetting = nil
-        frame.layoutRow = nil
+        frame.section = nil
         frame.Text:SetText("")
     end, false,
     function(frame)

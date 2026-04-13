@@ -68,16 +68,17 @@ function Ui.CreateIndicatorOptions(type, spec, savedSettings)
     local containerFrame = Ui.ContainerFramePool:Acquire()
     containerFrame.type = type
     containerFrame.savedSetting.spec = spec
+    containerFrame.savedSetting.index = savedSettings.index
 
     local typeSettings = Data.indicatorTypes[type]
     if typeSettings and typeSettings.controls then
         for _, controlData in ipairs(typeSettings.controls) do
             local factory = Ui.IndicatorControlFactories[controlData.controlType]
-            local control = factory and factory(spec, controlData, savedSettings)
+            local control = factory(spec, controlData, savedSettings)
 
             if control then
                 control.indicatorSetting = controlData.setting
-                control.layoutRow = controlData.row or 1
+                control.section = controlData.section
                 table.insert(containerFrame.elements, control)
             end
         end

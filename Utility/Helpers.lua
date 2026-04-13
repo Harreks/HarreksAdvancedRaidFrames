@@ -243,13 +243,6 @@ function Util.UpdatePlayerSpec()
     end
 end
 
---it says "is from player" but really we are checking it is not a trash buff
-function Util.IsAuraFromPlayer(unit, auraId)
-    local passesRic = not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, auraId, 'PLAYER|HELPFUL|RAID_IN_COMBAT')
-    local passesRaid = not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, auraId, 'PLAYER|HELPFUL|RAID')
-    return passesRic or passesRaid
-end
-
 --Here we handle encoding and decoding for export and import
 function Util.EncodeIndicators(spec)
     local indicators = SavedIndicators[spec]
@@ -308,4 +301,8 @@ function Util.IsValidUnitForAuraCheck(unit)
     else
         return true
     end
+end
+
+function Util.AuraPassesFilter(unit, auraInstanceId, filter)
+    return not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, auraInstanceId, filter)
 end

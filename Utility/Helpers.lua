@@ -306,3 +306,18 @@ end
 function Util.AuraPassesFilter(unit, auraInstanceId, filter)
     return not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, auraInstanceId, filter)
 end
+
+function Util.ToggleEnemyCastTrackingEvents(enabled)
+    if Core.EnemyCastTracker and Core.PlayerTargetingTracker then
+        if enabled then
+            for _, event in ipairs(Data.targetedSpellsEvents.casts) do
+                Core.EnemyCastTracker:RegisterEvent(event)
+            end
+            for _, event in ipairs(Data.targetedSpellsEvents.targeting) do
+                Core.PlayerTargetingTracker:RegisterEvent(event)
+            end
+        else
+            Core.EnemyCastTracker:UnregisterAllEvents()
+        end
+    end
+end

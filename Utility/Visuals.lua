@@ -403,11 +403,11 @@ function Util.GetDefaultFrameVisuals()
         --Name
         frameStyle.nameScale = Options.nameScale
         local nameFrame = _G[frameList[1] .. 'Name']
-        local point, _, relativePoint, xOff, yOff = nameFrame:GetPoint()
-        frameStyle.namePoint = point
-        frameStyle.nameRelativePoint = relativePoint
-        frameStyle.nameXOffset = xOff
-        frameStyle.nameYOffset = yOff
+        --local point, _, relativePoint, xOff, yOff = nameFrame:GetPoint()
+        frameStyle.namePoint = 'TOP'
+        frameStyle.nameRelativePoint = 'TOP'
+        frameStyle.nameXOffset = 0
+        frameStyle.nameYOffset = 0
         frameStyle.nameWidth = nameFrame:GetWidth()
         return frameStyle
     end
@@ -430,6 +430,64 @@ function Util.ApplyFrameStyle(customFrame, frameStyle, unitId)
         customFrame.name:SetWordWrap(false)
         customFrame.name:SetWidth(frameStyle.nameWidth)
         customFrame.name:SetScale(frameStyle.nameScale)
+    end
+end
+
+function Util.CreateTargetedSpellIcon(spellData)
+    if not IsInRaid() and not Data.state.enemyCasts[spellData.caster] then
+        local unitList = Data.targetedSpellsUnits.players
+        local iconList = {}
+        for _, unitId in ipairs(unitList) do
+            local unitFrame = _G[Data.unitList[unitId].frame]
+            if unitFrame then
+                local spellIcon = Ui.IconIndicatorPool:Acquire()
+                iconList[unitId] = spellIcon
+                spellIcon.texture:SetTexture(spellData.icon)
+                spellIcon.cooldown:SetCooldownFromDurationObject(spellData.duration)
+                spellIcon:SetSize(32, 32)
+                spellIcon:SetParent(unitFrame)
+                spellIcon:SetPoint('TOP', unitFrame, 'BOTTOM')
+                spellIcon:Show()
+                spellIcon:SetAlpha(0)
+            end
+        end
+        Data.state.enemyCasts[spellData.caster] = iconList
+        Util.RunAlphaCalculationForCast(spellData.caster)
+    end
+end
+
+function Util.RunAlphaCalculationForCast(castingUnit)
+    local iconList = Data.state.enemyCasts[castingUnit]
+    if iconList then
+        local target = castingUnit .. 'target'
+        for unitId, icon in pairs(iconList) do
+            for _, specialUnitToken in ipairs(Data.targetedSpellsUnits.tokens) do
+                local prevAlpha = icon:GetAlpha()
+                icon:SetAlpha(1)
+                icon:SetAlphaFromBoolean(UnitIsUnit(target, specialUnitToken), icon:GetAlpha(), prevAlpha)
+                icon:SetAlphaFromBoolean(UnitIsUnit(specialUnitToken, unitId), icon:GetAlpha(), prevAlpha)
+            end
+        end
+    end
+end
+
+function Util.DeleteTargetedSpellIcon(castingUnit)
+    local iconList = Data.state.enemyCasts[castingUnit]
+    if iconList then
+        for _, icon in pairs(iconList) do
+            icon:Release()
+        end
+        Data.state.enemyCasts[castingUnit] = nil
+    end
+end
+
+function Util.CleanupTargetedSpellsIcons()
+    for castingUnit, _ in pairs(Data.state.enemyCasts) do
+        local isCasting = UnitCastingInfo(castingUnit)
+        local isChanneling = UnitChannelInfo(castingUnit)
+        if not isCasting and not isChanneling then
+            Util.DeleteTargetedSpellIcon(castingUnit)
+        end
     end
 end
 

@@ -152,6 +152,8 @@ Ui.IndicatorOverlayRenderers = {
         newBar.spell = indicatorData.Spell
         local color = indicatorData.Color
         newBar:SetStatusBarColor(color.r, color.g, color.b, color.a)
+        local bgColor = indicatorData.BackgroundColor
+        newBar.background:SetColorTexture(bgColor.r, bgColor.g, bgColor.b, bgColor.a)
         newBar:SetParent(overlay)
         local anchorData = Util.FigureOutBarAnchors(indicatorData)
         if anchorData.points then

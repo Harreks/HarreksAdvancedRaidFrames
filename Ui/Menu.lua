@@ -89,7 +89,7 @@ function Ui.CreateOptions()
     local designerCategory = LAMB.CreateOptionsPanel(designer, nil, 'Designer', 'canvas', category)
 
     --If the container exists, register harf as a component
-    if HAUS then
+    if HAUS and HAUS.RegisterComponent and type(HAUS.RegisterComponent) == 'function' then
         HAUS.RegisterComponent('HarreksAdvancedRaidFrames', NS.Version, category.ID)
     end
 

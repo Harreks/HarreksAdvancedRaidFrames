@@ -68,6 +68,46 @@ function Core.InstallTrackers()
         Core.CastTracker = castTracker
     end
 
+    --Enemy cast tracking for targeted spells
+    if not Core.EnemyCastTracker then
+        local enemyCastTracker = CreateFrame('Frame')
+        Util.ToggleEnemyCastTrackingEvents(Options.enableTargetedSpells)
+        enemyCastTracker:SetScript('OnEvent', function(_, event, castingUnit)
+            if string.match(castingUnit, "^nameplate%d+$") and not issecretvalue(castingUnit) and UnitIsEnemy(castingUnit, 'player')  then
+                if event == 'UNIT_SPELLCAST_START' or event == 'UNIT_SPELLCAST_CHANNEL_START' then
+                    local castIcon, castDuration
+                    if select(9, UnitCastingInfo(castingUnit)) then
+                        castIcon = select(3, UnitCastingInfo(castingUnit))
+                        castDuration = UnitCastingDuration(castingUnit)
+                    else
+                        castIcon = select(3, UnitChannelInfo(castingUnit))
+                        castDuration = UnitChannelDuration(castingUnit)
+                    end
+                    local castData = { caster = castingUnit, icon = castIcon, duration = castDuration }
+                    Util.CreateTargetedSpellIcon(castData)
+                elseif
+                    event == 'UNIT_SPELLCAST_STOP' or
+                    event == 'UNIT_SPELLCAST_INTERRUPTED' or
+                    event == 'UNIT_SPELLCAST_CHANNEL_STOP' or
+                    event == 'UNIT_SPELLCAST_FAILED_QUIET'
+                then
+                    Util.DeleteTargetedSpellIcon(castingUnit)
+                end
+            end
+        end)
+        Core.EnemyCastTracker = enemyCastTracker
+    end
+
+    if not Core.PlayerTargetingTracker then
+        local playerTargetingTracker = CreateFrame('Frame')
+        playerTargetingTracker:SetScript('OnEvent', function()
+            for castingUnit, _ in pairs(Data.state.enemyCasts) do
+                Util.RunAlphaCalculationForCast(castingUnit)
+            end
+        end)
+        Core.PlayerTargetingTracker = playerTargetingTracker
+    end
+
     --State tracker to initialize settings and keep them updated
     if not Core.StateTracker then
         local stateTracker = CreateFrame('Frame')
@@ -80,8 +120,6 @@ function Core.InstallTrackers()
 
         stateTracker:SetScript('OnEvent', function(self, event, addonName)
             if event == 'ADDON_LOADED' and addonName == 'HarreksAdvancedRaidFrames' then
-                Debug.DebugData(Data.state, 'State')
-                Debug.DebugData(Data.unitList, 'Units')
                 Util.UpdatePlayerSpec()
                 if not Options.editingSpec or not Data.specInfo[Options.editingSpec] then
                     Options.editingSpec = Data.playerSpec

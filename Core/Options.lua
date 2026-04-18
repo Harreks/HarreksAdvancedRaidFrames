@@ -41,16 +41,18 @@ end
 
 --Controls visibility on debuff icons, takes how many debuffs are to be shown and the element list of the frame to be modified
 function Core.ToggleDebuffIcons(amount, _, elements)
-    for i = 1, 3 do
-        if i <= amount then
-            Util.ToggleTransparency(elements.debuffs[i], true)
-            if _G[elements.debuffs[i]] and not _G[elements.debuffs[i]]:IsMouseEnabled() and not Options.clickThroughBuffs then
-                Util.ChangeFrameMouseInteraction(elements.debuffs[i], true)
-            end
-        else
-            Util.ToggleTransparency(elements.debuffs[i], false)
-            if _G[elements.debuffs[i]] and _G[elements.debuffs[i]]:IsMouseEnabled() then
-                Util.ChangeFrameMouseInteraction(elements.debuffs[i], false)
+    if amount then
+        for i = 1, 3 do
+            if i <= amount then
+                Util.ToggleTransparency(elements.debuffs[i], true)
+                if _G[elements.debuffs[i]] and not _G[elements.debuffs[i]]:IsMouseEnabled() and not Options.clickThroughBuffs then
+                    Util.ChangeFrameMouseInteraction(elements.debuffs[i], true)
+                end
+            else
+                Util.ToggleTransparency(elements.debuffs[i], false)
+                if _G[elements.debuffs[i]] and _G[elements.debuffs[i]]:IsMouseEnabled() then
+                    Util.ChangeFrameMouseInteraction(elements.debuffs[i], false)
+                end
             end
         end
     end
@@ -190,6 +192,21 @@ function Core.ScaleRaidFrameContainer(value)
     local container = _G['CompactRaidFrameContainer']
     if container and value then
         container:SetScale(value)
+    end
+end
+
+function Core.TargetedSpells(value)
+    Util.ToggleEnemyCastTrackingEvents(value)
+    if value then
+        if not Core.TargetedSpellsCleaner then
+            Core.TargetedSpellsCleaner = C_Timer.NewTicker(1, Util.CleanupTargetedSpellsIcons)
+        end
+        C_CVar.SetCVar('softTargetFriend', 3) --Enable friendly action targeting
+    else
+        if Core.TargetedSpellsCleaner then
+            Core.TargetedSpellsCleaner:Cancel()
+            Core.TargetedSpellsCleaner = nil
+        end
     end
 end
 

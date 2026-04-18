@@ -14,7 +14,8 @@ Data.spotlightFrames = {}
 Data.state = {
     casts = {},
     auras = {},
-    extras = {}
+    extras = {},
+    enemyCasts = {}
 }
 
 --These are the texture ids to show the icons on the designer
@@ -122,15 +123,17 @@ Data.indicatorTypes = {
         display = 'Bar',
         sections = {
             'Display',
+            'Size',
             'Position'
         },
         controls = {
             { controlType = 'SpellSelector', setting = 'Spell', section = 'Display' },
             { controlType = 'ColorPicker', setting = 'Color', section = 'Display', default = { r = 0, g = 1, b = 0, a = 1 } },
+            { controlType = 'ColorPicker', setting = 'BackgroundColor', section = 'Display', default = { r = 0, g = 0, b = 0, a = 1 } },
             { controlType = 'Dropdown', dropdownType = 'barPosition', setting = 'Position', section = 'Position', default = 'TOPRIGHT' },
-            { controlType = 'Slider', sliderType = 'barSize', setting = 'barSize', section = 'Display', default = 15 },
+            { controlType = 'Slider', sliderType = 'barSize', setting = 'barSize', section = 'Size', default = 15 },
             { controlType = 'Dropdown', dropdownType = 'barOrientation', setting = 'Orientation', section = 'Position', default = 'Horizontal' },
-            { controlType = 'Dropdown', dropdownType = 'barScale', setting = 'Scale', section = 'Display', default = 'Full' },
+            { controlType = 'Dropdown', dropdownType = 'barScale', setting = 'Scale', section = 'Size', default = 'Full' },
             { controlType = 'Slider', sliderType = 'offset', setting = 'Offset', section = 'Position', default = 0 }
         }
     },
@@ -433,6 +436,23 @@ Data.settings = {
         tooltip = 'Changes the size of the unit frames in the spotlight.',
         func = 'Setup'
     },
+    --[[
+    {
+        key = 'enableFriendlyBossFrames',
+        type = 'checkbox',
+        text = 'Enable Friendly Boss Frames',
+        default = false,
+        tooltip = 'Enable the Friendly Boss Frames feature to have custom unit frames for healable npcs.'
+    },
+    ]]
+    {
+        key = 'enableTargetedSpells',
+        type = 'checkbox',
+        text = 'Enable Targeted Spells',
+        default = false,
+        tooltip = 'Targeted spells lets you see incoming enemy casts on friendly player frames. THIS IS AN EXPERIMENTAL FEATURE.',
+        func = 'TargetedSpells'
+    }
 }
 
 --This is a list of external frames we ignore for libGetFrame
@@ -450,14 +470,31 @@ Data.ignoredFrames = {
     '^PlayerFrame$'
 }
 
+Data.targetedSpellsUnits = {
+    players = {'player', 'party1', 'party2', 'party3', 'party4'},
+    tokens = {'focus', 'mouseover', 'softfriend', 'player'}
+}
+
+Data.targetedSpellsEvents = {
+    casts = {
+        'UNIT_SPELLCAST_START',
+        'UNIT_SPELLCAST_CHANNEL_START',
+        'UNIT_SPELLCAST_INTERRUPTED',
+        'UNIT_SPELLCAST_STOP',
+        'UNIT_SPELLCAST_CHANNEL_STOP',
+        'UNIT_SPELLCAST_FAILED_QUIET'
+    },
+    targeting = {
+        'PLAYER_SOFT_FRIEND_CHANGED',
+        'UPDATE_MOUSEOVER_UNIT'
+    }
+}
+
 local LAMB = NS.LibAdvancedMenuBuilder
 Data.barTextures = LAMB.barTextures
 Data.registeredFrameStyle = false
 Data.lastModify = 0
 Data.optionSections = {}
-Data.settingSpotlights = false
---Initializer list is used when we generate the menu, so we can parent some options to others
-Data.initializerList = {}
 --Player spec is checked constantly through the run to make sure we're using appropriate data
 Data.playerSpec = nil
 Data.auraSignatures = {}

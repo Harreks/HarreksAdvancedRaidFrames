@@ -15,5 +15,3 @@ if HARFDB.version ~= NS.Version then
 end
 if not HARFDB.options then HARFDB.options = {} end
 if not HARFDB.savedIndicators then HARFDB.savedIndicators = {} end
-
-print('|cnNORMAL_FONT_COLOR:AdvancedRaidFrames|r v' .. HARFDB.version .. ' by Harrek. use |cnNORMAL_FONT_COLOR:/harf|r to open the settings.')

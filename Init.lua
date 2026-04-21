@@ -11,6 +11,7 @@ NS.DevEnv = true
 --Initialize saved variables
 HARFDB = HARFDB or {}
 if HARFDB.version ~= NS.Version then
+    HARFDB.options.buffIcons = 'none'
     HARFDB.version = NS.Version
 end
 if not HARFDB.options then HARFDB.options = {} end

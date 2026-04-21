@@ -31,24 +31,6 @@ end
 local LAMB = NS.LibAdvancedMenuBuilder
 Util.FormatForDisplay = LAMB.FormatForDisplay
 
---Takes a string, checks global table for frame with that name and changes mouse interaction on it
-function Util.ChangeFrameMouseInteraction(frameString, value)
-    local frame
-    --Special handling for the center defensive because it doesn't have a direct name to access
-    if type(frameString) == 'table' and frameString.type and frameString.type == 'defensive' then
-        if _G[frameString.frame] and _G[frameString.frame].CenterDefensiveBuff then
-            frame = _G[frameString.frame].CenterDefensiveBuff
-        end
-    else
-        if _G[frameString] then
-            frame = _G[frameString]
-        end
-    end
-    if frame and frame:IsMouseEnabled() ~= value then
-        frame:EnableMouse(value)
-    end
-end
-
 --Hides elements by changing opacity
 function Util.ToggleTransparency(frameString, shouldShow)
     if _G[frameString] then
@@ -137,14 +119,11 @@ function Util.MapOutUnits()
     Util.UpdatePlayerSpec()
 
     --Remove all current data on the unit lists
-    for _, elements in pairs(Data.unitList) do
+    for unit, elements in pairs(Data.unitList) do
         elements.frame = nil
-        elements.centerIcon = nil
         elements.isColored = false
-        elements.defensive.frame = nil
         elements.name = nil
-        wipe(elements.buffs)
-        wipe(elements.debuffs)
+        C_UnitAuras.ClearBlockedAuras(unit)
         wipe(elements.extFrames)
         if elements.indicatorOverlay then
             elements.indicatorOverlay:Delete()
@@ -174,16 +153,8 @@ function Util.MapOutUnits()
             local unitElements = unitList[frame.unit]
             if unitElements then
                 unitElements.frame = frameString
-                unitElements.centerIcon = frameString .. 'CenterStatusIcon'
                 unitElements.roleIcon = frameString .. 'RoleIcon'
-                unitElements.defensive.frame = frameString
                 unitElements.name = frameString .. 'Name'
-                for i = 1, 6 do
-                    if i <= 3 then
-                        unitElements.debuffs[i] = frameString .. 'Debuff' .. i
-                    end
-                    unitElements.buffs[i] = frameString .. 'Buff' .. i
-                end
                 --Don't install overlays if theres no indicators set up
                 if SavedIndicators[Data.playerSpec] and #SavedIndicators[Data.playerSpec] > 0 then
                     local indicatorOverlay = Ui.CreateIndicatorOverlay(SavedIndicators[Data.playerSpec])

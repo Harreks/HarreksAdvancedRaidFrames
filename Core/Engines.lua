@@ -103,5 +103,32 @@ function Core.UpdateAuraStatus(unit, updateInfo)
             end
             Util.UpdateIndicatorsForUnit(unit, updatedAuraData)
         end
+
+        local buffOpt = Options.buffIcons
+        if buffOpt == 'none' then
+            if updateInfo.addedAuras then
+                for _, aura in ipairs(updateInfo.addedAuras) do
+                    if Util.AuraPassesFilter(unit, aura.auraInstanceID, 'PLAYER|HELPFUL') then
+                        C_UnitAuras.AddBlockedAura(unit, aura.auraInstanceID)
+                    end
+                end
+            end
+        elseif buffOpt == 'managed' then
+            if updateInfo.addedAuras then
+                for _, aura in ipairs(updateInfo.addedAuras) do
+                    if currentUnitAuras[aura.auraInstanceID] and Util.AuraPassesFilter(unit, aura.auraInstanceID, 'PLAYER|HELPFUL') then
+                        C_UnitAuras.AddBlockedAura(unit, aura.auraInstanceID)
+                    end
+                end
+            end
+        elseif buffOpt == 'non-managed' then
+            if updateInfo.addedAuras then
+                for _, aura in ipairs(updateInfo.addedAuras) do
+                    if not currentUnitAuras[aura.auraInstanceID] and Util.AuraPassesFilter(unit, aura.auraInstanceID, 'PLAYER|HELPFUL') then
+                        C_UnitAuras.AddBlockedAura(unit, aura.auraInstanceID)
+                    end
+                end
+            end
+        end
     end
 end

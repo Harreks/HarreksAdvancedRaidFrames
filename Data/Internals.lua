@@ -257,24 +257,20 @@ Data.settings = {
         text = 'Icons'
     },
     {
-        key = 'clickThroughBuffs',
-        type = 'checkbox',
-        text = 'Click Through Aura Icons',
-        default = true,
-        tooltip = 'Disables mouse interaction on the aura icons on the frame, letting you mouseover and click through them.',
-        func = 'ToggleAurasMouseInteraction'
-    },
-    {
         key = 'buffIcons',
-        type = 'slider',
+        type = 'dropdown',
         text = 'Show Buff Icons',
-        min = 0,
-        max = 6,
-        step = 1,
-        default = 0,
-        tooltip = 'Changes the maximum amount of buff icons on the default frames.',
+        default = 'none',
+        items = {
+            { text = 'None', value = 'none' },
+            { text = 'Only Managed Buffs', value = 'managed' },
+            { text = 'Only Non-Managed Buffs', value = 'non-managed' },
+            { text = 'All Buffs', value = 'all' },
+        },
+        tooltip = 'Changes which buffs are shown by default on the frames.',
         func = 'ToggleBuffIcons'
     },
+    --[[
     {
         key = 'debuffIcons',
         type = 'slider',
@@ -286,39 +282,7 @@ Data.settings = {
         tooltip = 'Changes the maximum amount of debuff icons on the default frames.',
         func = 'ToggleDebuffIcons'
     },
-    {
-        key = 'showDefensiveIcon',
-        ddKey = 'defensivePosition',
-        type = 'checkbox-dropdown',
-        text = 'Center Defensive Icon',
-        default = true,
-        ddDefault = 'CENTER',
-        items = {
-            { value = 'CENTER', text = 'Center' },
-            { value = 'TOPLEFT', text = 'Top Left' },
-            { value = 'TOP', text = 'Top' },
-            { value = 'TOPRIGHT', text = 'Top Right' },
-            { value = 'RIGHT', text = 'Right' },
-            { value = 'BOTTOMRIGHT', text = 'Bottom Right' },
-            { value = 'BOTTOM', text = 'Bottom' },
-            { value = 'BOTTOMLEFT', text = 'Bottom Left' },
-            { value = 'LEFT', text = 'Left' },
-        },
-        tooltip = 'Control the icon that shows defensive usage on the default frames.',
-        func = 'ToggleCenterDefensive',
-        ddFunc = 'ReanchorCenterDefensive'
-    },
-    {
-        key = 'defensiveIconScale',
-        type = 'slider',
-        text = 'Center Defensive Scale',
-        min = 0.5,
-        max = 1.5,
-        step = 0.1,
-        default = 1,
-        tooltip = 'Size of the center defensive icon.',
-        func = 'ResizeCenterDefensive'
-    },
+    ]]
     {
         key = 'roleIcon',
         type = 'checkbox',

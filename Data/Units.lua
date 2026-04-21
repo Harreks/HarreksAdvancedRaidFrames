@@ -22,13 +22,9 @@ end
 --Default data that each unit carries
 Data.defaultUnitData = {
     frame = nil,
-    buffs = {},
-    debuffs = {},
-    centerIcon = nil,
     roleIcon = nil,
     name = nil,
     isColored = false,
-    defensive = { type = 'defensive', frame = nil },
     extFrames = {},
     extIndicatorOverlays = {}
 }

@@ -8,54 +8,12 @@ local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
 --Controls visibility on buff icons, takes how many buffs are to be shown and the element list of the frame to be modified
-function Core.ToggleBuffIcons(amount, _, elements)
-    if amount then
-        for i = 1, 6 do
-            if i <= amount then
-                Util.ToggleTransparency(elements.buffs[i], true)
-                if _G[elements.buffs[i]] and not _G[elements.buffs[i]]:IsMouseEnabled() and not Options.clickThroughBuffs then
-                    Util.ChangeFrameMouseInteraction(elements.buffs[i], true)
-                end
-            else
-                Util.ToggleTransparency(elements.buffs[i], false)
-                if _G[elements.buffs[i]] and _G[elements.buffs[i]]:IsMouseEnabled() then
-                    Util.ChangeFrameMouseInteraction(elements.buffs[i], false)
-                end
-            end
-        end
-    end
-end
-
---Toggles mouse interaction on raid frame icons, pass true for enabled and false for disabled, third param is the elements of the edited frame
-function Core.ToggleAurasMouseInteraction(value, _, elements)
-    local enableMouse = not value -- If clickThroughBuffs is true enableMouse is false
-    for _, buff in ipairs(elements.buffs) do
-        Util.ChangeFrameMouseInteraction(buff, enableMouse)
-    end
-    for _, debuff in ipairs(elements.debuffs) do
-        Util.ChangeFrameMouseInteraction(debuff, enableMouse)
-    end
-    Util.ChangeFrameMouseInteraction(elements.centerIcon, enableMouse)
-    Util.ChangeFrameMouseInteraction(elements.defensive, enableMouse)
+function Core.ToggleBuffIcons(amount, unit, elements)
 end
 
 --Controls visibility on debuff icons, takes how many debuffs are to be shown and the element list of the frame to be modified
 function Core.ToggleDebuffIcons(amount, _, elements)
-    if amount then
-        for i = 1, 3 do
-            if i <= amount then
-                Util.ToggleTransparency(elements.debuffs[i], true)
-                if _G[elements.debuffs[i]] and not _G[elements.debuffs[i]]:IsMouseEnabled() and not Options.clickThroughBuffs then
-                    Util.ChangeFrameMouseInteraction(elements.debuffs[i], true)
-                end
-            else
-                Util.ToggleTransparency(elements.debuffs[i], false)
-                if _G[elements.debuffs[i]] and _G[elements.debuffs[i]]:IsMouseEnabled() then
-                    Util.ChangeFrameMouseInteraction(elements.debuffs[i], false)
-                end
-            end
-        end
-    end
+
 end
 
 --Toggles frame transparency, true for enabled false for disabled, takes frameString to be modified
@@ -155,27 +113,6 @@ end
 function Core.ToggleRoleIcon(value, _, elements)
     if _G[elements.roleIcon] then
         _G[elements.roleIcon]:SetAlpha(value and 1 or 0)
-    end
-end
-
-function Core.ToggleCenterDefensive(value, _, elements)
-    if _G[elements.frame] and _G[elements.frame].CenterDefensiveBuff then
-        _G[elements.frame].CenterDefensiveBuff:SetAlpha(value and 1 or 0)
-    end
-end
-
-function Core.ReanchorCenterDefensive(value, _, elements)
-    if _G[elements.frame] and _G[elements.frame].CenterDefensiveBuff then
-        local defensiveIcon = _G[elements.frame].CenterDefensiveBuff
-        local frame = defensiveIcon:GetParent()
-        defensiveIcon:ClearAllPoints()
-        defensiveIcon:SetPoint(value, frame, value)
-    end
-end
-
-function Core.ResizeCenterDefensive(value, _, elements)
-    if _G[elements.frame] and _G[elements.frame].CenterDefensiveBuff then
-        _G[elements.frame].CenterDefensiveBuff:SetScale(value)
     end
 end
 

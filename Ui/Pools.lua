@@ -799,3 +799,34 @@ Ui.HealthColorIndicatorPool = CreateFramePool('Frame', nil, nil,
         end
     end
 )
+
+--Statusbar display for the overshields
+Ui.OvershieldsBarPool = CreateFramePool('StatusBar', nil, nil,
+    function(_, frame)
+        frame:Hide()
+        frame:SetParent()
+        frame:ClearAllPoints()
+        frame.mask:ClearAllPoints()
+    end, false,
+    function(frame)
+        frame:SetAlpha(0.8)
+        frame:SetReverseFill(true)
+        frame:SetStatusBarTexture("")
+        frame.texture = frame:GetStatusBarTexture()
+        frame.texture:SetDrawLayer("BORDER")
+        frame.mask = frame:CreateMaskTexture()
+        frame.mask:SetTexture("Interface/TargetingFrame/UI-StatusBar", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+        frame.texture:AddMaskTexture(frame.mask)
+        frame.AttachToFrame = function(self, parentFrame)
+            self:SetParent(parentFrame)
+            self:SetAllPoints(parentFrame.healthBar)
+            self:SetFrameLevel(parentFrame.healthBar:GetFrameLevel())
+            self.mask:SetAllPoints(parentFrame.healthBar:GetStatusBarTexture())
+            Util.SetStatusbarTextureOrAtlas(self, Data.barTextures[Options.overshieldsTexture])
+            self:Show()
+        end
+        frame.Release = function(self)
+            Ui.OvershieldsBarPool:Release(self)
+        end
+    end
+)

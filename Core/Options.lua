@@ -70,35 +70,24 @@ end
 
 function Core.ShowOvershields(value, unit, elements)
     if value then
+        local frame = _G[elements.frame]
         if not elements.overshield then
-            local frame = _G[elements.frame]
             if frame and frame.healthBar then
-                local overshield = CreateFrame('StatusBar', nil, frame)
-                overshield:SetAlpha(0.8)
-                overshield:SetAllPoints(frame.healthBar)
-                overshield:SetFrameLevel(frame.healthBar:GetFrameLevel())
-                overshield:SetReverseFill(true)
-                Util.SetStatusbarTextureOrAtlas(overshield, Data.barTextures[Options.overshieldsTexture])
-
-                local overshieldTexture = overshield:GetStatusBarTexture()
-                overshieldTexture:SetDrawLayer("BORDER")
-
-                local mask = overshield:CreateMaskTexture()
-                mask:SetTexture("Interface/TargetingFrame/UI-StatusBar", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-                mask:SetAllPoints(frame.healthBar:GetStatusBarTexture())
-                overshieldTexture:AddMaskTexture(mask)
-
+                local overshield = Ui.OvershieldsBarPool:Acquire()
                 elements.overshield = overshield
             end
         end
         if elements.overshield then
-            elements.overshield:Show()
+            if frame and frame.healthBar then
+                elements.overshield:AttachToFrame(frame)
+            end
             elements.tracker:RegisterUnitEvent('UNIT_ABSORB_AMOUNT_CHANGED', unit)
             Util.UpdateOvershields(unit)
         end
     else
         if elements.overshield then
-            elements.overshield:Hide()
+            elements.overshield:Release()
+            elements.overshield = nil
         end
         elements.tracker:UnregisterEvent('UNIT_ABSORB_AMOUNT_CHANGED')
     end

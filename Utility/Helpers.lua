@@ -119,11 +119,10 @@ function Util.MapOutUnits()
     Util.UpdatePlayerSpec()
 
     --Remove all current data on the unit lists
-    for unit, elements in pairs(Data.unitList) do
+    for _, elements in pairs(Data.unitList) do
         elements.frame = nil
         elements.isColored = false
         elements.name = nil
-        C_UnitAuras.ClearBlockedAuras(unit)
         wipe(elements.extFrames)
         if elements.indicatorOverlay then
             elements.indicatorOverlay:Delete()

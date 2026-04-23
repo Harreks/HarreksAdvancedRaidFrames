@@ -258,16 +258,10 @@ Data.settings = {
     },
     {
         key = 'buffIcons',
-        type = 'dropdown',
+        type = 'checkbox',
         text = 'Show Buff Icons',
-        default = 'none',
-        items = {
-            { text = 'None', value = 'none' },
-            { text = 'Only Managed Buffs', value = 'managed' },
-            { text = 'Only Non-Managed Buffs', value = 'non-managed' },
-            { text = 'All Buffs', value = 'all' },
-        },
-        tooltip = 'Changes which buffs are shown by default on the frames.',
+        default = false,
+        tooltip = 'Show or hide the default buff icons on the raid frames.',
         func = 'ToggleBuffIcons'
     },
     --[[
@@ -351,6 +345,75 @@ Data.settings = {
         func = 'ColorNames'
     },
     {
+        key = 'targetedSpellsHeader',
+        type = 'header',
+        text = 'Targeted Spells'
+    },
+    {
+        key = 'enableTargetedSpells',
+        type = 'checkbox',
+        text = 'Enable Targeted Spells',
+        default = false,
+        tooltip = 'Targeted spells lets you see incoming enemy casts on friendly player frames. THIS IS AN EXPERIMENTAL FEATURE.',
+        func = 'TargetedSpells'
+    },
+    {
+        key = 'targetedSpellsIconSize',
+        text = 'Icon Size',
+        type = 'slider',
+        min = 10,
+        max = 60,
+        step = 1,
+        default = 32,
+        tooltip = 'Changes the size of the targeted spells icon.'
+    },
+    {
+        key = 'targetedSpellsAnchor',
+        type = 'dropdown',
+        text = 'Icon Position',
+        default = 'BOTTOM',
+        items = {
+            { text = 'Top Left', value = 'TOPLEFT' },
+            { text = 'Top', value = 'TOP' },
+            { text = 'Top Right', value = 'TOPRIGHT' },
+            { text = 'Left', value = 'LEFT' },
+            { text = 'Center', value = 'CENTER' },
+            { text = 'Right', value = 'RIGHT' },
+            { text = 'Bottom Left', value = 'BOTTOMLEFT' },
+            { text = 'Bottom', value = 'BOTTOM' },
+            { text = 'Bottom Right', value = 'BOTTOMRIGHT' }
+        },
+        tooltip = 'Pick the position in which the targeted spells icons will be anchored.'
+    },
+    {
+        key = 'targetedSpellsXOffset',
+        text = 'Horizontal Offset',
+        type = 'slider',
+        min = -100,
+        max = 100,
+        step = 1,
+        default = 0,
+        tooltip = 'Horizontal offset for the targeted spells icon.'
+    },
+    {
+        key = 'targetedSpellsYOffset',
+        text = 'Vertical Offset',
+        type = 'slider',
+        min = -100,
+        max = 100,
+        step = 1,
+        default = 0,
+        tooltip = 'Vertical offset for the targeted spells icon.'
+    },
+    {
+        key = 'showTargetedSpellsPreview',
+        text = 'Preview Targeted Spells',
+        content = 'Show Example',
+        tooltip = 'Show a quick example of how the targeted spells will be displayed on the party frames.',
+        type = 'button',
+        func = 'ShowTargetedSpellsPreview'
+    },
+    {
         key = 'miscHeader',
         type = 'header',
         text = 'Misc.'
@@ -409,14 +472,6 @@ Data.settings = {
         tooltip = 'Enable the Friendly Boss Frames feature to have custom unit frames for healable npcs.'
     },
     ]]
-    {
-        key = 'enableTargetedSpells',
-        type = 'checkbox',
-        text = 'Enable Targeted Spells',
-        default = false,
-        tooltip = 'Targeted spells lets you see incoming enemy casts on friendly player frames. THIS IS AN EXPERIMENTAL FEATURE.',
-        func = 'TargetedSpells'
-    }
 }
 
 --This is a list of external frames we ignore for libGetFrame

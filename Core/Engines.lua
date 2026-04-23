@@ -35,8 +35,9 @@ end
 
 --Check data of UNIT_AURA to update its status
 function Core.UpdateAuraStatus(unit, updateInfo)
-    local updatedAuras = {}
     if Data.playerSpec then
+        local updatedAuras = {}
+        local hideBuffs = not Options.buffIcons
         local state = Data.state
         if not updateInfo then updateInfo = {} end
         local currentUnitAuras = state.auras[unit]
@@ -49,6 +50,9 @@ function Core.UpdateAuraStatus(unit, updateInfo)
             for _, aura in ipairs(auras) do
                 local auraId = aura.auraInstanceID
                 local matchedAura = Core.MatchAuraInfo(unit, aura)
+                if hideBuffs then
+                    pcall(C_UnitAuras.AddBlockedAura, unit, aura.auraInstanceID)
+                end
                 if matchedAura then
                     currentUnitAuras[auraId] = matchedAura
                     updatedAuras[matchedAura] = auraId
@@ -104,28 +108,11 @@ function Core.UpdateAuraStatus(unit, updateInfo)
             Util.UpdateIndicatorsForUnit(unit, updatedAuraData)
         end
 
-        local buffOpt = Options.buffIcons
-        if buffOpt == 'none' then
+        if hideBuffs then
             if updateInfo.addedAuras then
                 for _, aura in ipairs(updateInfo.addedAuras) do
                     if Util.AuraPassesFilter(unit, aura.auraInstanceID, 'PLAYER|HELPFUL') then
-                        C_UnitAuras.AddBlockedAura(unit, aura.auraInstanceID)
-                    end
-                end
-            end
-        elseif buffOpt == 'managed' then
-            if updateInfo.addedAuras then
-                for _, aura in ipairs(updateInfo.addedAuras) do
-                    if currentUnitAuras[aura.auraInstanceID] and Util.AuraPassesFilter(unit, aura.auraInstanceID, 'PLAYER|HELPFUL') then
-                        C_UnitAuras.AddBlockedAura(unit, aura.auraInstanceID)
-                    end
-                end
-            end
-        elseif buffOpt == 'non-managed' then
-            if updateInfo.addedAuras then
-                for _, aura in ipairs(updateInfo.addedAuras) do
-                    if not currentUnitAuras[aura.auraInstanceID] and Util.AuraPassesFilter(unit, aura.auraInstanceID, 'PLAYER|HELPFUL') then
-                        C_UnitAuras.AddBlockedAura(unit, aura.auraInstanceID)
+                        pcall(C_UnitAuras.AddBlockedAura, unit, aura.auraInstanceID)
                     end
                 end
             end

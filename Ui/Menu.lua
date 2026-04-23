@@ -74,10 +74,14 @@ function Ui.CreateOptions()
     local settingsTable = CopyTable(Data.settings)
     for _, data in ipairs(settingsTable) do
         if data.func and type(data.func) == 'string' then
-            if data.func ~= 'Setup' then
-                data.funcArgs = { functionToRun = data.func }
+            if data.type == 'button' then
+                data.func = Util[data.func]
+            else
+                if data.func ~= 'Setup' then
+                    data.funcArgs = { functionToRun = data.func }
+                end
+                data.func = Core.ModifySettings
             end
-            data.func = Core.ModifySettings
         end
     end
 
@@ -104,6 +108,11 @@ function Ui.CreateOptions()
                     Settings.OpenToCategory(designerCategory.ID)
                 elseif msg == 'reset' then
                     Util.DisplayResetPopup()
+                elseif msg == 'auras' then
+                    local activeAuraData = Data.state.auras
+                    for unit, _ in pairs(activeAuraData) do
+                        Util.ResetUnitAuraData(unit)
+                    end
                 end
             else
                 Settings.OpenToCategory(category.ID)

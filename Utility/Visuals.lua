@@ -278,6 +278,7 @@ function Util.ResetUnitAuraData(unit)
             emptyAuraData[auraData.name] = { active = false }
         end
         Util.UpdateIndicatorsForUnit(unit, emptyAuraData)
+        C_UnitAuras.ClearBlockedAuras(unit)
         Core.UpdateAuraStatus(unit, { isFullUpdate = true })
     end
 end
@@ -444,9 +445,9 @@ function Util.CreateTargetedSpellIcon(spellData)
                 iconList[unitId] = spellIcon
                 spellIcon.texture:SetTexture(spellData.icon)
                 spellIcon.cooldown:SetCooldownFromDurationObject(spellData.duration)
-                spellIcon:SetSize(32, 32)
+                spellIcon:SetSize(Options.targetedSpellsIconSize, Options.targetedSpellsIconSize)
                 spellIcon:SetParent(unitFrame)
-                spellIcon:SetPoint('TOP', unitFrame, 'BOTTOM')
+                spellIcon:SetPoint(Options.targetedSpellsAnchor, unitFrame, Options.targetedSpellsAnchor, Options.targetedSpellsXOffset, Options.targetedSpellsYOffset)
                 spellIcon:Show()
                 spellIcon:SetAlpha(0)
             end
@@ -478,6 +479,34 @@ function Util.DeleteTargetedSpellIcon(castingUnit)
             icon:Release()
         end
         Data.state.enemyCasts[castingUnit] = nil
+    end
+end
+
+function Util.ShowTargetedSpellsPreview()
+    if not IsInRaid() then
+        local unitList = Data.targetedSpellsUnits.players
+        local previewIconList = {}
+        for _, unitId in ipairs(unitList) do
+            local unitFrame = _G[Data.unitList[unitId].frame]
+            if unitFrame then
+                local spellIcon = Ui.IconIndicatorPool:Acquire()
+                previewIconList[unitId] = spellIcon
+                spellIcon.texture:SetTexture('Interface/Addons/HarreksAdvancedRaidFrames/Assets/harrek-logo.png')
+                local duration = C_DurationUtil.CreateDuration()
+                duration:SetTimeSpan(GetTime(), GetTime() + 5)
+                spellIcon.cooldown:SetCooldownFromDurationObject(duration)
+                spellIcon:SetSize(Options.targetedSpellsIconSize, Options.targetedSpellsIconSize)
+                spellIcon:SetParent(unitFrame)
+                spellIcon:SetPoint(Options.targetedSpellsAnchor, unitFrame, Options.targetedSpellsAnchor, Options.targetedSpellsXOffset, Options.targetedSpellsYOffset)
+                spellIcon:Show()
+                spellIcon:SetAlpha(1)
+            end
+        end
+        C_Timer.After(5, function()
+            for _, icon in pairs(previewIconList) do
+                icon:Release()
+            end
+        end)
     end
 end
 

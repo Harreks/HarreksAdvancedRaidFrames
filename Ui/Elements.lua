@@ -132,6 +132,11 @@ Ui.IndicatorOverlayRenderers = {
         newIcon.cooldown:SetDrawSwipe(indicatorData.showTexture)
         newIcon.cooldown:SetDrawEdge(indicatorData.showTexture)
         newIcon.cooldown:SetDrawBling(indicatorData.showTexture)
+        local cooldownText = newIcon.cooldown:GetCountdownFontString()
+        if cooldownText then
+            local txtColor = indicatorData.textColor
+            cooldownText:SetTextColor(txtColor.r, txtColor.g, txtColor.b, txtColor.a)
+        end
         return newIcon
     end,
     square = function(overlay, indicatorData)
@@ -145,6 +150,11 @@ Ui.IndicatorOverlayRenderers = {
         newSquare.cooldown:SetScale(indicatorData.textSize)
         newSquare.showCooldown = indicatorData.showCooldown
         newSquare.cooldown:SetHideCountdownNumbers(not indicatorData.showText)
+        local cooldownText = newSquare.cooldown:GetCountdownFontString()
+        if cooldownText then
+            local txtColor = indicatorData.textColor
+            cooldownText:SetTextColor(txtColor.r, txtColor.g, txtColor.b, txtColor.a)
+        end
         return newSquare
     end,
     bar = function(overlay, indicatorData)

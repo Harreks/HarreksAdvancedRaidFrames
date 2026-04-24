@@ -278,7 +278,9 @@ function Util.ResetUnitAuraData(unit)
             emptyAuraData[auraData.name] = { active = false }
         end
         Util.UpdateIndicatorsForUnit(unit, emptyAuraData)
+        Data.allowedAuraClear = true
         C_UnitAuras.ClearBlockedAuras(unit)
+        Data.allowedAuraClear = false
         Core.UpdateAuraStatus(unit, { isFullUpdate = true })
     end
 end
@@ -399,7 +401,7 @@ function Util.GetDefaultFrameVisuals()
                 frameStyle.atlas = textureData.path
             end
         else
-            frameStyle.texture = Data.barTextures['Default']
+            frameStyle.texture = Data.barTextures['Default'].path
         end
         --Name
         frameStyle.nameScale = Options.nameScale
@@ -533,7 +535,7 @@ end)
 --This recolors the names on the default frames if blizzard tries to color them back
 hooksecurefunc("CompactUnitFrame_UpdateName", function(frame)
     local unitList = Data.unitList
-    if Options.colorNames and frame.unit and unitList[frame.unit] and frame == _G[unitList[frame.unit].frame] then
+    if Options and Options.colorNames and frame.unit and unitList[frame.unit] and frame == _G[unitList[frame.unit].frame] then
         local nameFrame = _G[unitList[frame.unit].name]
         if nameFrame then
             local _, class = UnitClass(frame.unit)

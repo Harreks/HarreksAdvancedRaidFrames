@@ -11,6 +11,14 @@ local Options = HARFDB.options
 function Core.ToggleBuffIcons(amount, unit, elements)
 end
 
+function Core.ForceHideBuffs(value, unit)
+    if value then
+        for i = 1, 10000 do
+            C_UnitAuras.AddBlockedAura(unit, i)
+        end
+    end
+end
+
 --Controls visibility on debuff icons, takes how many debuffs are to be shown and the element list of the frame to be modified
 function Core.ToggleDebuffIcons(amount, _, elements)
 
@@ -121,18 +129,31 @@ function Core.ScaleRaidFrameContainer(value)
     end
 end
 
+function Core.ScalePartyFrameContainer(value)
+    local container = _G['CompactPartyFrame']
+    if container and value then
+        container:SetScale(value)
+    end
+end
+
 function Core.TargetedSpells(value)
     Util.ToggleEnemyCastTrackingEvents(value)
     if value then
         if not Core.TargetedSpellsCleaner then
             Core.TargetedSpellsCleaner = C_Timer.NewTicker(1, Util.CleanupTargetedSpellsIcons)
         end
-        C_CVar.SetCVar('softTargetFriend', 3) --Enable friendly action targeting
     else
         if Core.TargetedSpellsCleaner then
             Core.TargetedSpellsCleaner:Cancel()
             Core.TargetedSpellsCleaner = nil
         end
+    end
+end
+
+function Core.UseSoftTarget(value)
+    if value then
+        C_CVar.SetCVar('SoftTargetFriend', 3)
+        C_CVar.SetCVar('SoftTargetFriendArc', 2)
     end
 end
 

@@ -37,7 +37,7 @@ end
 function Core.UpdateAuraStatus(unit, updateInfo)
     if Data.playerSpec then
         local updatedAuras = {}
-        local hideBuffs = not Options.buffIcons
+        local hideBuffs = Options.buffIcons
         local state = Data.state
         if not updateInfo then updateInfo = {} end
         local currentUnitAuras = state.auras[unit]
@@ -46,12 +46,15 @@ function Core.UpdateAuraStatus(unit, updateInfo)
         if not currentUnitAuras or updateInfo.isFullUpdate then
             currentUnitAuras = {}
             state.auras[unit] = currentUnitAuras
-            local auras = C_UnitAuras.GetUnitAuras(unit, 'PLAYER|HELPFUL')
+            local auras = C_UnitAuras.GetUnitAuras(unit, 'HELPFUL')
             for _, aura in ipairs(auras) do
                 local auraId = aura.auraInstanceID
                 local matchedAura = Core.MatchAuraInfo(unit, aura)
                 if hideBuffs then
-                    pcall(C_UnitAuras.AddBlockedAura, unit, aura.auraInstanceID)
+                    if pcall(C_UnitAuras.AddBlockedAura, unit, aura.auraInstanceID) then
+                        state.blockedAuras[unit] = state.blockedAuras[unit] or {}
+                        table.insert(state.blockedAuras[unit], aura.auraInstanceID)
+                    end
                 end
                 if matchedAura then
                     currentUnitAuras[auraId] = matchedAura
@@ -111,8 +114,11 @@ function Core.UpdateAuraStatus(unit, updateInfo)
         if hideBuffs then
             if updateInfo.addedAuras then
                 for _, aura in ipairs(updateInfo.addedAuras) do
-                    if Util.AuraPassesFilter(unit, aura.auraInstanceID, 'PLAYER|HELPFUL') then
-                        pcall(C_UnitAuras.AddBlockedAura, unit, aura.auraInstanceID)
+                    if Util.AuraPassesFilter(unit, aura.auraInstanceID, 'HELPFUL') then
+                        if pcall(C_UnitAuras.AddBlockedAura, unit, aura.auraInstanceID) then
+                            state.blockedAuras[unit] = state.blockedAuras[unit] or {}
+                            table.insert(state.blockedAuras[unit], aura.auraInstanceID)
+                        end
                     end
                 end
             end

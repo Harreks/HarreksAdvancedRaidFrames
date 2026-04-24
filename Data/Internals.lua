@@ -14,7 +14,7 @@ Data.spotlightFrames = {}
 Data.state = {
     casts = {},
     auras = {},
-    extras = {},
+    blockedAuras = {},
     enemyCasts = {}
 }
 
@@ -96,6 +96,7 @@ Data.indicatorTypes = {
             { controlType = 'Slider', sliderType = 'textSize', setting = 'textSize', section = 'Text', default = 1 },
             { controlType = 'Slider', sliderType = 'xOffset', setting = 'xOffset', section = 'Position', default = 0 },
             { controlType = 'Slider', sliderType = 'yOffset', setting = 'yOffset', section = 'Position', default = 0 },
+            { controlType = 'ColorPicker', setting = 'textColor', section = 'Text', default = { r = 1, g = 1, b = 1, a = 1 } },
             { controlType = 'Checkbox', setting = 'showText', text = 'Show Text', section = 'Text', default = true },
             { controlType = 'Checkbox', setting = 'showTexture', text = 'Show Texture', section = 'Icon', default = true }
         }
@@ -115,6 +116,7 @@ Data.indicatorTypes = {
             { controlType = 'Slider', sliderType = 'xOffset', setting = 'xOffset', section = 'Position', default = 0 },
             { controlType = 'Slider', sliderType = 'yOffset', setting = 'yOffset', section = 'Position', default = 0 },
             { controlType = 'ColorPicker', setting = 'Color', section = 'Icon', default = { r = 0, g = 1, b = 0, a = 1 } },
+            { controlType = 'ColorPicker', setting = 'textColor', section = 'Text', default = { r = 1, g = 1, b = 1, a = 1 } },
             { controlType = 'Checkbox', setting = 'showText', text = 'Show Text', section = 'Text', default = false },
             { controlType = 'Checkbox', setting = 'showCooldown', text = 'Show Cooldown', section = 'Text', default = false }
         }
@@ -259,10 +261,19 @@ Data.settings = {
     {
         key = 'buffIcons',
         type = 'checkbox',
-        text = 'Show Buff Icons',
-        default = false,
-        tooltip = 'Show or hide the default buff icons on the raid frames.',
+        text = 'Hide Buff Icons',
+        default = true,
+        tooltip = 'Enable to remove the default buff icons on the raid frames.',
         func = 'ToggleBuffIcons'
+    },
+    {
+        key = 'forceHideBuffs',
+        type = 'checkbox',
+        text = 'Aggressive Aura Hiding',
+        default = false,
+        tooltip = 'Enable to more aggressively hide all buffs from the frames. This is an experimental option that might affect performance.',
+        parent = 'buffIcons',
+        func = 'ForceHideBuffs'
     },
     --[[
     {
@@ -288,7 +299,7 @@ Data.settings = {
     {
         key = 'barHeader',
         type = 'header',
-        text = 'Health Bar'
+        text = 'Frame & Health Bar'
     },
     {
         key = 'frameTransparency',
@@ -319,6 +330,44 @@ Data.settings = {
         tooltip = 'Shows shields that go above the players max hp.',
         func = 'ShowOvershields',
         ddFunc = 'OvershieldsTexture'
+    },
+    {
+        key = 'extFrames',
+        type = 'checkbox',
+        text = 'Use Frame Addons',
+        default = true,
+        tooltip = 'Add Advanced Raid Frames indicators on top of other active frame addons.',
+        func = 'Setup'
+    },
+    {
+        key = 'toggleGroupTitles',
+        type = 'checkbox',
+        text = 'Show Group Titles',
+        default = true,
+        tooltip = 'Toggle the display of the group title when using separate groups in raids.',
+        func = 'ToggleGroupTitles'
+    },
+    {
+        key = 'raidFrameContainerScale',
+        type = 'slider',
+        text = 'Raid Container Scale',
+        min = 0.4,
+        max = 2,
+        step = 0.1,
+        default = 1,
+        tooltip = 'Changes the size of the raid frames container.',
+        func = 'ScaleRaidFrameContainer'
+    },
+    {
+        key = 'partyFrameContainerScale',
+        type = 'slider',
+        text = 'Party Container Scale',
+        min = 0.4,
+        max = 2,
+        step = 0.1,
+        default = 1,
+        tooltip = 'Changes the size of the party frames container.',
+        func = 'ScalePartyFrameContainer'
     },
     {
         key = 'namesHeader',
@@ -354,7 +403,7 @@ Data.settings = {
         type = 'checkbox',
         text = 'Enable Targeted Spells',
         default = false,
-        tooltip = 'Targeted spells lets you see incoming enemy casts on friendly player frames. THIS IS AN EXPERIMENTAL FEATURE.',
+        tooltip = 'Targeted spells lets you see incoming enemy casts on friendly player frames.',
         func = 'TargetedSpells'
     },
     {
@@ -406,6 +455,13 @@ Data.settings = {
         tooltip = 'Vertical offset for the targeted spells icon.'
     },
     {
+        key = 'useSoftTarget',
+        text = 'Use Soft Friendly Targeting',
+        type = 'checkbox',
+        default = true,
+        tooltip = 'Soft Friend is an extra type of targeting that can be used to compare units, targeted spells uses this to make the comparisons more precise. Turning this off might make some casts harder to see but would resolve issues related to automatic targeting.'
+    },
+    {
         key = 'showTargetedSpellsPreview',
         text = 'Preview Targeted Spells',
         content = 'Show Example',
@@ -414,36 +470,10 @@ Data.settings = {
         func = 'ShowTargetedSpellsPreview'
     },
     {
-        key = 'miscHeader',
+        key = 'extraFramesHeader',
         type = 'header',
-        text = 'Misc.'
-    },
-    {
-        key = 'extFrames',
-        type = 'checkbox',
-        text = 'Use Frame Addons',
-        default = true,
-        tooltip = 'Add Advanced Raid Frames indicators on top of other active frame addons.',
-        func = 'Setup'
-    },
-    {
-        key = 'toggleGroupTitles',
-        type = 'checkbox',
-        text = 'Show Group Titles',
-        default = true,
-        tooltip = 'Toggle the display of the group title when using separate groups in raids.',
-        func = 'ToggleGroupTitles'
-    },
-    {
-        key = 'raidFrameContainerScale',
-        type = 'slider',
-        text = 'Raid Container Scale',
-        min = 0.4,
-        max = 2,
-        step = 0.1,
-        default = 1,
-        tooltip = 'Changes the size of the raid frames container.',
-        func = 'ScaleRaidFrameContainer'
+        text = 'Extra Frames',
+        tooltip = 'Options for external frames controlled by HARF'
     },
     {
         key = 'enableSpotlight',
@@ -517,7 +547,7 @@ Data.optionSections = {}
 --Player spec is checked constantly through the run to make sure we're using appropriate data
 Data.playerSpec = nil
 Data.auraSignatures = {}
-
+Data.allowedAuraClear = false
 Data.hpStatusOptions = {
     losthealth = '[missinghp]',
     health = '[curhp]',

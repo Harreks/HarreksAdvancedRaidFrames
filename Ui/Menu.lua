@@ -108,11 +108,9 @@ function Ui.CreateOptions()
                     Settings.OpenToCategory(designerCategory.ID)
                 elseif msg == 'reset' then
                     Util.DisplayResetPopup()
-                elseif msg == 'auras' then
-                    local activeAuraData = Data.state.auras
-                    for unit, _ in pairs(activeAuraData) do
-                        Util.ResetUnitAuraData(unit)
-                    end
+                elseif msg == 'debug' then
+                    NS.DevEnv = not NS.DevEnv
+                    print('changing debug setting to', NS.DevEnv)
                 end
             else
                 Settings.OpenToCategory(category.ID)

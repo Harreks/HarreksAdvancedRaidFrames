@@ -550,9 +550,13 @@ hooksecurefunc("CompactUnitFrame_UpdateName", function(frame)
 end)
 
 hooksecurefunc(CompactRaidFrameContainer, "LayoutFrames", function()
-    Core.ModifySettings()
+    if Options then
+        Core.ModifySettings()
+    end
 end)
 
 hooksecurefunc(CompactPartyFrame, "UpdateLayout", function()
-    Core.ModifySettings()
+    if Options then
+        Core.ModifySettings()
+    end
 end)

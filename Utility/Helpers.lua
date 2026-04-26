@@ -295,8 +295,11 @@ end
 hooksecurefunc(C_UnitAuras, 'ClearBlockedAuras', function(unit)
     if Options and Options.forceHideBuffs then
         for unitId, _ in pairs(Data.unitList) do
-            for i = 1, 10000 do
-                C_UnitAuras.AddBlockedAura(unitId, i)
+            if UnitIsVisible(unitId) then
+                local auras = C_UnitAuras.GetUnitAuras(unitId, 'HELPFUL')
+                for _, aura in ipairs(auras) do
+                    C_UnitAuras.AddBlockedAura(unitId, aura.auraInstanceID)
+                end
             end
         end
     else

@@ -8,14 +8,11 @@ local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
 --Controls visibility on buff icons, takes how many buffs are to be shown and the element list of the frame to be modified
-function Core.ToggleBuffIcons(amount, unit, elements)
-end
-
-function Core.ForceHideBuffs(value, unit)
-    if value then
-        for i = 1, 10000 do
-            C_UnitAuras.AddBlockedAura(unit, i)
-        end
+function Core.ToggleBuffIcons(value, _, elements)
+    local frame = _G[elements.frame]
+    if frame then
+        frame:SetAttribute("ignore-buffs", value)
+        frame:SetAttribute("update-settings", true)
     end
 end
 

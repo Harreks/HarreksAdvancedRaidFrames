@@ -291,12 +291,3 @@ function Util.ToggleEnemyCastTrackingEvents(enabled)
         end
     end
 end
-
-hooksecurefunc(C_UnitAuras, 'ClearBlockedAuras', function(unit)
-    if Options and Options.buffIcons then
-        local auras = C_UnitAuras.GetUnitAuras(unit, 'HELPFUL')
-        for _, aura in ipairs(auras) do
-            C_UnitAuras.AddBlockedAura(unit, aura.auraInstanceID)
-        end
-    end
-end)

@@ -7,7 +7,7 @@ NS.Core = {}
 NS.Debug = {}
 NS.Version = C_AddOns.GetAddOnMetadata(addonName, 'Version')
 NS.DevEnv = false
-print('TESTING')
+
 --Initialize saved variables
 HARFDB = HARFDB or {}
 if HARFDB.version ~= NS.Version then

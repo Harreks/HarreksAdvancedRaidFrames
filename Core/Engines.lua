@@ -45,8 +45,8 @@ function Core.UpdateAuraStatus(unit, updateInfo)
         if not currentUnitAuras or updateInfo.isFullUpdate then
             currentUnitAuras = {}
             state.auras[unit] = currentUnitAuras
-            local auras = C_UnitAuras.GetUnitAuras(unit, 'HELPFUL')
-            for _, aura in ipairs(auras) do
+            local allAuras = C_UnitAuras.GetUnitAuras(unit, 'HELPFUL')
+            for _, aura in ipairs(allAuras) do
                 local auraId = aura.auraInstanceID
                 local matchedAura = Core.MatchAuraInfo(unit, aura)
                 if matchedAura then

@@ -293,25 +293,10 @@ function Util.ToggleEnemyCastTrackingEvents(enabled)
 end
 
 hooksecurefunc(C_UnitAuras, 'ClearBlockedAuras', function(unit)
-    if Options and Options.forceHideBuffs then
-        for unitId, _ in pairs(Data.unitList) do
-            if UnitIsVisible(unitId) then
-                local auras = C_UnitAuras.GetUnitAuras(unitId, 'HELPFUL')
-                for _, aura in ipairs(auras) do
-                    C_UnitAuras.AddBlockedAura(unitId, aura.auraInstanceID)
-                end
-            end
-        end
-    else
-        local auraIds = Data.state.blockedAuras[unit]
-        if auraIds then
-            if Data.allowedAuraClear then
-                table.wipe(auraIds)
-            else
-                for _, auraId in ipairs(auraIds) do
-                    C_UnitAuras.AddBlockedAura(auraId)
-                end
-            end
+    if Options and Options.buffIcons then
+        local auras = C_UnitAuras.GetUnitAuras(unit, 'HELPFUL')
+        for _, aura in ipairs(auras) do
+            C_UnitAuras.AddBlockedAura(unit, aura.auraInstanceID)
         end
     end
 end)

@@ -37,7 +37,6 @@ end
 function Core.UpdateAuraStatus(unit, updateInfo)
     if Data.playerSpec then
         local updatedAuras = {}
-        local hideBuffs = Options.buffIcons
         local state = Data.state
         if not updateInfo then updateInfo = {} end
         local currentUnitAuras = state.auras[unit]
@@ -50,12 +49,6 @@ function Core.UpdateAuraStatus(unit, updateInfo)
             for _, aura in ipairs(auras) do
                 local auraId = aura.auraInstanceID
                 local matchedAura = Core.MatchAuraInfo(unit, aura)
-                if hideBuffs then
-                    if pcall(C_UnitAuras.AddBlockedAura, unit, aura.auraInstanceID) then
-                        state.blockedAuras[unit] = state.blockedAuras[unit] or {}
-                        table.insert(state.blockedAuras[unit], aura.auraInstanceID)
-                    end
-                end
                 if matchedAura then
                     currentUnitAuras[auraId] = matchedAura
                     updatedAuras[matchedAura] = auraId
@@ -109,19 +102,6 @@ function Core.UpdateAuraStatus(unit, updateInfo)
                 updatedAuraData[buffName] = aura
             end
             Util.UpdateIndicatorsForUnit(unit, updatedAuraData)
-        end
-
-        if hideBuffs then
-            if updateInfo.addedAuras then
-                for _, aura in ipairs(updateInfo.addedAuras) do
-                    if Util.AuraPassesFilter(unit, aura.auraInstanceID, 'HELPFUL') then
-                        if pcall(C_UnitAuras.AddBlockedAura, unit, aura.auraInstanceID) then
-                            state.blockedAuras[unit] = state.blockedAuras[unit] or {}
-                            table.insert(state.blockedAuras[unit], aura.auraInstanceID)
-                        end
-                    end
-                end
-            end
         end
     end
 end

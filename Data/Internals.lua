@@ -266,15 +266,6 @@ Data.settings = {
         tooltip = 'Enable to remove the default buff icons on the raid frames.',
         func = 'ToggleBuffIcons'
     },
-    {
-        key = 'forceHideBuffs',
-        type = 'checkbox',
-        text = 'Aggressive Aura Hiding',
-        default = false,
-        tooltip = 'Enable to more aggressively hide all buffs from the frames. This is an experimental option that might affect performance.',
-        parent = 'buffIcons',
-        func = 'ForceHideBuffs'
-    },
     --[[
     {
         key = 'debuffIcons',

@@ -493,6 +493,18 @@ Data.settings = {
         tooltip = 'Enable the Friendly Boss Frames feature to have custom unit frames for healable npcs.'
     },
     ]]
+    {
+        key = 'miscHeader',
+        type = 'header',
+        text = 'Misc.'
+    },
+    {
+        key = 'debugMode',
+        type = 'checkbox',
+        text = 'Debug Mode',
+        default = false,
+        tooltip = 'Enable debug mode.'
+    }
 }
 
 --This is a list of external frames we ignore for libGetFrame
@@ -528,6 +540,47 @@ Data.targetedSpellsEvents = {
         'PLAYER_SOFT_FRIEND_CHANGED',
         'UPDATE_MOUSEOVER_UNIT'
     }
+}
+
+Data.auraContainerSettings = {
+    container = {
+        unitToken = nil,
+        auraIndex = 1,
+        parent = nil,
+        showCountdownFrame = true,
+        showCountdownNumbers = false,
+        isContainer = true,
+        iconInfo = {
+            iconAnchor = {
+                point = "BOTTOMLEFT",
+                relativeTo = nil,
+                relativePoint = "BOTTOMLEFT",
+                offsetX = 0,
+                offsetY = 0,
+            },
+            iconWidth = nil,
+            iconHeight = nil,
+            borderScale = nil,
+        },
+        durationAnchor = nil,
+    },
+    attributes = {
+        'max-debuffs',
+        'max-dispel-debuffs',
+        'ignore-debuffs',
+        'always-hide-duration',
+        'show-dispel-indicator-overlay',
+        'suppress-dispel-border-icons',
+        'aura-organization-type',
+        'set-aura-size-to-icon-size',
+        'show-big-defensive',
+        'big-defensive-size',
+        'power-bar-used-height',
+        'group-type',
+        'display-larger-role-specific-debuffs',
+        'dispel-indicator-option',
+        'display-only-dispellable-debuffs',
+    },
 }
 
 local LAMB = NS.LibAdvancedMenuBuilder

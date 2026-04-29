@@ -120,6 +120,8 @@ function Core.InstallTrackers()
 
         stateTracker:SetScript('OnEvent', function(self, event, addonName)
             if event == 'ADDON_LOADED' and addonName == 'HarreksAdvancedRaidFrames' then
+                Debug.DebugData(Data.state, 'State')
+                Debug.DebugData(Data.unitList, 'Units')
                 Util.UpdatePlayerSpec()
                 if not Options.editingSpec or not Data.specInfo[Options.editingSpec] then
                     Options.editingSpec = Data.playerSpec

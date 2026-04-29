@@ -9,11 +9,7 @@ local Options = HARFDB.options
 
 --Controls visibility on buff icons, takes how many buffs are to be shown and the element list of the frame to be modified
 function Core.ToggleBuffIcons(value, _, elements)
-    local frame = _G[elements.frame]
-    if frame then
-        frame:SetAttribute("ignore-buffs", value)
-        frame:SetAttribute("update-settings", true)
-    end
+
 end
 
 --Controls visibility on debuff icons, takes how many debuffs are to be shown and the element list of the frame to be modified
@@ -156,7 +152,11 @@ end
 
 function Core.ModifySettings(newValue, functionArgs)
     local timeSinceLastModify = GetTime() - Data.lastModify
-    if timeSinceLastModify > 0.1 and not InCombatLockdown() then
+    if InCombatLockdown() then
+        Util.ScheduleLaterUpdate()
+        return
+    end
+    if timeSinceLastModify > 0.1 then
         Data.lastModify = GetTime()
         local unitList = Data.unitList
         local functionsToRun = {}

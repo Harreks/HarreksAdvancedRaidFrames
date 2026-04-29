@@ -6,7 +6,6 @@ NS.Util = {}
 NS.Core = {}
 NS.Debug = {}
 NS.Version = C_AddOns.GetAddOnMetadata(addonName, 'Version')
-NS.DevEnv = false
 
 --Initialize saved variables
 HARFDB = HARFDB or {}

@@ -125,6 +125,9 @@ function Util.MapOutUnits()
         elements.name = nil
         wipe(elements.extFrames)
         if elements.indicatorOverlay then
+            if elements.indicatorOverlay.anchorID then
+                C_UnitAuras.RemovePrivateAuraAnchor(elements.indicatorOverlay.anchorID)
+            end
             elements.indicatorOverlay:Delete()
             elements.indicatorOverlay = nil
         end
@@ -160,6 +163,9 @@ function Util.MapOutUnits()
                     indicatorOverlay.unit = frame.unit
                     indicatorOverlay:AttachToFrame(frame)
                     indicatorOverlay:Show()
+                    if Options.buffIcons then
+                        Util.CreateAuraContainer(frame.unit, indicatorOverlay, frame)
+                    end
                     unitElements.indicatorOverlay = indicatorOverlay
                     Util.RefreshIndicatorsWithSavedData(frame.unit)
                 end
@@ -242,6 +248,7 @@ function Util.DecodeIndicators(string)
         end
     end
 end
+
 function Util.IsSpotlightActive()
     if IsInRaid() and Options.enableSpotlight then return true end
     return false
@@ -291,3 +298,57 @@ function Util.ToggleEnemyCastTrackingEvents(enabled)
         end
     end
 end
+
+function Util.ScheduleLaterUpdate()
+    if not Util.PendingUpdateTracker then
+        local pendingUpdateFrame = CreateFrame('Frame')
+        pendingUpdateFrame:SetScript('OnEvent', function(self)
+            self:UnregisterAllEvents()
+            Core.ModifySettings()
+        end)
+        Util.PendingUpdateTracker = pendingUpdateFrame
+    end
+    if not Util.PendingUpdateTracker:IsEventRegistered('PLAYER_REGEN_ENABLED') then
+        Util.PendingUpdateTracker:RegisterEvent('PLAYER_REGEN_ENABLED')
+        Util.PendingUpdateTracker:RegisterEvent('ENCOUNTER_END')
+    end
+end
+
+function Util.CreateAuraContainer(unit, overlay, frame)
+    --Copy aura container attributes
+    for _, attribute in ipairs(Data.auraContainerSettings.attributes) do
+        overlay:SetAttribute(attribute, frame:GetAttribute(attribute))
+    end
+    --overlay:SetAttribute('set-aura-size-to-icon-size', true)
+    overlay:SetAttribute('icon-size', frame:GetAuraSize())
+    overlay:SetAttribute('max-buffs', Options.buffIcons and 0 or frame:GetAttribute('max-buffs'))
+    overlay:SetAttribute('ignore-buffs', Options.buffIcons)
+
+    --Copy aura anchor settings
+    local containerSettings = CopyTable(Data.auraContainerSettings.container)
+    containerSettings.unitToken = unit
+    containerSettings.parent = overlay
+    containerSettings.iconInfo.iconAnchor.relativeTo = overlay
+    local iconSize = frame:GetAuraSize()
+    containerSettings.iconInfo.iconWidth = iconSize
+    containerSettings.iconInfo.iconHeight = iconSize
+    containerSettings.iconInfo.borderScale = frame:GetBorderScale()
+    
+    --Create Anchor
+    overlay.anchorID = C_UnitAuras.AddPrivateAuraAnchor(containerSettings)
+    overlay:SetAttribute('update-settings', true)
+end
+
+hooksecurefunc("CompactUnitFrame_UpdateAll", function(frame)
+    local frameList = Util.GetActiveFrameList()
+    if frame and not frame.ignoreCUFNameRequirement then
+        local frameName = frame:GetName()
+        if frameName then
+            for _, frameString in ipairs(frameList) do
+                if frameString == frameName and frame.anchorID then
+                    C_UnitAuras.RemovePrivateAuraAnchor(frame.anchorID)
+                end
+            end
+        end
+    end
+end)

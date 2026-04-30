@@ -303,6 +303,7 @@ function Util.ScheduleLaterUpdate()
     if not Util.PendingUpdateTracker then
         local pendingUpdateFrame = CreateFrame('Frame')
         pendingUpdateFrame:SetScript('OnEvent', function(self)
+            Debug.PrintData('running delayed update to frames')
             self:UnregisterAllEvents()
             Core.ModifySettings()
         end)
@@ -340,13 +341,15 @@ function Util.CreateAuraContainer(unit, overlay, frame)
 end
 
 hooksecurefunc("CompactUnitFrame_UpdateAll", function(frame)
-    local frameList = Util.GetActiveFrameList()
-    if frame and not frame.ignoreCUFNameRequirement then
-        local frameName = frame:GetName()
-        if frameName then
-            for _, frameString in ipairs(frameList) do
-                if frameString == frameName and frame.anchorID then
-                    C_UnitAuras.RemovePrivateAuraAnchor(frame.anchorID)
+    if Options and Options.buffIcons then
+        local frameList = Util.GetActiveFrameList()
+        if frame and not frame.ignoreCUFNameRequirement then
+            local frameName = frame:GetName()
+            if frameName then
+                for _, frameString in ipairs(frameList) do
+                    if frameString == frameName and frame.anchorID then
+                        C_UnitAuras.RemovePrivateAuraAnchor(frame.anchorID)
+                    end
                 end
             end
         end

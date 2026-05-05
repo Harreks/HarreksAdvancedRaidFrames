@@ -125,9 +125,6 @@ function Util.MapOutUnits()
         elements.name = nil
         wipe(elements.extFrames)
         if elements.indicatorOverlay then
-            if elements.indicatorOverlay.anchorID then
-                C_UnitAuras.RemovePrivateAuraAnchor(elements.indicatorOverlay.anchorID)
-            end
             elements.indicatorOverlay:Delete()
             elements.indicatorOverlay = nil
         end
@@ -163,9 +160,6 @@ function Util.MapOutUnits()
                     indicatorOverlay.unit = frame.unit
                     indicatorOverlay:AttachToFrame(frame)
                     indicatorOverlay:Show()
-                    if Options.buffIcons then
-                        Util.CreateAuraContainer(frame.unit, indicatorOverlay, frame)
-                    end
                     unitElements.indicatorOverlay = indicatorOverlay
                     Util.RefreshIndicatorsWithSavedData(frame.unit)
                 end
@@ -315,6 +309,8 @@ function Util.ScheduleLaterUpdate()
     end
 end
 
+--Deprecated, function to add a private auras container that copies the default frames ontop of the overlay
+--Didn't delete it in because i can use this later to duplicate the defaults on top of the spotlights
 function Util.CreateAuraContainer(unit, overlay, frame)
     --Copy aura container attributes
     for _, attribute in ipairs(Data.auraContainerSettings.attributes) do
@@ -339,19 +335,3 @@ function Util.CreateAuraContainer(unit, overlay, frame)
     overlay.anchorID = C_UnitAuras.AddPrivateAuraAnchor(containerSettings)
     overlay:SetAttribute('update-settings', true)
 end
-
-hooksecurefunc("CompactUnitFrame_UpdateAll", function(frame)
-    if Options and Options.buffIcons then
-        local frameList = Util.GetActiveFrameList()
-        if frame and not frame.ignoreCUFNameRequirement then
-            local frameName = frame:GetName()
-            if frameName then
-                for _, frameString in ipairs(frameList) do
-                    if frameString == frameName and frame.anchorID then
-                        C_UnitAuras.RemovePrivateAuraAnchor(frame.anchorID)
-                    end
-                end
-            end
-        end
-    end
-end)

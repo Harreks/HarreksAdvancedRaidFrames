@@ -1,7 +1,7 @@
 ## Interface: 120005
 ## Title: Harreks Advanced Raid Frames
 ## Author: Harrek
-## Version: 2.2.13
+## Version: 2.2.14
 ## Notes: Functionality enhancement for party and raid frames
 ## IconTexture: Interface/Addons/HarreksAdvancedRaidFrames/Assets/harrek-logo.png
 ## Category: Unit Frames

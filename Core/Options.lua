@@ -8,8 +8,10 @@ local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
 --Controls visibility on buff icons, takes how many buffs are to be shown and the element list of the frame to be modified
-function Core.ToggleBuffIcons(value, _, elements)
-
+--The name of the savedvar doesn't make a ton of sense anymore because this stupid thing has gone thru 100 changes
+--Thank you very much for 12.0.5 blizzard, loved that shit
+function Core.ToggleBuffIcons(value, _, _)
+    C_CVar.SetCVar('raidFramesDisplayBuffs', value and 0 or 1)
 end
 
 --Controls visibility on debuff icons, takes how many debuffs are to be shown and the element list of the frame to be modified

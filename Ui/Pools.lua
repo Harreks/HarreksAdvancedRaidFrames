@@ -115,7 +115,8 @@ Ui.ContainerFramePool = CreateFramePool('Frame', nil, 'InsetFrameTemplate3',
                     xOff = 10
                     yOff = 0
                     if currentSectionElements[#currentSectionElements].type == 'Checkbox' then
-                        xOff = 60
+                        local offset = currentSectionElements[#currentSectionElements].Text:GetStringWidth()
+                        xOff = offset
                     end
                     table.insert(sectionElements[currentSection].elements, element)
                 end
@@ -554,6 +555,7 @@ Ui.IconIndicatorPool = CreateFramePool('Frame', nil, nil,
         frame:ClearAllPoints()
         frame:SetParent()
         frame.spell = nil
+        frame.stacksText:Hide()
     end, false,
     function(frame)
         frame.texture = frame:CreateTexture(nil, 'ARTWORK')
@@ -564,8 +566,15 @@ Ui.IconIndicatorPool = CreateFramePool('Frame', nil, nil,
         frame.cooldown = CreateFrame('Cooldown', nil, frame, 'CooldownFrameTemplate')
         frame.cooldown:SetAllPoints()
         frame.cooldown:SetReverse(true)
+        frame.stacksText = frame.cooldown:CreateFontString(nil, 'OVERLAY')
+        frame.stacksText:SetFont('Fonts\\FRIZQT__.TTF', 16, 'OUTLINE')
+        frame.stacksText:SetShadowColor(0, 0, 0, 1)
+        frame.stacksText:SetShadowOffset(1, -1)
+        frame.stacksText:SetPoint('CENTER', frame.cooldown)
+        frame.stacksText:Hide()
         frame.ShowPreview = function(self)
             self.texture:SetTexture(Data.textures[self.spell])
+            self.stacksText:SetText('5')
             self.cooldown:SetCooldown(GetTime(), 30)
             if not self.previewTimer then
                 self.previewTimer = C_Timer.NewTicker(30, function()
@@ -576,6 +585,7 @@ Ui.IconIndicatorPool = CreateFramePool('Frame', nil, nil,
         end
         frame.UpdateIndicator = function(self, auraInfo)
             if auraInfo.active and auraInfo.data then
+                self.stacksText:SetText(auraInfo.data.applications)
                 self.texture:SetTexture(auraInfo.data.icon)
                 self.cooldown:SetCooldownFromDurationObject(auraInfo.duration)
                 self:Show()
@@ -601,6 +611,7 @@ Ui.SquareIndicatorPool = CreateFramePool('Frame', nil, nil,
         frame:ClearAllPoints()
         frame:SetParent()
         frame.spell = nil
+        frame.stacksText:Hide()
     end, false,
     function(frame)
         frame.texture = frame:CreateTexture(nil, 'ARTWORK')
@@ -609,10 +620,17 @@ Ui.SquareIndicatorPool = CreateFramePool('Frame', nil, nil,
         frame.cooldown:SetAllPoints()
         frame.cooldown:SetReverse(true)
         frame.cooldown:Hide()
+        frame.stacksText = frame.cooldown:CreateFontString(nil, 'OVERLAY')
+        frame.stacksText:SetFont('Fonts\\FRIZQT__.TTF', 16, 'OUTLINE')
+        frame.stacksText:SetShadowColor(0, 0, 0, 1)
+        frame.stacksText:SetShadowOffset(1, -1)
+        frame.stacksText:SetPoint('CENTER', frame.cooldown)
+        frame.stacksText:Hide()
         frame.type = 'SquareIndicator'
         frame.spell = nil
         frame.UpdateIndicator = function(self, auraInfo)
             if auraInfo.active and auraInfo.data then
+                self.stacksText:SetText(auraInfo.data.applications)
                 if self.showCooldown then
                     self.cooldown:SetCooldownFromDurationObject(auraInfo.duration)
                     self.cooldown:Show()
@@ -631,6 +649,7 @@ Ui.SquareIndicatorPool = CreateFramePool('Frame', nil, nil,
             else
                 self.cooldown:Hide()
             end
+            self.stacksText:SetText('5')
             if not self.previewTimer then
                 self.previewTimer = C_Timer.NewTicker(30, function()
                     self:ShowPreview()

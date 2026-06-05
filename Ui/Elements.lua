@@ -127,7 +127,11 @@ Ui.IndicatorOverlayRenderers = {
         newIcon:SetSize(indicatorData.iconSize, indicatorData.iconSize)
         newIcon:SetPoint(indicatorData.Position, overlay, indicatorData.Position, indicatorData.xOffset, indicatorData.yOffset)
         newIcon.cooldown:SetScale(indicatorData.textSize)
-        newIcon.cooldown:SetHideCountdownNumbers(not indicatorData.showText)
+        newIcon.cooldown:SetHideCountdownNumbers(not indicatorData.showText or indicatorData.showStacks)
+        newIcon.stacksText:SetScale(indicatorData.textSize)
+        if indicatorData.showStacks then
+            newIcon.stacksText:Show()
+        end
         newIcon.texture:SetShown(indicatorData.showTexture)
         newIcon.cooldown:SetDrawSwipe(indicatorData.showTexture)
         newIcon.cooldown:SetDrawEdge(indicatorData.showTexture)
@@ -149,7 +153,11 @@ Ui.IndicatorOverlayRenderers = {
         newSquare.texture:SetColorTexture(color.r, color.g, color.b, color.a)
         newSquare.cooldown:SetScale(indicatorData.textSize)
         newSquare.showCooldown = indicatorData.showCooldown
-        newSquare.cooldown:SetHideCountdownNumbers(not indicatorData.showText)
+        newSquare.cooldown:SetHideCountdownNumbers(not indicatorData.showText or indicatorData.showStacks)
+        newSquare.stacksText:SetScale(indicatorData.textSize)
+        if indicatorData.showStacks then
+            newSquare.stacksText:Show()
+        end
         local cooldownText = newSquare.cooldown:GetCountdownFontString()
         if cooldownText then
             local txtColor = indicatorData.textColor
@@ -181,6 +189,8 @@ Ui.IndicatorOverlayRenderers = {
         end
         if anchorData.sizing.Reverse then
             newBar:SetReverseFill(true)
+        else
+            newBar:SetReverseFill(false)
         end
         return newBar
     end,

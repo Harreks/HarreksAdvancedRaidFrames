@@ -278,9 +278,6 @@ function Util.ResetUnitAuraData(unit)
             emptyAuraData[auraData.name] = { active = false }
         end
         Util.UpdateIndicatorsForUnit(unit, emptyAuraData)
-        Data.allowedAuraClear = true
-        C_UnitAuras.ClearBlockedAuras(unit)
-        Data.allowedAuraClear = false
         Core.UpdateAuraStatus(unit, { isFullUpdate = true })
     end
 end

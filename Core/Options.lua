@@ -152,6 +152,17 @@ function Core.UseSoftTarget(value)
     end
 end
 
+function Core.ScaleHealthbarsToBackground(value, _, elements)
+    if value and elements.frame then
+        local healthbar = _G[elements.frame .. 'HealthBar']
+        local background = _G[elements.frame .. 'Background']
+        if healthbar and background then
+            healthbar:ClearAllPoints()
+            healthbar:SetAllPoints(background)
+        end
+    end
+end
+
 function Core.ModifySettings(newValue, functionArgs)
     local timeSinceLastModify = GetTime() - Data.lastModify
     if InCombatLockdown() then

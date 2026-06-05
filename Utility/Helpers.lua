@@ -249,7 +249,9 @@ function Util.IsSpotlightActive()
 end
 
 function Util.GetActiveFrameList()
-    if IsInRaid() then
+    if IsActiveBattlefieldArena() then
+        return Data.frameList.party
+    elseif IsInRaid() then
         local displayType = EditModeManagerFrame:GetSettingValue(Enum.EditModeSystem.UnitFrame, Enum.EditModeUnitFrameSystemIndices.Raid, Enum.EditModeUnitFrameSetting.RaidGroupDisplayType)
         if displayType == 2 or displayType == 3 then
             return Data.frameList.raidCombined
@@ -297,7 +299,7 @@ function Util.ScheduleLaterUpdate()
     if not Util.PendingUpdateTracker then
         local pendingUpdateFrame = CreateFrame('Frame')
         pendingUpdateFrame:SetScript('OnEvent', function(self)
-            Debug.PrintData('running delayed update to frames')
+            Debug.PrintData('HARF: Running delayed update to frames.')
             self:UnregisterAllEvents()
             Core.ModifySettings()
         end)

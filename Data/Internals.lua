@@ -14,7 +14,6 @@ Data.spotlightFrames = {}
 Data.state = {
     casts = {},
     auras = {},
-    blockedAuras = {},
     enemyCasts = {}
 }
 
@@ -98,6 +97,7 @@ Data.indicatorTypes = {
             { controlType = 'Slider', sliderType = 'yOffset', setting = 'yOffset', section = 'Position', default = 0 },
             { controlType = 'ColorPicker', setting = 'textColor', section = 'Text', default = { r = 1, g = 1, b = 1, a = 1 } },
             { controlType = 'Checkbox', setting = 'showText', text = 'Show Text', section = 'Text', default = true },
+            { controlType = 'Checkbox', setting = 'showStacks', text = 'Show Stacks', section = 'Text', default = false },
             { controlType = 'Checkbox', setting = 'showTexture', text = 'Show Texture', section = 'Icon', default = true }
         }
     },
@@ -117,8 +117,9 @@ Data.indicatorTypes = {
             { controlType = 'Slider', sliderType = 'yOffset', setting = 'yOffset', section = 'Position', default = 0 },
             { controlType = 'ColorPicker', setting = 'Color', section = 'Icon', default = { r = 0, g = 1, b = 0, a = 1 } },
             { controlType = 'ColorPicker', setting = 'textColor', section = 'Text', default = { r = 1, g = 1, b = 1, a = 1 } },
+            { controlType = 'Checkbox', setting = 'showCooldown', text = 'Show Cooldown', section = 'Text', default = false },
             { controlType = 'Checkbox', setting = 'showText', text = 'Show Text', section = 'Text', default = false },
-            { controlType = 'Checkbox', setting = 'showCooldown', text = 'Show Cooldown', section = 'Text', default = false }
+            { controlType = 'Checkbox', setting = 'showStacks', text = 'Show Stacks', section = 'Text', default = false },
         }
     },
     bar = {
@@ -337,6 +338,14 @@ Data.settings = {
         default = true,
         tooltip = 'Toggle the display of the group title when using separate groups in raids.',
         func = 'ToggleGroupTitles'
+    },
+    {
+        key = 'scaleHealthbarToBackground',
+        type = 'checkbox',
+        text = 'Hide Frame Borders',
+        default = false,
+        tooltip = 'Default frames have a border of the background color around the healthbar, this setting slightly increases the size of the healthbar to completely cover the background. Turning this off will require a reload to restore the previous settings.',
+        func = 'ScaleHealthbarsToBackground'
     },
     {
         key = 'raidFrameContainerScale',
@@ -591,7 +600,6 @@ Data.optionSections = {}
 --Player spec is checked constantly through the run to make sure we're using appropriate data
 Data.playerSpec = nil
 Data.auraSignatures = {}
-Data.allowedAuraClear = false
 Data.hpStatusOptions = {
     losthealth = '[missinghp]',
     health = '[curhp]',

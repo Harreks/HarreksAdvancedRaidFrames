@@ -5,7 +5,18 @@ local Util = NS.Util
 local Core = NS.Core
 local Debug = NS.Debug
 local SavedIndicators = HARFDB.savedIndicators
-local Options = HARFDB.options
+--local Options = HARFDB.options
+
+local Options = setmetatable({}, {
+    __index = function(_, key)
+        return _G["HARFDB"] and _G["HARFDB"].options and _G["HARFDB"].options[key]
+    end,
+    __newindex = function(_, key, value)
+        if _G["HARFDB"] and _G["HARFDB"].options then
+            _G["HARFDB"].options[key] = value
+        end
+    end
+})
 
 --Controls visibility on buff icons, takes how many buffs are to be shown and the element list of the frame to be modified
 --The name of the savedvar doesn't make a ton of sense anymore because this stupid thing has gone thru 100 changes
@@ -164,6 +175,9 @@ function Core.ScaleHealthbarsToBackground(value, _, elements)
 end
 
 function Core.ModifySettings(newValue, functionArgs)
+    local Options = _G["HARFDB"] and _G["HARFDB"].options
+    if not Options then return end
+    
     local timeSinceLastModify = GetTime() - Data.lastModify
     if InCombatLockdown() then
         Util.ScheduleLaterUpdate()

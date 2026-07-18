@@ -120,20 +120,18 @@ function Util.MapOutUnits()
 
     --Remove all current data on the unit lists
     for _, elements in pairs(Data.unitList) do
+        if elements.frame then
+            Core.UnregisterEngine(_G[elements.frame])
+        end
         elements.frame = nil
         elements.isColored = false
         elements.name = nil
-        wipe(elements.extFrames)
-        if elements.indicatorOverlay then
-            elements.indicatorOverlay:Delete()
-            elements.indicatorOverlay = nil
-        end
-        if next(elements.extIndicatorOverlays) then
-            for index, overlay in ipairs(elements.extIndicatorOverlays) do
-                overlay:Delete()
-                elements.extIndicatorOverlays[index] = nil
+        if next(elements.extFrames) then
+            for index, extFrame in ipairs(elements.extFrames) do
+                Core.UnregisterEngine(extFrame)
             end
         end
+        wipe(elements.extFrames)
     end
 
     --If we are using external frames, call a cache refresh
@@ -156,25 +154,12 @@ function Util.MapOutUnits()
                 unitElements.name = frameString .. 'Name'
                 --Don't install overlays if theres no indicators set up
                 if SavedIndicators[Data.playerSpec] and #SavedIndicators[Data.playerSpec] > 0 then
-                    local indicatorOverlay = Ui.CreateIndicatorOverlay(SavedIndicators[Data.playerSpec])
-                    indicatorOverlay.unit = frame.unit
-                    indicatorOverlay:AttachToFrame(frame)
-                    indicatorOverlay:Show()
-                    unitElements.indicatorOverlay = indicatorOverlay
-                    Util.RefreshIndicatorsWithSavedData(frame.unit)
+                    Core.RegisterEngine(frame, frame.unit)
                 end
                 --Reset overshields just in case
                 if unitElements.overshield then
                     Util.UpdateOvershields(frame.unit)
                 end
-            end
-        end
-    end
-
-    if Data.playerSpec then
-        for _, units in pairs(Data.unitList) do
-            for unit, _ in pairs(units) do
-                if UnitIsVisible(unit) then Core.UpdateAuraStatus(unit) end
             end
         end
     end
@@ -190,12 +175,7 @@ function Util.GetExternalFrames()
                 if extFrames then
                     for _, extFrame in pairs(extFrames) do
                         table.insert(elements.extFrames, extFrame)
-                        local indicatorOverlay = Ui.CreateIndicatorOverlay(SavedIndicators[Data.playerSpec])
-                        indicatorOverlay.unit = unit
-                        indicatorOverlay:AttachToFrame(extFrame)
-                        indicatorOverlay:Show()
-                        table.insert(elements.extIndicatorOverlays, indicatorOverlay)
-                        Util.RefreshIndicatorsWithSavedData(unit)
+                        Core.RegisterEngine(extFrame, unit)
                     end
                 end
             end

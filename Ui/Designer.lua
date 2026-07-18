@@ -207,13 +207,62 @@ function Ui.GetDesignerFrame()
         end
 
         designer.RefreshPreview = function()
-            if preview.Overlay then preview.Overlay:Delete() end
-            local exampleIndicatorOverlay = Ui.CreateIndicatorOverlay(SavedIndicators[Options.editingSpec])
-            if exampleIndicatorOverlay then
-                exampleIndicatorOverlay:SetParent(preview)
-                exampleIndicatorOverlay:AttachToFrame(exampleFrame)
-                exampleIndicatorOverlay:ShowPreview()
-                preview.Overlay = exampleIndicatorOverlay
+            if preview.Overlay then
+                for _, btn in ipairs(preview.Overlay.buttons) do
+                    btn:Hide()
+                end
+            else
+                preview.Overlay = { buttons = {} }
+            end
+            
+            local indicators = SavedIndicators[Options.editingSpec]
+            if indicators then
+                for i, indicatorData in ipairs(indicators) do
+                    local previewData = indicatorData
+                    local btn = preview.Overlay.buttons[i]
+                    if not btn then
+                        btn = CreateFrame("Button", nil, exampleFrame)
+                        -- Stub binders for preview
+                        btn.SetDurationCooldown = function(self, cd)
+                            cd:SetCooldown(GetTime(), 30)
+                        end
+                        btn.SetDurationBar = function(self, bar)
+                            local dur = C_DurationUtil.CreateDuration()
+                            dur:SetTimeFromStart(GetTime(), 30)
+                            bar:SetTimerDuration(dur, Enum.StatusBarInterpolation.Immediate, Enum.StatusBarTimerDirection.RemainingTime)
+                        end
+                        btn.SetApplicationCount = function(self, text)
+                            text:SetText("5")
+                        end
+                        btn.SetIcon = function(self, tex)
+                            if not tex then return end
+                            local textureId = previewData.Spell and Data.textures[previewData.Spell]
+                            if textureId then
+                                tex:SetTexture(textureId)
+                            elseif previewData.Type == 'square' and previewData.Color then
+                                tex:SetColorTexture(previewData.Color.r, previewData.Color.g, previewData.Color.b, previewData.Color.a)
+                            end
+                        end
+                        btn.SetAuraBorder = function() end
+                        preview.Overlay.buttons[i] = btn
+                    else
+                        for _, r in ipairs({btn:GetRegions()}) do
+                            r:Hide()
+                            r:SetParent(nil)
+                        end
+                        for _, c in ipairs({btn:GetChildren()}) do
+                            c:Hide()
+                            c:SetParent(nil)
+                        end
+                    end
+                    
+                    btn:ClearAllPoints()
+                    Ui.SetupIndicatorFrame(btn, indicatorData)
+                    btn:Show()
+                end
+                for i = #indicators + 1, #preview.Overlay.buttons do
+                    preview.Overlay.buttons[i]:Hide()
+                end
             end
         end
 

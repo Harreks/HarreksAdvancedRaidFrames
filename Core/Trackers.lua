@@ -28,19 +28,11 @@ function Core.InstallTrackers()
                     end
                 end
             end
-            tracker:SetScript('OnEvent', function(self, event, unitId, auraUpdateInfo)
-                if event == 'UNIT_AURA' and Data.playerSpec and Util.IsValidUnitForAuraCheck(unitId) then
-                    if not self.active then
-                        self.active = true
-                        self:SetScript('OnUpdate', self.VisibleCheck)
-                    end
-                    self.lastUpdate = GetTime()
-                    Core.UpdateAuraStatus(unitId, auraUpdateInfo)
-                elseif event == 'UNIT_ABSORB_AMOUNT_CHANGED' then
+            tracker:SetScript('OnEvent', function(self, event, unitId)
+                if event == 'UNIT_ABSORB_AMOUNT_CHANGED' then
                     Util.UpdateOvershields(unitId)
                 end
             end)
-            tracker:RegisterUnitEvent('UNIT_AURA', unit)
             if Options.showOvershields then
                 tracker:RegisterUnitEvent('UNIT_ABSORB_AMOUNT_CHANGED', unit)
             end
@@ -117,6 +109,7 @@ function Core.InstallTrackers()
         stateTracker:RegisterEvent('GROUP_ROSTER_UPDATE')
         stateTracker:RegisterEvent('ACTIVE_PLAYER_SPECIALIZATION_CHANGED')
         stateTracker:RegisterEvent('ACTIVE_TALENT_GROUP_CHANGED')
+        stateTracker:RegisterEvent('PLAYER_REGEN_ENABLED')
 
         stateTracker:SetScript('OnEvent', function(self, event, addonName)
             if event == 'ADDON_LOADED' and addonName == 'HarreksAdvancedRaidFrames' then
@@ -235,6 +228,11 @@ function Core.InstallTrackers()
                 end
             elseif event == 'ACTIVE_PLAYER_SPECIALIZATION_CHANGED' or event == 'ACTIVE_TALENT_GROUP_CHANGED' then
                 Util.HandlePlayerSpecializationChanged()
+            elseif event == 'PLAYER_REGEN_ENABLED' then
+                if Data.pendingRefresh then
+                    Data.pendingRefresh = false
+                    Core.ModifySettings()
+                end
             end
         end)
     end

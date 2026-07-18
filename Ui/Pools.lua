@@ -492,62 +492,150 @@ Ui.CheckboxPool = CreateFramePool('CheckButton', nil, 'InterfaceOptionsCheckButt
     end
 )
 
---All indicators are created inside a container, the container is then anchored to the frame to show the indicators on top of it
-Ui.IndicatorOverlayPool = CreateFramePool('Frame', UIParent, nil,
-    function(_, frame)
-        frame:Hide()
-        frame:SetParent(UIParent)
-        frame:SetFrameStrata('MEDIUM')
-        frame:SetFrameLevel(0)
-        frame:ReleaseElements()
-        frame.unit = nil
-        frame:ClearAllPoints()
-    end, false,
-    function(frame)
-        frame.elements = {}
-        frame.unit = nil
-        frame.ReleaseElements = function(self)
-            for _, element in ipairs(frame.elements) do
-                element:Release()
-            end
-            wipe(self.elements)
+function Ui.SetupIndicatorFrame(btn, indicatorData)
+    local size = indicatorData.iconSize or 25
+    local pos = indicatorData.Position or 'CENTER'
+    local xOff = indicatorData.xOffset or 0
+    local yOff = indicatorData.yOffset or 0
+
+    if indicatorData.Type == 'icon' then
+        local icon = btn:CreateTexture(nil, "ARTWORK")
+        icon:SetAllPoints(btn)
+
+        local spellTexture = indicatorData.Spell and Data.textures[indicatorData.Spell]
+        if spellTexture then
+            icon:SetTexture(spellTexture)
         end
-        frame.UpdateIndicators = function(self, updatedAuras)
-            for _, element in ipairs(self.elements) do
-                for buffName, auraInfo in pairs(updatedAuras) do
-                    if element.spell == buffName then
-                        element:UpdateIndicator(auraInfo)
-                        break
-                    end
+        btn:SetIcon(icon)
+        
+        local cd = CreateFrame("Cooldown", nil, btn, "CooldownFrameTemplate")
+        cd:SetAllPoints(btn)
+        cd:SetReverse(true)
+        cd:SetHideCountdownNumbers(not indicatorData.showText or indicatorData.showStacks)
+        btn:SetDurationCooldown(cd)
+        
+        local text = cd:CreateFontString(nil, "OVERLAY")
+        text:SetFont('Fonts\\FRIZQT__.TTF', indicatorData.textSize or 16, 'OUTLINE')
+        text:SetShadowColor(0, 0, 0, 1)
+        text:SetShadowOffset(1, -1)
+        text:SetPoint("CENTER")
+        if indicatorData.showStacks then
+            btn:SetApplicationCount(text)
+        end
+        
+        if indicatorData.textColor then
+            local cooldownText = cd:GetCountdownFontString()
+            if cooldownText then
+                cooldownText:SetTextColor(indicatorData.textColor.r, indicatorData.textColor.g, indicatorData.textColor.b, indicatorData.textColor.a)
+            end
+        end
+
+        btn:SetSize(size, size)
+        btn:SetPoint(pos, btn:GetParent(), pos, xOff, yOff)
+    elseif indicatorData.Type == 'square' then
+        local square = btn:CreateTexture(nil, "OVERLAY")
+        square:SetAllPoints(btn)
+        square:SetDrawLayer("OVERLAY")
+        square:SetColorTexture(indicatorData.Color.r, indicatorData.Color.g, indicatorData.Color.b, indicatorData.Color.a)
+        square:SetBlendMode('BLEND')
+        square:Show()
+        
+        if indicatorData.showCooldown then
+            local cd = CreateFrame("Cooldown", nil, btn, "CooldownFrameTemplate")
+            cd:SetAllPoints(btn)
+            cd:SetReverse(true)
+            cd:SetHideCountdownNumbers(not indicatorData.showText or indicatorData.showStacks)
+            btn:SetDurationCooldown(cd)
+            
+            if indicatorData.textColor then
+                local cooldownText = cd:GetCountdownFontString()
+                if cooldownText then
+                    cooldownText:SetTextColor(indicatorData.textColor.r, indicatorData.textColor.g, indicatorData.textColor.b, indicatorData.textColor.a)
                 end
             end
         end
-        frame.coloringFunc = nil
-        frame.extraFrameIndex = nil
-        frame.ShowPreview = function(self)
-            for _, element in ipairs(self.elements) do
-                element:ShowPreview()
-            end
-            self:Show()
+        
+        local text = btn:CreateFontString(nil, "OVERLAY")
+        text:SetFont('Fonts\\FRIZQT__.TTF', indicatorData.textSize or 16, 'OUTLINE')
+        text:SetShadowColor(0, 0, 0, 1)
+        text:SetShadowOffset(1, -1)
+        text:SetPoint("CENTER")
+        if indicatorData.showStacks then
+            btn:SetApplicationCount(text)
         end
-        frame.AttachToFrame = function(self, unitFrame)
-            if not unitFrame then return end
-            self:SetParent(unitFrame)
-            self:SetAllPoints(unitFrame)
-            local parentStrata = unitFrame:GetFrameStrata()
-            local parentLevel = unitFrame:GetFrameLevel()
-            if parentStrata and parentLevel then
-                self:SetFrameStrata(parentStrata)
-                self:SetFrameLevel(parentLevel + 5)
-            end
-        end
-        frame.Delete = function(self)
-            Ui.IndicatorOverlayPool:Release(self)
-        end
-    end
-)
 
---This is the default icon indicator that shows on frames
+        btn:SetSize(size, size)
+        btn:SetPoint(pos, btn:GetParent(), pos, xOff, yOff)
+    elseif indicatorData.Type == 'bar' then
+        local bar = CreateFrame("StatusBar", nil, btn)
+        bar:SetStatusBarTexture("Interface/Buttons/WHITE8x8")
+        bar:SetStatusBarColor(indicatorData.Color.r, indicatorData.Color.g, indicatorData.Color.b, indicatorData.Color.a)
+        
+        local bg = bar:CreateTexture(nil, "BACKGROUND")
+        bg:SetAllPoints(bar)
+        bg:SetColorTexture(indicatorData.BackgroundColor.r, indicatorData.BackgroundColor.g, indicatorData.BackgroundColor.b, indicatorData.BackgroundColor.a)
+        
+        btn:SetDurationBar(bar)
+        
+        local anchorData = Util.FigureOutBarAnchors(indicatorData)
+        if anchorData.points then
+            for _, anchor in ipairs(anchorData.points) do
+                bar:SetPoint(anchor.point, btn:GetParent(), anchor.relative, anchorData.sizing.xOffset, anchorData.sizing.yOffset)
+            end
+        end
+        if anchorData.sizing.Orientation then
+            bar:SetOrientation(anchorData.sizing.Orientation)
+            if anchorData.sizing.Orientation == 'VERTICAL' then
+                bar:SetWidth(indicatorData.barSize)
+            else
+                bar:SetHeight(indicatorData.barSize)
+            end
+        end
+        if anchorData.sizing.Reverse then
+            bar:SetReverseFill(true)
+        else
+            bar:SetReverseFill(false)
+        end
+    elseif indicatorData.Type == 'healthColor' then
+        --stub
+    elseif indicatorData.Type == 'border' then
+        local borderWidth = indicatorData.borderWidth or 3
+        local borderColor = indicatorData.Color or { r = 1, g = 1, b = 1, a = 1 }
+        local host = btn:GetParent() or UIParent
+
+        local borderFrame = CreateFrame('Frame', nil, btn)
+        borderFrame:SetAllPoints(btn)
+        borderFrame:SetFrameLevel(btn:GetFrameLevel() + 10)
+
+        local topBorder = borderFrame:CreateTexture(nil, 'OVERLAY')
+        topBorder:SetColorTexture(borderColor.r, borderColor.g, borderColor.b, borderColor.a)
+        topBorder:SetPoint('TOPLEFT', btn, 'TOPLEFT')
+        topBorder:SetPoint('TOPRIGHT', btn, 'TOPRIGHT')
+        topBorder:SetHeight(borderWidth)
+
+        local rightBorder = borderFrame:CreateTexture(nil, 'OVERLAY')
+        rightBorder:SetColorTexture(borderColor.r, borderColor.g, borderColor.b, borderColor.a)
+        rightBorder:SetPoint('TOPRIGHT', btn, 'TOPRIGHT')
+        rightBorder:SetPoint('BOTTOMRIGHT', btn, 'BOTTOMRIGHT')
+        rightBorder:SetWidth(borderWidth)
+
+        local bottomBorder = borderFrame:CreateTexture(nil, 'OVERLAY')
+        bottomBorder:SetColorTexture(borderColor.r, borderColor.g, borderColor.b, borderColor.a)
+        bottomBorder:SetPoint('BOTTOMLEFT', btn, 'BOTTOMLEFT')
+        bottomBorder:SetPoint('BOTTOMRIGHT', btn, 'BOTTOMRIGHT')
+        bottomBorder:SetHeight(borderWidth)
+
+        local leftBorder = borderFrame:CreateTexture(nil, 'OVERLAY')
+        leftBorder:SetColorTexture(borderColor.r, borderColor.g, borderColor.b, borderColor.a)
+        leftBorder:SetPoint('TOPLEFT', btn, 'TOPLEFT')
+        leftBorder:SetPoint('BOTTOMLEFT', btn, 'BOTTOMLEFT')
+        leftBorder:SetWidth(borderWidth)
+
+        btn:SetPoint('TOPLEFT', host, 'TOPLEFT', 0, 0)
+        btn:SetPoint('BOTTOMRIGHT', host, 'BOTTOMRIGHT', 0, 0)
+    end
+end
+
 Ui.IconIndicatorPool = CreateFramePool('Frame', nil, nil,
     function(_, frame)
         frame:Hide()
@@ -572,249 +660,12 @@ Ui.IconIndicatorPool = CreateFramePool('Frame', nil, nil,
         frame.stacksText:SetShadowOffset(1, -1)
         frame.stacksText:SetPoint('CENTER', frame.cooldown)
         frame.stacksText:Hide()
-        frame.ShowPreview = function(self)
-            self.texture:SetTexture(Data.textures[self.spell])
-            self.stacksText:SetText('5')
-            self.cooldown:SetCooldown(GetTime(), 30)
-            if not self.previewTimer then
-                self.previewTimer = C_Timer.NewTicker(30, function()
-                    self:ShowPreview()
-                end)
-            end
-            self:Show()
-        end
-        frame.UpdateIndicator = function(self, auraInfo)
-            if auraInfo.active and auraInfo.data then
-                self.stacksText:SetText(auraInfo.data.applications)
-                self.texture:SetTexture(auraInfo.data.icon)
-                self.cooldown:SetCooldownFromDurationObject(auraInfo.duration)
-                self:Show()
-            else
-                self:Hide()
-            end
-        end
         frame.Release = function(self)
             if self.previewTimer then
                 self.previewTimer:Cancel()
                 self.previewTimer = nil
             end
             Ui.IconIndicatorPool:Release(self)
-        end
-    end
-)
-
---Square type indicators
-Ui.SquareIndicatorPool = CreateFramePool('Frame', nil, nil,
-    function(_, frame)
-        frame:Hide()
-        frame:SetScale(1)
-        frame:ClearAllPoints()
-        frame:SetParent()
-        frame.spell = nil
-        frame.stacksText:Hide()
-    end, false,
-    function(frame)
-        frame.texture = frame:CreateTexture(nil, 'ARTWORK')
-        frame.texture:SetAllPoints()
-        frame.cooldown = CreateFrame('Cooldown', nil, frame, 'CooldownFrameTemplate')
-        frame.cooldown:SetAllPoints()
-        frame.cooldown:SetReverse(true)
-        frame.cooldown:Hide()
-        frame.stacksText = frame.cooldown:CreateFontString(nil, 'OVERLAY')
-        frame.stacksText:SetFont('Fonts\\FRIZQT__.TTF', 16, 'OUTLINE')
-        frame.stacksText:SetShadowColor(0, 0, 0, 1)
-        frame.stacksText:SetShadowOffset(1, -1)
-        frame.stacksText:SetPoint('CENTER', frame.cooldown)
-        frame.stacksText:Hide()
-        frame.type = 'SquareIndicator'
-        frame.spell = nil
-        frame.UpdateIndicator = function(self, auraInfo)
-            if auraInfo.active and auraInfo.data then
-                self.stacksText:SetText(auraInfo.data.applications)
-                if self.showCooldown then
-                    self.cooldown:SetCooldownFromDurationObject(auraInfo.duration)
-                    self.cooldown:Show()
-                else
-                    self.cooldown:Hide()
-                end
-                self:Show()
-            else
-                self:Hide()
-            end
-        end
-        frame.ShowPreview = function(self)
-            if self.showCooldown then
-                self.cooldown:SetCooldown(GetTime(), 30)
-                self.cooldown:Show()
-            else
-                self.cooldown:Hide()
-            end
-            self.stacksText:SetText('5')
-            if not self.previewTimer then
-                self.previewTimer = C_Timer.NewTicker(30, function()
-                    self:ShowPreview()
-                end)
-            end
-            self:Show()
-        end
-        frame.Release = function(self)
-            Ui.SquareIndicatorPool:Release(self)
-        end
-    end
-)
-
---Progress Bars
-Ui.BarIndicatorPool = CreateFramePool('StatusBar', nil, nil,
-    function(_, frame)
-        frame:Hide()
-        frame:SetScale(1)
-        frame:ClearAllPoints()
-        frame:SetParent()
-        frame.spell = nil
-    end, false,
-    function(frame)
-        frame:SetStatusBarTexture("Interface/Buttons/WHITE8x8")
-        frame.background = frame:CreateTexture(nil, 'BACKGROUND')
-        frame.background:SetAllPoints(frame)
-        frame.background:SetColorTexture(0, 0, 0, 1)
-        frame.type = 'BarIndicator'
-        frame.previewTimer = nil
-        frame.spell = nil
-        frame.UpdateIndicator = function(self, auraInfo)
-            if auraInfo.active and auraInfo.data then
-                self:SetTimerDuration(auraInfo.duration, Enum.StatusBarInterpolation.Immediate, Enum.StatusBarTimerDirection.RemainingTime)
-                self:Show()
-            else
-                self:Hide()
-            end
-        end
-        frame.ShowPreview = function(self)
-            local duration = C_DurationUtil.CreateDuration()
-            duration:SetTimeFromStart(GetTime(), 30)
-            self:SetTimerDuration(duration, Enum.StatusBarInterpolation.Immediate, Enum.StatusBarTimerDirection.RemainingTime)
-            if not self.previewTimer then
-                self.previewTimer = C_Timer.NewTicker(30, function()
-                    local duration = C_DurationUtil.CreateDuration()
-                    duration:SetTimeFromStart(GetTime(), 30)
-                    self:SetTimerDuration(duration, Enum.StatusBarInterpolation.Immediate, Enum.StatusBarTimerDirection.RemainingTime)
-                end)
-            end
-            self:Show()
-        end
-        frame.Release = function(self)
-            if self.previewTimer then
-                self.previewTimer:Cancel()
-                self.previewTimer = nil
-            end
-            Ui.BarIndicatorPool:Release(self)
-        end
-    end
-)
-
---Colored border around the frame
-Ui.BorderIndicatorPool = CreateFramePool('Frame', nil, 'BackdropTemplate',
-    function(_, frame)
-        frame:Hide()
-        frame:ClearAllPoints()
-        frame:SetParent()
-        frame.coloringFunc = nil
-        frame.spell = nil
-    end, false,
-    function(frame)
-        frame.spell = nil
-        frame.color = nil
-        frame.type = 'Border'
-        frame.defaultBackdrop = {
-            edgeFile = "Interface\\Buttons\\WHITE8X8",
-            edgeSize = 3,
-            tile = true, tileSize = 16,
-            insets = { left = 2, right = 2, top = 2, bottom = 2 }
-        }
-        frame:SetBackdropColor(0, 0, 0, 0)
-        frame:Hide()
-        frame.UpdateIndicator = function(self, auraInfo)
-            if auraInfo.active and auraInfo.data then
-                self:SetBackdropBorderColor(self.color.r, self.color.g, self.color.b)
-                self:Show()
-            else
-                self:Hide()
-            end
-        end
-        frame.SetWidth = function(self, width)
-            self:ClearBackdrop()
-            self.backdropInfo = CopyTable(self.defaultBackdrop)
-            self.backdropInfo.edgeSize = width
-            self:ApplyBackdrop()
-        end
-        frame.ShowPreview = function(self)
-            self:SetBackdropBorderColor(self.color.r, self.color.g, self.color.b)
-            self:Show()
-        end
-        frame.Release = function(self)
-            Ui.BorderIndicatorPool:Release(self)
-        end
-    end
-)
-
---This indicator recolors the frame of the unit, doesn't show anything by itself
-Ui.HealthColorIndicatorPool = CreateFramePool('Frame', nil, nil,
-    function(_, frame)
-        frame:SetParent()
-        frame.spell = nil
-        frame.oldColor = nil
-        frame.color = nil
-    end, false,
-    function(frame)
-        frame.spell = nil
-        frame.color = nil
-        frame.type = 'HealthColor'
-        frame.UpdateIndicator = function(self, auraInfo)
-            local overlay = self:GetParent()
-            local unitList = Data.unitList
-            local unit = overlay.unit
-            local elements = unitList[unit]
-            if elements then
-                local unitFrame = overlay:GetParent()
-                if unitFrame then
-                    local texture = Util.GetFrameHealthTexture(unitFrame)
-                    if texture then
-                        local isDefault = unitFrame == _G[elements.frame]
-                        if not isDefault and not texture._HARF_Hooked then
-                            texture._HARF_SetVertexColor = texture.SetVertexColor
-                            texture.SetVertexColor = Util.CustomSetVertexColor
-                            texture._HARF_Hooked = true
-                        end
-                        if auraInfo.active and auraInfo.data then
-                            elements.isColored = true
-                            elements.recolor = self.color
-                            if not self.oldColor then
-                                local oldR, oldG, oldB = texture:GetVertexColor()
-                                self.oldColor = { r = oldR, g = oldG, b = oldB }
-                            end
-                            if isDefault then
-                                texture:SetVertexColor(self.color.r, self.color.g, self.color.b)
-                            else
-                                texture:_HARF_SetVertexColor(self.color.r, self.color.g, self.color.b)
-                            end
-                        else
-                            elements.isColored = false
-                            elements.recolor = nil
-                            if self.oldColor then
-                                if isDefault then
-                                    texture:SetVertexColor(self.oldColor.r, self.oldColor.g, self.oldColor.b)
-                                else
-                                    texture:_HARF_SetVertexColor(self.oldColor.r, self.oldColor.g, self.oldColor.b)
-                                end
-                                self.oldColor = nil
-                            end
-                        end
-                    end
-                end
-            end
-        end
-        frame.ShowPreview = function() end
-        frame.Release = function(self)
-            Ui.HealthColorIndicatorPool:Release(self)
         end
     end
 )

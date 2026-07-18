@@ -25,8 +25,7 @@ Data.defaultUnitData = {
     roleIcon = nil,
     name = nil,
     isColored = false,
-    extFrames = {},
-    extIndicatorOverlays = {}
+    extFrames = {}
 }
 
 --Build a list of units to store data for each group member

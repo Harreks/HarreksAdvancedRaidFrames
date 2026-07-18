@@ -122,6 +122,7 @@ Data.indicatorTypes = {
             { controlType = 'Checkbox', setting = 'showStacks', text = 'Show Stacks', section = 'Text', default = false },
         }
     },
+    --[[
     bar = {
         display = 'Bar',
         sections = {
@@ -140,6 +141,7 @@ Data.indicatorTypes = {
             { controlType = 'Slider', sliderType = 'offset', setting = 'Offset', section = 'Position', default = 0 }
         }
     },
+    ]]
     border = {
         display = 'Border',
         sections = {
@@ -151,6 +153,7 @@ Data.indicatorTypes = {
             { controlType = 'Slider', sliderType = 'borderWidth', setting = 'borderWidth', section = 'Display', default = 3 }
         }
     },
+    --[[
     healthColor = {
         display = 'Health Bar Color',
         sections = {
@@ -161,6 +164,7 @@ Data.indicatorTypes = {
             { controlType = 'ColorPicker', setting = 'Color', section = 'Display', default = { r = 0, g = 1, b = 0, a = 1 } }
         }
     }
+    ]]
 }
 
 --Different type of dropdown controls

@@ -271,43 +271,7 @@ function Util.CustomSetVertexColor(self, r, g, b, a)
     end
 end
 
-function Util.ResetUnitAuraData(unit)
-    if Data.playerSpec then
-        local emptyAuraData = {}
-        for _, auraData in pairs(Data.specInfo[Data.playerSpec].auras) do
-            emptyAuraData[auraData.name] = { active = false }
-        end
-        Util.UpdateIndicatorsForUnit(unit, emptyAuraData)
-        Core.UpdateAuraStatus(unit, { isFullUpdate = true })
-    end
-end
-
-function Util.UpdateIndicatorsForUnit(unit, auraData)
-    local elements = Data.unitList[unit]
-    if elements.indicatorOverlay then
-        elements.indicatorOverlay:UpdateIndicators(auraData)
-    end
-    if next(elements.extIndicatorOverlays) then
-        for _, overlay in ipairs(elements.extIndicatorOverlays) do
-            overlay:UpdateIndicators(auraData)
-        end
-    end
-end
-
-function Util.RefreshIndicatorsWithSavedData(unit)
-    local currentUnitAuras = Data.state.auras[unit]
-    if currentUnitAuras then
-        local updatedAuraData = {}
-        for instanceId, buffName in pairs(currentUnitAuras) do
-            local aura = {}
-            aura.active = true
-            aura.duration = C_UnitAuras.GetAuraDuration(unit, instanceId)
-            aura.data = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, instanceId)
-            updatedAuraData[buffName] = aura
-        end
-        Util.UpdateIndicatorsForUnit(unit, updatedAuraData)
-    end
-end
+-- Removed ResetUnitAuraData, UpdateIndicatorsForUnit, and RefreshIndicatorsWithSavedData since AuraContainer handles it natively.
 
 --Different frames contain their texture in different ways
 function Util.GetFrameHealthTexture(frame)

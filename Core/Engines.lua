@@ -25,17 +25,20 @@ function Core.RegisterEngine(unitFrame, unitId)
         local specIndicators = SavedIndicators[Data.playerSpec]
         if specIndicators then
             for i, indicator in ipairs(specIndicators) do
-                local spellIds = {}
+                local spellId
                 for id, data in pairs(Data.specInfo[Data.playerSpec].auras) do
                     if data.name == indicator.Spell then
-                        spellIds[id] = true
+                        spellId = id
+                        break
                     end
                 end
                 
-                if next(spellIds) then
-                    local button = container:AddAuraSlot("slot_" .. i, "HELPFUL", {
+                if spellId then
+                    container:AddAuraSlot("slot_" .. i, "PLAYER|HELPFUL", {
                         candidateFilters = {
-                            includeSpellIDs = spellIds
+                            includeSpellIDs = {
+                                [spellId] = true
+                            }
                         },
                         initializeFrame = function(btn)
                             Ui.SetupIndicatorFrame(btn, indicator)

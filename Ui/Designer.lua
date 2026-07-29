@@ -227,8 +227,11 @@ function Ui.GetDesignerFrame()
                             cd:SetCooldown(GetTime(), 30)
                         end
                         btn.SetDurationBar = function(self, bar)
+                            if not bar then return end
                             local dur = C_DurationUtil.CreateDuration()
                             dur:SetTimeFromStart(GetTime(), 30)
+                            bar:SetMinMaxValues(0, 30)
+                            bar:SetValue(30)
                             bar:SetTimerDuration(dur, Enum.StatusBarInterpolation.Immediate, Enum.StatusBarTimerDirection.RemainingTime)
                         end
                         btn.SetApplicationCount = function(self, text)

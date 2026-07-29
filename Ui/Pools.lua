@@ -567,15 +567,21 @@ function Ui.SetupIndicatorFrame(btn, indicatorData)
         btn:SetSize(size, size)
         btn:SetPoint(pos, btn:GetParent(), pos, xOff, yOff)
     elseif indicatorData.Type == 'bar' then
+        local barColor = indicatorData.Color or { r = 0, g = 1, b = 0, a = 1 }
+        local bgColor = indicatorData.BackgroundColor or { r = 0, g = 0, b = 0, a = 1 }
         local bar = CreateFrame("StatusBar", nil, btn)
         bar:SetStatusBarTexture("Interface/Buttons/WHITE8x8")
-        bar:SetStatusBarColor(indicatorData.Color.r, indicatorData.Color.g, indicatorData.Color.b, indicatorData.Color.a)
+        bar:SetMinMaxValues(0, 1)
+        bar:SetValue(1)
+        bar:SetStatusBarColor(barColor.r, barColor.g, barColor.b, barColor.a)
         
         local bg = bar:CreateTexture(nil, "BACKGROUND")
         bg:SetAllPoints(bar)
-        bg:SetColorTexture(indicatorData.BackgroundColor.r, indicatorData.BackgroundColor.g, indicatorData.BackgroundColor.b, indicatorData.BackgroundColor.a)
+        bg:SetColorTexture(bgColor.r, bgColor.g, bgColor.b, bgColor.a)
         
-        btn:SetDurationBar(bar)
+        if type(btn.SetDurationBar) == 'function' then
+            btn:SetDurationBar(bar)
+        end
         
         local anchorData = Util.FigureOutBarAnchors(indicatorData)
         if anchorData.points then
@@ -596,6 +602,7 @@ function Ui.SetupIndicatorFrame(btn, indicatorData)
         else
             bar:SetReverseFill(false)
         end
+        bar:Show()
     elseif indicatorData.Type == 'healthColor' then
         --stub
     elseif indicatorData.Type == 'border' then

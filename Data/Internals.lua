@@ -122,7 +122,6 @@ Data.indicatorTypes = {
             { controlType = 'Checkbox', setting = 'showStacks', text = 'Show Stacks', section = 'Text', default = false },
         }
     },
-    --[[
     bar = {
         display = 'Bar',
         sections = {
@@ -141,7 +140,6 @@ Data.indicatorTypes = {
             { controlType = 'Slider', sliderType = 'offset', setting = 'Offset', section = 'Position', default = 0 }
         }
     },
-    ]]
     border = {
         display = 'Border',
         sections = {

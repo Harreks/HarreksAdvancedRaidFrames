@@ -492,7 +492,7 @@ Ui.CheckboxPool = CreateFramePool('CheckButton', nil, 'InterfaceOptionsCheckButt
     end
 )
 
-function Ui.SetupIndicatorFrame(btn, indicatorData)
+function Ui.SetupIndicatorFrame(btn, indicatorData, healthTexture)
     local size = indicatorData.iconSize or 25
     local pos = indicatorData.Position or 'CENTER'
     local xOff = indicatorData.xOffset or 0
@@ -604,7 +604,15 @@ function Ui.SetupIndicatorFrame(btn, indicatorData)
         end
         bar:Show()
     elseif indicatorData.Type == 'healthColor' then
-        --stub
+        --[[
+        if healthTexture then
+            local color = indicatorData.Color or { r = 0, g = 1, b = 0, a = 1 }
+            btn:SetAllPoints(btn:GetParent())
+            local tint = btn:CreateTexture(nil, 'ARTWORK')
+            tint:SetAllPoints(healthTexture)
+            tint:SetColorTexture(color.r, color.g, color.b, color.a)
+        end
+        ]]
     elseif indicatorData.Type == 'border' then
         local borderWidth = indicatorData.borderWidth or 3
         local borderColor = indicatorData.Color or { r = 1, g = 1, b = 1, a = 1 }

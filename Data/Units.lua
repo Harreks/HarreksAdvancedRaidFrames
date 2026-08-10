@@ -24,7 +24,6 @@ Data.defaultUnitData = {
     frame = nil,
     roleIcon = nil,
     name = nil,
-    isColored = false,
     extFrames = {}
 }
 

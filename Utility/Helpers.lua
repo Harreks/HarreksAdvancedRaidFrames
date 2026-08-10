@@ -124,7 +124,6 @@ function Util.MapOutUnits()
             Core.UnregisterEngine(_G[elements.frame])
         end
         elements.frame = nil
-        elements.isColored = false
         elements.name = nil
         if next(elements.extFrames) then
             for index, extFrame in ipairs(elements.extFrames) do

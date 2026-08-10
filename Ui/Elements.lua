@@ -153,20 +153,6 @@ function Ui.RegisterFrameStyle()
         health.bg = health:CreateTexture(nil, 'BORDER')
         health.bg:SetAllPoints(health)
         health.bg:SetColorTexture(0.1, 0.1, 0.1)
-        health._SetStatusBarColor = health.SetStatusBarColor
-        health.SetStatusBarColor = function(barSelf, r, g, b, a)
-            local parent = barSelf:GetParent()
-            if parent then
-                local unit = parent:GetAttribute('unit')
-                if unit then
-                    local unitList = Data.unitList
-                    local elements = unitList[unit]
-                    if not elements.isColored then
-                        health._SetStatusBarColor(barSelf, r, g, b, a)
-                    end
-                end
-            end
-        end
         self.Health = health
 
         local name = health:CreateFontString(nil, 'OVERLAY', 'GameFontHighlightSmall')

@@ -22,6 +22,7 @@ function Core.RegisterEngine(unitFrame, unitId)
         container:SetAllPoints(unitFrame)
         container:SetUnit(unit)
         
+        local healthTexture = Util.GetFrameHealthTexture(unitFrame)
         local specIndicators = SavedIndicators[Data.playerSpec]
         if specIndicators then
             for i, indicator in ipairs(specIndicators) do
@@ -41,7 +42,7 @@ function Core.RegisterEngine(unitFrame, unitId)
                             }
                         },
                         initializeFrame = function(btn)
-                            Ui.SetupIndicatorFrame(btn, indicator)
+                            Ui.SetupIndicatorFrame(btn, indicator, healthTexture)
                         end
                     })
                 end

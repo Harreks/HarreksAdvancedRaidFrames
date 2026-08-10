@@ -260,7 +260,7 @@ function Ui.GetDesignerFrame()
                     end
                     
                     btn:ClearAllPoints()
-                    Ui.SetupIndicatorFrame(btn, indicatorData)
+                    Ui.SetupIndicatorFrame(btn, indicatorData, exampleFrame.bg)
                     btn:Show()
                 end
                 for i = #indicators + 1, #preview.Overlay.buttons do

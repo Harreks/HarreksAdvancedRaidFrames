@@ -257,20 +257,6 @@ function Util.DisplayResetPopup()
     StaticPopup_Show('HARF_RESET')
 end
 
-function Util.CustomSetVertexColor(self, r, g, b, a)
-    local healthBar = self:GetParent()
-    if healthBar then
-        local unitFrame = healthBar:GetParent()
-        if unitFrame and unitFrame.unit then
-            local unitList = Data.unitList
-            local elements = unitList[unitFrame.unit]
-            if not elements.isColored then
-                self:_HARF_SetVertexColor(r, g, b, a)
-            end
-        end
-    end
-end
-
 -- Removed ResetUnitAuraData, UpdateIndicatorsForUnit, and RefreshIndicatorsWithSavedData since AuraContainer handles it natively.
 
 --Different frames contain their texture in different ways
@@ -482,16 +468,6 @@ function Util.CleanupTargetedSpellsIcons()
         end
     end
 end
-
---This recolors the default frames if blizzard tries to color them back beforehand
-hooksecurefunc("CompactUnitFrame_UpdateHealthColor", function(frame)
-    local unitList = Data.unitList
-    if frame.unit and unitList[frame.unit] and frame == _G[unitList[frame.unit].frame] and unitList[frame.unit].isColored then
-        local color = unitList[frame.unit].recolor
-        local texture = frame.healthBar:GetStatusBarTexture()
-        texture:SetVertexColor(color.r, color.g, color.b)
-    end
-end)
 
 --This recolors the names on the default frames if blizzard tries to color them back
 hooksecurefunc("CompactUnitFrame_UpdateName", function(frame)

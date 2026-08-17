@@ -502,6 +502,15 @@ function Ui.SetupIndicatorFrame(btn, indicatorData, healthTexture)
         local icon = btn:CreateTexture(nil, "ARTWORK")
         icon:SetAllPoints(btn)
 
+        if not indicatorData.showTexture then
+            icon:SetVertexColor(1, 1, 1, 0)
+            hooksecurefunc(icon, "SetTexture", function(self) self:SetVertexColor(1, 1, 1, 0) end)
+            hooksecurefunc(icon, "SetAlpha", function(self) self:SetVertexColor(1, 1, 1, 0) end)
+            hooksecurefunc(icon, "Show", function(self) self:SetVertexColor(1, 1, 1, 0) end)
+        else
+            icon:SetVertexColor(1, 1, 1, 1)
+        end
+
         local spellTexture = indicatorData.Spell and Data.textures[indicatorData.Spell]
         if spellTexture then
             icon:SetTexture(spellTexture)
@@ -512,6 +521,16 @@ function Ui.SetupIndicatorFrame(btn, indicatorData, healthTexture)
         cd:SetAllPoints(btn)
         cd:SetReverse(true)
         cd:SetHideCountdownNumbers(not indicatorData.showText or indicatorData.showStacks)
+
+        if not indicatorData.showTexture then
+            cd:SetDrawSwipe(false)
+            cd:SetDrawEdge(false)
+            cd:SetDrawBling(false)
+        else
+            cd:SetDrawSwipe(true)
+            cd:SetDrawEdge(true)
+            cd:SetDrawBling(true)
+        end
         btn:SetDurationCooldown(cd)
         
         local text = cd:CreateFontString(nil, "OVERLAY")
@@ -604,15 +623,21 @@ function Ui.SetupIndicatorFrame(btn, indicatorData, healthTexture)
         end
         bar:Show()
     elseif indicatorData.Type == 'healthColor' then
-        --[[
         if healthTexture then
             local color = indicatorData.Color or { r = 0, g = 1, b = 0, a = 1 }
-            btn:SetAllPoints(btn:GetParent())
-            local tint = btn:CreateTexture(nil, 'ARTWORK')
+            
+            local healthBar = healthTexture:GetParent()
+            
+            if healthBar then
+                btn:SetFrameLevel(healthBar:GetFrameLevel())
+            end
+
+            local tint = btn:CreateTexture(nil, "ARTWORK")
             tint:SetAllPoints(healthTexture)
-            tint:SetColorTexture(color.r, color.g, color.b, color.a)
+
+            tint:SetTexture(healthTexture:GetTexture())
+            tint:SetVertexColor(color.r, color.g, color.b, color.a)
         end
-        ]]
     elseif indicatorData.Type == 'border' then
         local borderWidth = indicatorData.borderWidth or 3
         local borderColor = indicatorData.Color or { r = 1, g = 1, b = 1, a = 1 }

@@ -5,9 +5,12 @@ local Util = NS.Util
 local Core = NS.Core
 local Debug = NS.Debug
 local SavedIndicators = HARFDB.savedIndicators
-local Options = HARFDB.options
+--local Options = HARFDB.options
 
 function Core.InstallTrackers()
+    local Options = _G["HARFDB"] and _G["HARFDB"].options
+    if not Options then return end
+
     --The aura trackers are per-unit, this is the most efficient way because the events only ever fire for valid units
     --So even if we install trackers for raid40, they would simply never activate on a 5man party
     --We also completely avoid all events that are not from group members this way

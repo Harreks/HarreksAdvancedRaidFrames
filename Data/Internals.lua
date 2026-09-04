@@ -267,6 +267,13 @@ Data.settings = {
         tooltip = 'Enable to remove the default buff icons on the raid frames.',
         func = 'ToggleBuffIcons'
     },
+    {
+        key = 'iconTooltips',
+        type = 'checkbox',
+        text = 'Show Tooltip on Buffs',
+        default = false,
+        tooltip = 'Show the spell tooltip when you mouseover over an aura added by the designer.'
+    },
     --[[
     {
         key = 'debuffIcons',

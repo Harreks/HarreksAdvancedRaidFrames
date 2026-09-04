@@ -7,6 +7,12 @@ local Debug = NS.Debug
 local SavedIndicators = HARFDB.savedIndicators
 local Options = HARFDB.options
 
+--Formats remaining duration as a plain rounded-down number, without a unit suffix
+local DurationTextFormatter = C_StringUtil.CreateNumericRuleFormatter()
+DurationTextFormatter:SetBreakpoints({
+    { threshold = 0, rounding = Enum.NumericRuleFormatRounding.Down, format = '%d' }
+})
+
 --Container frame is a holder for indicator option elements
 Ui.ContainerFramePool = CreateFramePool('Frame', nil, 'InsetFrameTemplate3',
     function(_, frame)
@@ -516,11 +522,12 @@ function Ui.SetupIndicatorFrame(btn, indicatorData, healthTexture)
             icon:SetTexture(spellTexture)
         end
         btn:SetIcon(icon)
+        btn:SetMouseMotionEnabled(Options.iconTooltips)
         
         local cd = CreateFrame("Cooldown", nil, btn, "CooldownFrameTemplate")
         cd:SetAllPoints(btn)
         cd:SetReverse(true)
-        cd:SetHideCountdownNumbers(not indicatorData.showText or indicatorData.showStacks)
+        cd:SetHideCountdownNumbers(true)
 
         if not indicatorData.showTexture then
             cd:SetDrawSwipe(false)
@@ -534,19 +541,18 @@ function Ui.SetupIndicatorFrame(btn, indicatorData, healthTexture)
         btn:SetDurationCooldown(cd)
         
         local text = cd:CreateFontString(nil, "OVERLAY")
-        text:SetFont('Fonts\\FRIZQT__.TTF', indicatorData.textSize or 16, 'OUTLINE')
+        text:SetFont('Fonts\\FRIZQT__.TTF', 16, 'OUTLINE')
+        text:SetScale(indicatorData.textSize)
         text:SetShadowColor(0, 0, 0, 1)
         text:SetShadowOffset(1, -1)
         text:SetPoint("CENTER")
+        if indicatorData.textColor then
+            text:SetTextColor(indicatorData.textColor.r, indicatorData.textColor.g, indicatorData.textColor.b, indicatorData.textColor.a)
+        end
         if indicatorData.showStacks then
             btn:SetApplicationCount(text)
-        end
-        
-        if indicatorData.textColor then
-            local cooldownText = cd:GetCountdownFontString()
-            if cooldownText then
-                cooldownText:SetTextColor(indicatorData.textColor.r, indicatorData.textColor.g, indicatorData.textColor.b, indicatorData.textColor.a)
-            end
+        elseif indicatorData.showText then
+            btn:SetDurationText(text, { textFormatter = DurationTextFormatter })
         end
 
         btn:SetSize(size, size)
@@ -563,24 +569,23 @@ function Ui.SetupIndicatorFrame(btn, indicatorData, healthTexture)
             local cd = CreateFrame("Cooldown", nil, btn, "CooldownFrameTemplate")
             cd:SetAllPoints(btn)
             cd:SetReverse(true)
-            cd:SetHideCountdownNumbers(not indicatorData.showText or indicatorData.showStacks)
+            cd:SetHideCountdownNumbers(true)
             btn:SetDurationCooldown(cd)
-            
-            if indicatorData.textColor then
-                local cooldownText = cd:GetCountdownFontString()
-                if cooldownText then
-                    cooldownText:SetTextColor(indicatorData.textColor.r, indicatorData.textColor.g, indicatorData.textColor.b, indicatorData.textColor.a)
-                end
-            end
         end
         
         local text = btn:CreateFontString(nil, "OVERLAY")
-        text:SetFont('Fonts\\FRIZQT__.TTF', indicatorData.textSize or 16, 'OUTLINE')
+        text:SetFont('Fonts\\FRIZQT__.TTF', 16, 'OUTLINE')
+        text:SetScale(indicatorData.textSize)
         text:SetShadowColor(0, 0, 0, 1)
         text:SetShadowOffset(1, -1)
         text:SetPoint("CENTER")
+        if indicatorData.textColor then
+            text:SetTextColor(indicatorData.textColor.r, indicatorData.textColor.g, indicatorData.textColor.b, indicatorData.textColor.a)
+        end
         if indicatorData.showStacks then
             btn:SetApplicationCount(text)
+        elseif indicatorData.showCooldown and indicatorData.showText then
+            btn:SetDurationText(text, { textFormatter = DurationTextFormatter })
         end
 
         btn:SetSize(size, size)

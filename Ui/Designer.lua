@@ -237,6 +237,9 @@ function Ui.GetDesignerFrame()
                         btn.SetApplicationCount = function(self, text)
                             text:SetText("5")
                         end
+                        btn.SetDurationText = function(self, text)
+                            text:SetText("30")
+                        end
                         btn.SetIcon = function(self, tex)
                             if not tex then return end
                             local textureId = previewData.Spell and Data.textures[previewData.Spell]

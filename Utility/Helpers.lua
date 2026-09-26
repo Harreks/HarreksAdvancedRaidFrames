@@ -274,7 +274,7 @@ function Util.ToggleEnemyCastTrackingEvents(enabled)
     end
 end
 
-function Util.ScheduleLaterUpdate()
+function Util.ScheduleLaterUpdate(timeBased)
     if not Util.PendingUpdateTracker then
         local pendingUpdateFrame = CreateFrame('Frame')
         pendingUpdateFrame:SetScript('OnEvent', function(self)
@@ -284,9 +284,16 @@ function Util.ScheduleLaterUpdate()
         end)
         Util.PendingUpdateTracker = pendingUpdateFrame
     end
-    if not Util.PendingUpdateTracker:IsEventRegistered('PLAYER_REGEN_ENABLED') then
-        Util.PendingUpdateTracker:RegisterEvent('PLAYER_REGEN_ENABLED')
-        Util.PendingUpdateTracker:RegisterEvent('ENCOUNTER_END')
+    if timeBased then
+        if Data.modifyTimer then
+            Data.modifyTimer:Cancel()
+        end
+        Data.modifyTimer = C_Timer.NewTimer(2, Core.ModifySettings)
+    else
+        if not Util.PendingUpdateTracker:IsEventRegistered('PLAYER_REGEN_ENABLED') then
+            Util.PendingUpdateTracker:RegisterEvent('PLAYER_REGEN_ENABLED')
+            Util.PendingUpdateTracker:RegisterEvent('ENCOUNTER_END')
+        end
     end
 end
 

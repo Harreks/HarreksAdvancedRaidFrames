@@ -590,6 +590,7 @@ function Ui.SetupIndicatorFrame(btn, indicatorData, healthTexture)
 
         btn:SetSize(size, size)
         btn:SetPoint(pos, btn:GetParent(), pos, xOff, yOff)
+        btn:SetMouseMotionEnabled(Options.iconTooltips)
     elseif indicatorData.Type == 'bar' then
         local barColor = indicatorData.Color or { r = 0, g = 1, b = 0, a = 1 }
         local bgColor = indicatorData.BackgroundColor or { r = 0, g = 0, b = 0, a = 1 }
@@ -630,9 +631,9 @@ function Ui.SetupIndicatorFrame(btn, indicatorData, healthTexture)
     elseif indicatorData.Type == 'healthColor' then
         if healthTexture then
             local color = indicatorData.Color or { r = 0, g = 1, b = 0, a = 1 }
-            
+
             local healthBar = healthTexture:GetParent()
-            
+
             if healthBar then
                 btn:SetFrameLevel(healthBar:GetFrameLevel())
             end
@@ -642,6 +643,7 @@ function Ui.SetupIndicatorFrame(btn, indicatorData, healthTexture)
 
             tint:SetTexture(healthTexture:GetTexture())
             tint:SetVertexColor(color.r, color.g, color.b, color.a)
+            tint:SetDrawLayer("ARTWORK", -8)
         end
     elseif indicatorData.Type == 'border' then
         local borderWidth = indicatorData.borderWidth or 3
@@ -678,6 +680,7 @@ function Ui.SetupIndicatorFrame(btn, indicatorData, healthTexture)
 
         btn:SetPoint('TOPLEFT', host, 'TOPLEFT', 0, 0)
         btn:SetPoint('BOTTOMRIGHT', host, 'BOTTOMRIGHT', 0, 0)
+        btn:SetMouseMotionEnabled(Options.iconTooltips)
     end
 end
 

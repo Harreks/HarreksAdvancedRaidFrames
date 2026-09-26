@@ -603,6 +603,7 @@ local LAMB = NS.LibAdvancedMenuBuilder
 Data.barTextures = LAMB.barTextures
 Data.registeredFrameStyle = false
 Data.lastModify = 0
+Data.modifyTimer = nil
 Data.optionSections = {}
 --Player spec is checked constantly through the run to make sure we're using appropriate data
 Data.playerSpec = nil

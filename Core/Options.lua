@@ -14,11 +14,6 @@ function Core.ToggleBuffIcons(value, _, _)
     C_CVar.SetCVar('raidFramesDisplayBuffs', value and 0 or 1)
 end
 
---Controls visibility on debuff icons, takes how many debuffs are to be shown and the element list of the frame to be modified
-function Core.ToggleDebuffIcons(amount, _, elements)
-
-end
-
 --Toggles frame transparency, true for enabled false for disabled, takes frameString to be modified
 function Core.SetGroupFrameTransparency(value, _, elements)
     if _G[elements.frame] then
@@ -164,11 +159,11 @@ function Core.ScaleHealthbarsToBackground(value, _, elements)
 end
 
 function Core.ModifySettings(newValue, functionArgs)
-    local timeSinceLastModify = GetTime() - Data.lastModify
     if InCombatLockdown() then
         Util.ScheduleLaterUpdate()
         return
     end
+    local timeSinceLastModify = GetTime() - Data.lastModify
     if timeSinceLastModify > 0.1 then
         Data.lastModify = GetTime()
         local unitList = Data.unitList

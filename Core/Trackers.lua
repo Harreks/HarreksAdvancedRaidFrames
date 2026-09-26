@@ -220,7 +220,7 @@ function Core.InstallTrackers()
                     end
                 end)
             elseif event == 'PLAYER_LOGIN' or event == 'GROUP_ROSTER_UPDATE' then
-                C_Timer.After(0.2, Core.ModifySettings)
+                Util.ScheduleLaterUpdate(true)
             elseif event == 'PLAYER_ENTERING_WORLD' then
                 local activeAuraData = Data.state.auras
                 for unit, _ in pairs(activeAuraData) do
